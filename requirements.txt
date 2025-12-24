@@ -1,0 +1,43 @@
+# Core dependencies
+python-dotenv>=1.0.0
+pydantic>=2.6.0
+pydantic-settings>=2.2.0
+
+# API clients
+openai>=1.0.0
+anthropic>=0.25.0
+httpx>=0.26.0  # Also used for Deepseek OCR API
+requests>=2.31.0
+
+# Document processing
+pypdf>=4.0.0
+python-docx>=1.0.0
+pdf2image>=1.16.0
+Pillow>=10.0.0  # Also used for OCR image preprocessing
+openpyxl>=3.1.0
+PyMuPDF>=1.23.0  # Advanced PDF processing for STEM mode
+regex>=2023.0.0  # Enhanced regex for formula detection
+
+# PDF generation & export
+reportlab>=4.0.0
+docx2pdf>=0.1.8  # Optional: Windows/Mac only for DOCX to PDF conversion
+
+# Async and utilities
+aiofiles>=23.0.0
+tqdm>=4.66.0
+python-dateutil>=2.8.0
+
+# Web API (Phase 6)
+fastapi>=0.109.0
+uvicorn[standard]>=0.27.0
+websockets>=12.0
+python-multipart>=0.0.20  # Required for file uploads
+slowapi>=0.1.9  # Rate limiting
+
+# Chinese text processing (optional)
+jieba>=0.42.1
+
+# Testing
+pytest>=8.0.0
+pytest-asyncio>=0.23.0
+fastapi-csrf-protect==0.3.4

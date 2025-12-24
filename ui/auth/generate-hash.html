@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Password Hash Generator - AI Translator Pro</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f5f5f5;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      background: #fff;
+      padding: 48px;
+      max-width: 500px;
+      width: 100%;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: #6b6b6b;
+      margin-bottom: 32px;
+      font-size: 14px;
+    }
+
+    .warning {
+      background: #FEF3C7;
+      border: 1px solid #F59E0B;
+      padding: 16px;
+      margin-bottom: 24px;
+      font-size: 13px;
+      color: #92400E;
+    }
+
+    .warning strong {
+      display: block;
+      margin-bottom: 4px;
+    }
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #6b6b6b;
+      margin-bottom: 8px;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px 16px;
+      font-size: 16px;
+      border: 1px solid #e5e5e5;
+      background: #fafafa;
+      margin-bottom: 16px;
+      font-family: inherit;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #000;
+      background: #fff;
+    }
+
+    button {
+      width: 100%;
+      padding: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      background: #000;
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover {
+      background: #333;
+    }
+
+    .result {
+      margin-top: 24px;
+      padding: 20px;
+      background: #f0fdf4;
+      border: 1px solid #86efac;
+      display: none;
+    }
+
+    .result.show {
+      display: block;
+    }
+
+    .result-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #166534;
+      margin-bottom: 8px;
+    }
+
+    .result-hash {
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+      word-break: break-all;
+      background: #fff;
+      padding: 12px;
+      border: 1px solid #bbf7d0;
+      user-select: all;
+    }
+
+    .copy-btn {
+      margin-top: 12px;
+      background: #166534;
+      padding: 12px;
+      font-size: 12px;
+    }
+
+    .copy-btn:hover {
+      background: #15803d;
+    }
+
+    .instructions {
+      margin-top: 32px;
+      padding-top: 24px;
+      border-top: 1px solid #e5e5e5;
+    }
+
+    .instructions h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .instructions ol {
+      padding-left: 20px;
+      font-size: 13px;
+      color: #6b6b6b;
+      line-height: 1.8;
+    }
+
+    .instructions code {
+      background: #f5f5f5;
+      padding: 2px 6px;
+      font-family: 'SF Mono', Monaco, monospace;
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>PASSWORD HASH</h1>
+    <p class="subtitle">Tạo SHA-256 hash cho mật khẩu</p>
+
+    <div class="warning">
+      <strong>Bảo mật:</strong>
+      Chỉ sử dụng tool này trên máy local. Không chia sẻ hash hoặc password với người khác.
+    </div>
+
+    <div>
+      <label for="password">NHẬP MẬT KHẨU</label>
+      <input
+        type="password"
+        id="password"
+        placeholder="Nhập mật khẩu của bạn"
+        autocomplete="new-password"
+      >
+    </div>
+
+    <div>
+      <label for="confirmPassword">XÁC NHẬN MẬT KHẨU</label>
+      <input
+        type="password"
+        id="confirmPassword"
+        placeholder="Nhập lại mật khẩu"
+        autocomplete="new-password"
+      >
+    </div>
+
+    <button onclick="generateHash()">TẠO HASH</button>
+
+    <div class="result" id="result">
+      <div class="result-label">SHA-256 HASH</div>
+      <div class="result-hash" id="hashOutput"></div>
+      <button class="copy-btn" onclick="copyHash()">COPY HASH</button>
+    </div>
+
+    <div class="instructions">
+      <h3>Hướng dẫn sử dụng:</h3>
+      <ol>
+        <li>Nhập mật khẩu bạn muốn sử dụng</li>
+        <li>Click "TẠO HASH" để tạo SHA-256 hash</li>
+        <li>Copy hash và paste vào file <code>auth.js</code></li>
+        <li>Tìm dòng <code>PASSWORD_HASH: 'REPLACE_WITH_YOUR_HASH'</code></li>
+        <li>Thay thế bằng hash vừa tạo</li>
+        <li>Xóa file này sau khi hoàn tất</li>
+      </ol>
+    </div>
+  </div>
+
+  <script>
+    async function generateHash() {
+      const password = document.getElementById('password').value;
+      const confirmPassword = document.getElementById('confirmPassword').value;
+
+      if (!password) {
+        alert('Vui lòng nhập mật khẩu');
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        alert('Mật khẩu không khớp');
+        return;
+      }
+
+      if (password.length < 6) {
+        alert('Mật khẩu phải có ít nhất 6 ký tự');
+        return;
+      }
+
+      // Generate SHA-256 hash
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+      // Show result
+      document.getElementById('hashOutput').textContent = hash;
+      document.getElementById('result').classList.add('show');
+    }
+
+    function copyHash() {
+      const hash = document.getElementById('hashOutput').textContent;
+      navigator.clipboard.writeText(hash).then(() => {
+        const btn = document.querySelector('.copy-btn');
+        btn.textContent = 'COPIED!';
+        setTimeout(() => {
+          btn.textContent = 'COPY HASH';
+        }, 2000);
+      });
+    }
+
+    // Enter key to submit
+    document.getElementById('confirmPassword').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        generateHash();
+      }
+    });
+  </script>
+</body>
+</html>

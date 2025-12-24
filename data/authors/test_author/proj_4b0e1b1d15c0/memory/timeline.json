@@ -1,0 +1,156 @@
+[
+  {
+    "event_id": "evt_1_0",
+    "description": "It was a dark and stormy night when Sarah Chen first arrived at the old mansion",
+    "chapter": 1,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154340"
+  },
+  {
+    "event_id": "evt_1_1",
+    "description": "The mansion stood atop a hill, its Gothic architecture looming against the cloudy sky",
+    "chapter": 1,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154343"
+  },
+  {
+    "event_id": "evt_1_2",
+    "description": "Inside, she met the butler, James, who had worked for the Morrison family for thirty years",
+    "chapter": 1,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154344"
+  },
+  {
+    "event_id": "evt_2_0",
+    "description": "The next morning, Sarah began her investigation in earnest",
+    "chapter": 2,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154352"
+  },
+  {
+    "event_id": "evt_2_1",
+    "description": "Sarah's partner, Detective Mike Rodriguez, arrived from the city with forensic equipment",
+    "chapter": 2,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154353"
+  },
+  {
+    "event_id": "evt_3_0",
+    "description": "In a hidden compartment behind Morrison's desk, Sarah discovered a series of encrypted letters",
+    "chapter": 3,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154360"
+  },
+  {
+    "event_id": "evt_3_1",
+    "description": "As Sarah decoded the letters with Mike's help, a pattern emerged",
+    "chapter": 3,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154361"
+  },
+  {
+    "event_id": "evt_3_2",
+    "description": "The investigation was heating up, and Sarah knew they were getting close to the truth",
+    "chapter": 3,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154362"
+  },
+  {
+    "event_id": "evt_4_0",
+    "description": "That evening, Sarah confronted Morrison's business partner, Richard Drake, at his downtown office",
+    "chapter": 4,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154368"
+  },
+  {
+    "event_id": "evt_4_1",
+    "description": "Under pressure, Drake finally admitted that Morrison had fled the country to escape his debts",
+    "chapter": 4,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154369"
+  },
+  {
+    "event_id": "evt_4_2",
+    "description": "She pressed harder, and Drake's facade crumbled",
+    "chapter": 4,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154369"
+  },
+  {
+    "event_id": "evt_5_0",
+    "description": "Morrison hadn't fled—he had been murdered",
+    "chapter": 5,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154377"
+  },
+  {
+    "event_id": "evt_5_1",
+    "description": "Sarah called the police, and Drake was arrested on the spot",
+    "chapter": 5,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154550"
+  },
+  {
+    "event_id": "evt_5_2",
+    "description": "As Sarah drove away from Drake's office, she reflected on the twisted path that had led to this moment",
+    "chapter": 5,
+    "timestamp": null,
+    "participants": [],
+    "location": "",
+    "significance": "",
+    "consequences": [],
+    "created_at": "2025-11-25T16:37:54.154552"
+  }
+]

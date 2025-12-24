@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quản Trị - AI Publisher Pro</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <link rel="stylesheet" href="/ui/shared/navbar.css">
+  <link rel="stylesheet" href="/ui/admin/styles.css">
+</head>
+<body>
+  <div class="admin-layout">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar">
+      <div class="sidebar-header">
+        <i data-lucide="settings" class="sidebar-icon"></i>
+        <span class="sidebar-title">Quản Trị</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#overview" class="sidebar-link active" data-section="overview">
+          <i data-lucide="layout-dashboard" class="link-icon"></i>
+          <span>Tổng Quan</span>
+        </a>
+        <a href="#jobs" class="sidebar-link" data-section="jobs">
+          <i data-lucide="clipboard-list" class="link-icon"></i>
+          <span>Công Việc</span>
+        </a>
+        <a href="#cache" class="sidebar-link" data-section="cache">
+          <i data-lucide="database" class="link-icon"></i>
+          <span>Bộ Nhớ Đệm</span>
+        </a>
+        <a href="#profiles" class="sidebar-link" data-section="profiles">
+          <i data-lucide="layers" class="link-icon"></i>
+          <span>Hồ Sơ</span>
+        </a>
+        <a href="#settings" class="sidebar-link" data-section="settings">
+          <i data-lucide="sliders" class="link-icon"></i>
+          <span>Cài Đặt</span>
+        </a>
+      </nav>
+
+      <!-- System Status -->
+      <div class="sidebar-status">
+        <h4>Trạng Thái Hệ Thống</h4>
+        <div class="status-row">
+          <span><i data-lucide="server" class="status-icon"></i> API</span>
+          <span class="status-badge" id="status-api">--</span>
+        </div>
+        <div class="status-row">
+          <span><i data-lucide="file-output" class="status-icon"></i> Pandoc</span>
+          <span class="status-badge" id="status-pandoc">--</span>
+        </div>
+        <div class="status-row">
+          <span><i data-lucide="brain" class="status-icon"></i> Claude</span>
+          <span class="status-badge" id="status-claude">--</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+
+      <!-- Overview Section -->
+      <section class="admin-section active" id="section-overview">
+        <div class="section-header">
+          <h2><i data-lucide="layout-dashboard" class="section-icon"></i> Tổng Quan Hệ Thống</h2>
+          <button class="btn btn-sm" onclick="AdminDashboard.refresh()">
+            <i data-lucide="refresh-cw"></i> Làm Mới
+          </button>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon-wrap">
+              <i data-lucide="file-text"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-total-jobs">--</span>
+              <span class="stat-label">Tổng Công Việc</span>
+            </div>
+          </div>
+          <div class="stat-card success">
+            <div class="stat-icon-wrap">
+              <i data-lucide="check-circle"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-completed">--</span>
+              <span class="stat-label">Hoàn Thành</span>
+            </div>
+          </div>
+          <div class="stat-card warning">
+            <div class="stat-icon-wrap">
+              <i data-lucide="loader-2"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-running">--</span>
+              <span class="stat-label">Đang Chạy</span>
+            </div>
+          </div>
+          <div class="stat-card error">
+            <div class="stat-icon-wrap">
+              <i data-lucide="alert-circle"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="stat-failed">--</span>
+              <span class="stat-label">Thất Bại</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Recent Jobs Table -->
+        <div class="card">
+          <div class="card-header">
+            <h3><i data-lucide="clock"></i> Công Việc Gần Đây</h3>
+          </div>
+          <div class="card-body">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mã CV</th>
+                  <th>File</th>
+                  <th>Hồ Sơ</th>
+                  <th>Trạng Thái</th>
+                  <th>Tiến Trình</th>
+                  <th>Thời Gian</th>
+                  <th>Hành Động</th>
+                </tr>
+              </thead>
+              <tbody id="recent-jobs-body">
+                <tr>
+                  <td colspan="7" class="text-center text-muted">Đang tải...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Jobs Section -->
+      <section class="admin-section" id="section-jobs">
+        <div class="section-header">
+          <h2><i data-lucide="clipboard-list" class="section-icon"></i> Quản Lý Công Việc</h2>
+          <div class="header-actions">
+            <div class="search-wrap">
+              <i data-lucide="search" class="search-icon"></i>
+              <input type="text" class="search-input" placeholder="Tìm kiếm công việc..." id="jobs-search">
+            </div>
+            <select class="filter-select" id="jobs-filter">
+              <option value="all">Tất Cả</option>
+              <option value="complete">Hoàn Thành</option>
+              <option value="running">Đang Chạy</option>
+              <option value="failed">Thất Bại</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-body">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Mã CV</th>
+                  <th>File</th>
+                  <th>Hồ Sơ</th>
+                  <th>Ngôn Ngữ</th>
+                  <th>Trạng Thái</th>
+                  <th>Tiến Trình</th>
+                  <th>Ngày Tạo</th>
+                  <th>Hành Động</th>
+                </tr>
+              </thead>
+              <tbody id="all-jobs-body">
+                <tr>
+                  <td colspan="8" class="text-center text-muted">Đang tải...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- Cache Section -->
+      <section class="admin-section" id="section-cache">
+        <div class="section-header">
+          <h2><i data-lucide="database" class="section-icon"></i> Quản Lý Bộ Nhớ Đệm</h2>
+        </div>
+
+        <div class="stats-grid cols-2">
+          <div class="stat-card">
+            <div class="stat-icon-wrap">
+              <i data-lucide="archive"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="cache-total">--</span>
+              <span class="stat-label">Công Việc Đã Lưu</span>
+            </div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon-wrap">
+              <i data-lucide="hard-drive"></i>
+            </div>
+            <div class="stat-info">
+              <span class="stat-value" id="cache-size">--</span>
+              <span class="stat-label">Dung Lượng</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3><i data-lucide="tool"></i> Thao Tác Bộ Nhớ Đệm</h3>
+          </div>
+          <div class="card-body">
+            <div class="action-group">
+              <button class="btn btn-danger btn-lg" onclick="AdminDashboard.clearCache()">
+                <i data-lucide="trash-2"></i> Xóa Toàn Bộ
+              </button>
+              <p class="help-text">Xóa tất cả công việc và file đầu ra đã lưu.</p>
+            </div>
+
+            <div class="action-group">
+              <button class="btn btn-warning" onclick="AdminDashboard.clearOldJobs()">
+                <i data-lucide="calendar-x"></i> Xóa Công Việc Cũ (>7 ngày)
+              </button>
+              <p class="help-text">Xóa các công việc cũ hơn 7 ngày.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Profiles Section -->
+      <section class="admin-section" id="section-profiles">
+        <div class="section-header">
+          <h2><i data-lucide="layers" class="section-icon"></i> Hồ Sơ Xuất Bản</h2>
+        </div>
+
+        <div class="profiles-grid" id="profiles-grid">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
+      <!-- Settings Section -->
+      <section class="admin-section" id="section-settings">
+        <div class="section-header">
+          <h2><i data-lucide="sliders" class="section-icon"></i> Cài Đặt</h2>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3><i data-lucide="server"></i> Cấu Hình API</h3>
+          </div>
+          <div class="card-body">
+            <div class="setting-row">
+              <label><i data-lucide="link"></i> URL API Cơ Sở</label>
+              <input type="text" value="/api/v2" disabled class="input-disabled">
+            </div>
+            <div class="setting-row">
+              <label><i data-lucide="layers"></i> Công Việc Đồng Thời Tối Đa</label>
+              <input type="number" value="2" id="setting-max-concurrent">
+            </div>
+            <div class="setting-row">
+              <label><i data-lucide="eye"></i> Chế Độ Nhìn Mặc Định</label>
+              <select id="setting-vision-default">
+                <option value="true" selected>Bật</option>
+                <option value="false">Tắt</option>
+              </select>
+            </div>
+            <div class="setting-row">
+              <label><i data-lucide="timer"></i> Thời Gian Lưu Cache (giờ)</label>
+              <input type="number" value="168" id="setting-cache-ttl">
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h3><i data-lucide="info"></i> Thông Tin Hệ Thống</h3>
+          </div>
+          <div class="card-body">
+            <div class="info-grid">
+              <div class="info-item">
+                <i data-lucide="tag" class="info-icon"></i>
+                <span class="info-label">Phiên Bản</span>
+                <span class="info-value">2.0.0</span>
+              </div>
+              <div class="info-item">
+                <i data-lucide="cloud" class="info-icon"></i>
+                <span class="info-label">Môi Trường</span>
+                <span class="info-value">Sản Xuất</span>
+              </div>
+              <div class="info-item">
+                <i data-lucide="activity" class="info-icon"></i>
+                <span class="info-label">Thời Gian Hoạt Động</span>
+                <span class="info-value" id="system-uptime">--</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/ui/shared/navbar.js"></script>
+  <script src="/ui/admin/main.js"></script>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Initialize navbar
+    NavBar.init('admin');
+
+    // Initialize admin dashboard
+    document.addEventListener('DOMContentLoaded', () => {
+      AdminDashboard.init();
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

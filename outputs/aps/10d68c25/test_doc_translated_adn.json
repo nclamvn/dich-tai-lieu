@@ -1,0 +1,145 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "source_language": "en",
+    "target_language": "vi",
+    "document_type": "unknown"
+  },
+  "adn": {
+    "characters": [
+      {
+        "name": "Dr. Smith",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 0,
+        "occurrences": [
+          0
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Introduction\n\nThis",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 0,
+        "occurrences": [
+          0
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Publishing System",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 0,
+        "occurrences": [
+          0
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Harvard University",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 0,
+        "occurrences": [
+          0
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Methodology\n\nThe",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 0,
+        "occurrences": [
+          0
+        ],
+        "attributes": {}
+      }
+    ],
+    "terms": [],
+    "proper_nouns": [
+      {
+        "text": "Dr. Smith",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          0
+        ],
+        "confidence": 0.8500000000000001,
+        "variants": []
+      },
+      {
+        "text": "Introduction\n\nThis",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          0
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Publishing System",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          0
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Harvard University",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          0
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Methodology\n\nThe",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          0
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "AI",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          0
+        ],
+        "confidence": 0.65,
+        "variants": []
+      }
+    ],
+    "patterns": [
+      {
+        "type": "chapter_start",
+        "markers": [
+          "Chapter",
+          "CHAPTER"
+        ],
+        "regex": "^(?:Chapter|CHAPTER)\\s+(?:\\d+|[IVXLCDM]+)",
+        "occurrences": 2,
+        "examples": [
+          "Chapter 1: Introduction",
+          "Chapter 2: Methodology"
+        ]
+      }
+    ]
+  },
+  "statistics": {
+    "total_segments": 1,
+    "total_characters": 373,
+    "unique_terms": 0
+  }
+}

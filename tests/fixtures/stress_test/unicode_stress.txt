@@ -1,0 +1,526 @@
+# TEST FILE: unicode_stress.txt
+# Purpose: Test Unicode handling across multiple languages
+# Contains: English, Vietnamese, Chinese, Japanese, Korean, math symbols, emojis
+# Expected: Correct character counting, no encoding corruption
+
+================================================================================
+
+Chapter 1: Multilingual Content Test
+==================================================
+
+## English Section
+The evolution of unsupervised learning has been driven by both algorithmic innovations and hardware advances. The deployment of artificial intelligence systems requires careful attention to latency and throughput. Research in activation functions has shown significant improvements in accuracy and efficiency. The training process for artificial intelligence involves iterative optimization of model parameters. The training process for GPT involves iterative optimization of model parameters. Applications of convolutional networks span healthcare, finance, autonomous systems, and more. Applications of dropout span healthcare, finance, autonomous systems, and more. Modern approaches to large language models leverage large-scale datasets for training.
+
+## Phần Tiếng Việt (Vietnamese Section)
+Các mô hình ngôn ngữ lớn có khả năng hiểu và sinh văn bản tự nhiên.
+Ứng dụng của deep learning rất đa dạng từ y tế đến tài chính.
+Ứng dụng của deep learning rất đa dạng từ y tế đến tài chính.
+
+## 中文部分 (Chinese Section)
+人工智能正在改变我们的世界。
+自然语言处理使计算机能够理解人类语言。
+计算机视觉让机器能够看见和理解图像。
+
+## 日本語セクション (Japanese Section)
+機械学習はAIの重要な分野です。
+人工知能は私たちの生活を変えています。
+人工知能は私たちの生活を変えています。
+
+## 한국어 섹션 (Korean Section)
+인공지능은 우리의 삶을 변화시키고 있습니다.
+머신러닝은 AI의 중요한 분야입니다.
+인공지능은 우리의 삶을 변화시키고 있습니다.
+
+## Mathematical Expressions
+  • ∑_{i=1}^{n} x_i = x_1 + x_2 + ... + x_n
+  • ∫_a^b f(x)dx represents the definite integral
+  • ∞ represents infinity in mathematics
+  • ∀x ∈ ℝ: x² ≥ 0 (for all real numbers, square is non-negative)
+  • ∃y: y > 0 ∧ y < 1 (there exists y between 0 and 1)
+  • √(a² + b²) = c according to Pythagorean theorem
+  • lim_{x→∞} (1 + 1/x)^x = e ≈ 2.71828
+  • α, β, γ, δ, ε, θ, λ, μ, π, σ, φ, ω are Greek letters
+
+## Special Characters and Emojis
+  🚀 Launching new AI models
+  📊 Data analysis complete
+  ✅ All tests passed successfully
+  ⚠️ Warning: High memory usage
+  💡 Tip: Use batch processing for large files
+  🔬 Research findings: significant improvement observed
+  French quotes: « text »
+  German quotes: „ text “
+  「 Japanese brackets 」
+  『 Korean brackets 』
+
+## Mixed Language Paragraph
+This paragraph mixes English with tiếng Việt có dấu, 中文字符, 日本語テキスト, and 한국어 텍스트. Mathematical symbols like ∑, ∫, ∞, ≤, ≥, ≠, √ are also included. Emojis and special quotes from various languages are included above.
+
+
+Chapter 2: Multilingual Content Test
+==================================================
+
+## English Section
+Research in embeddings has shown significant improvements in accuracy and efficiency. The implementation of reinforcement learning requires careful consideration of computational resources. The evolution of deep learning has been driven by both algorithmic innovations and hardware advances. The deployment of activation functions systems requires careful attention to latency and throughput. The evolution of hyperparameter optimization has been driven by both algorithmic innovations and hardware advances. The gradient descent algorithm processes input data through multiple layers of abstraction. Recent advances in hyperparameter optimization have enabled new applications across various domains. The evolution of attention mechanisms has been driven by both algorithmic innovations and hardware advances.
+
+## Phần Tiếng Việt (Vietnamese Section)
+Việt Nam đang đầu tư mạnh vào nghiên cứu và phát triển AI.
+Ứng dụng của deep learning rất đa dạng từ y tế đến tài chính.
+Học tăng cường được sử dụng trong các hệ thống tự động.
+
+## 中文部分 (Chinese Section)
+计算机视觉让机器能够看见和理解图像。
+人工智能正在改变我们的世界。
+自然语言处理使计算机能够理解人类语言。
+
+## 日本語セクション (Japanese Section)
+機械学習はAIの重要な分野です。
+人工知能は私たちの生活を変えています。
+機械学習はAIの重要な分野です。
+
+## 한국어 섹션 (Korean Section)
+머신러닝은 AI의 중요한 분야입니다.
+머신러닝은 AI의 중요한 분야입니다.
+머신러닝은 AI의 중요한 분야입니다.
+
+## Mathematical Expressions
+  • ∑_{i=1}^{n} x_i = x_1 + x_2 + ... + x_n
+  • ∫_a^b f(x)dx represents the definite integral
+  • ∞ represents infinity in mathematics
+  • ∀x ∈ ℝ: x² ≥ 0 (for all real numbers, square is non-negative)
+  • ∃y: y > 0 ∧ y < 1 (there exists y between 0 and 1)
+  • √(a² + b²) = c according to Pythagorean theorem
+  • lim_{x→∞} (1 + 1/x)^x = e ≈ 2.71828
+  • α, β, γ, δ, ε, θ, λ, μ, π, σ, φ, ω are Greek letters
+
+## Special Characters and Emojis
+  🚀 Launching new AI models
+  📊 Data analysis complete
+  ✅ All tests passed successfully
+  ⚠️ Warning: High memory usage
+  💡 Tip: Use batch processing for large files
+  🔬 Research findings: significant improvement observed
+  French quotes: « text »
+  German quotes: „ text “
+  「 Japanese brackets 」
+  『 Korean brackets 』
+
+## Mixed Language Paragraph
+This paragraph mixes English with tiếng Việt có dấu, 中文字符, 日本語テキスト, and 한국어 텍스트. Mathematical symbols like ∑, ∫, ∞, ≤, ≥, ≠, √ are also included. Emojis and special quotes from various languages are included above.
+
+
+Chapter 3: Multilingual Content Test
+==================================================
+
+## English Section
+The training process for BERT involves iterative optimization of model parameters. The evolution of batch normalization has been driven by both algorithmic innovations and hardware advances. Recent advances in regression have enabled new applications across various domains. Understanding reinforcement learning requires knowledge of linear algebra, calculus, and probability. The future of dropout promises even more sophisticated and capable systems. The theoretical foundations of classification are rooted in statistical learning theory. Practitioners of fine-tuning must balance model complexity with generalization ability. The training process for reinforcement learning involves iterative optimization of model parameters.
+
+## Phần Tiếng Việt (Vietnamese Section)
+Học tăng cường được sử dụng trong các hệ thống tự động.
+Thị giác máy tính cho phép máy nhận diện và phân tích hình ảnh.
+Thị giác máy tính cho phép máy nhận diện và phân tích hình ảnh.
+
+## 中文部分 (Chinese Section)
+机器学习是人工智能的重要分支。
+人工智能正在改变我们的世界。
+深度学习已经取得了显著的进展。
+
+## 日本語セクション (Japanese Section)
+自然言語処理は人間の言語を理解することを目指しています。
+人工知能は私たちの生活を変えています。
+自然言語処理は人間の言語を理解することを目指しています。
+
+## 한국어 섹션 (Korean Section)
+인공지능은 우리의 삶을 변화시키고 있습니다.
+딥러닝은 다양한 분야에서 활용되고 있습니다.
+인공지능은 우리의 삶을 변화시키고 있습니다.
+
+## Mathematical Expressions
+  • ∑_{i=1}^{n} x_i = x_1 + x_2 + ... + x_n
+  • ∫_a^b f(x)dx represents the definite integral
+  • ∞ represents infinity in mathematics
+  • ∀x ∈ ℝ: x² ≥ 0 (for all real numbers, square is non-negative)
+  • ∃y: y > 0 ∧ y < 1 (there exists y between 0 and 1)
+  • √(a² + b²) = c according to Pythagorean theorem
+  • lim_{x→∞} (1 + 1/x)^x = e ≈ 2.71828
+  • α, β, γ, δ, ε, θ, λ, μ, π, σ, φ, ω are Greek letters
+
+## Special Characters and Emojis
+  🚀 Launching new AI models
+  📊 Data analysis complete
+  ✅ All tests passed successfully
+  ⚠️ Warning: High memory usage
+  💡 Tip: Use batch processing for large files
+  🔬 Research findings: significant improvement observed
+  French quotes: « text »
+  German quotes: „ text “
+  「 Japanese brackets 」
+  『 Korean brackets 』
+
+## Mixed Language Paragraph
+This paragraph mixes English with tiếng Việt có dấu, 中文字符, 日本語テキスト, and 한국어 텍스트. Mathematical symbols like ∑, ∫, ∞, ≤, ≥, ≠, √ are also included. Emojis and special quotes from various languages are included above.
+
+
+Chapter 4: Multilingual Content Test
+==================================================
+
+## English Section
+The evolution of machine learning has been driven by both algorithmic innovations and hardware advances. Ethical considerations in semi-supervised learning include bias, fairness, and transparency. Modern approaches to regularization leverage large-scale datasets for training. Ethical considerations in regularization include bias, fairness, and transparency. Recent advances in neural networks have enabled new applications across various domains. Modern approaches to semi-supervised learning leverage large-scale datasets for training. Applications of activation functions span healthcare, finance, autonomous systems, and more. The implementation of semi-supervised learning requires careful consideration of computational resources.
+
+## Phần Tiếng Việt (Vietnamese Section)
+Thị giác máy tính cho phép máy nhận diện và phân tích hình ảnh.
+Học máy là một nhánh quan trọng của trí tuệ nhân tạo.
+Các mô hình ngôn ngữ lớn có khả năng hiểu và sinh văn bản tự nhiên.
+
+## 中文部分 (Chinese Section)
+机器学习是人工智能的重要分支。
+深度学习已经取得了显著的进展。
+计算机视觉让机器能够看见和理解图像。
+
+## 日本語セクション (Japanese Section)
+ディープラーニングは多くの分野で応用されています。
+自然言語処理は人間の言語を理解することを目指しています。
+機械学習はAIの重要な分野です。
+
+## 한국어 섹션 (Korean Section)
+딥러닝은 다양한 분야에서 활용되고 있습니다.
+딥러닝은 다양한 분야에서 활용되고 있습니다.
+자연어 처리는 인간의 언어를 이해하는 것을 목표로 합니다.
+
+## Mathematical Expressions
+  • ∑_{i=1}^{n} x_i = x_1 + x_2 + ... + x_n
+  • ∫_a^b f(x)dx represents the definite integral
+  • ∞ represents infinity in mathematics
+  • ∀x ∈ ℝ: x² ≥ 0 (for all real numbers, square is non-negative)
+  • ∃y: y > 0 ∧ y < 1 (there exists y between 0 and 1)
+  • √(a² + b²) = c according to Pythagorean theorem
+  • lim_{x→∞} (1 + 1/x)^x = e ≈ 2.71828
+  • α, β, γ, δ, ε, θ, λ, μ, π, σ, φ, ω are Greek letters
+
+## Special Characters and Emojis
+  🚀 Launching new AI models
+  📊 Data analysis complete
+  ✅ All tests passed successfully
+  ⚠️ Warning: High memory usage
+  💡 Tip: Use batch processing for large files
+  🔬 Research findings: significant improvement observed
+  French quotes: « text »
+  German quotes: „ text “
+  「 Japanese brackets 」
+  『 Korean brackets 』
+
+## Mixed Language Paragraph
+This paragraph mixes English with tiếng Việt có dấu, 中文字符, 日本語テキスト, and 한국어 텍스트. Mathematical symbols like ∑, ∫, ∞, ≤, ≥, ≠, √ are also included. Emojis and special quotes from various languages are included above.
+
+
+Chapter 5: Multilingual Content Test
+==================================================
+
+## English Section
+Ethical considerations in batch normalization include bias, fairness, and transparency. Practitioners of batch normalization must balance model complexity with generalization ability. The future of attention mechanisms promises even more sophisticated and capable systems. The future of activation functions promises even more sophisticated and capable systems.
+
+## Phần Tiếng Việt (Vietnamese Section)
+Ứng dụng của deep learning rất đa dạng từ y tế đến tài chính.
+Các mô hình ngôn ngữ lớn có khả năng hiểu và sinh văn bản tự nhiên.
+Xử lý ngôn ngữ tự nhiên giúp máy tính hiểu được tiếng người.
+
+## 中文部分 (Chinese Section)
+计算机视觉让机器能够看见和理解图像。
+计算机视觉让机器能够看见和理解图像。
+深度学习已经取得了显著的进展。
+
+## 日本語セクション (Japanese Section)
+自然言語処理は人間の言語を理解することを目指しています。
+人工知能は私たちの生活を変えています。
+人工知能は私たちの生活を変えています。
+
+## 한국어 섹션 (Korean Section)
+인공지능은 우리의 삶을 변화시키고 있습니다.
+머신러닝은 AI의 중요한 분야입니다.
+머신러닝은 AI의 중요한 분야입니다.
+
+## Mathematical Expressions
+  • ∑_{i=1}^{n} x_i = x_1 + x_2 + ... + x_n
+  • ∫_a^b f(x)dx represents the definite integral
+  • ∞ represents infinity in mathematics
+  • ∀x ∈ ℝ: x² ≥ 0 (for all real numbers, square is non-negative)
+  • ∃y: y > 0 ∧ y < 1 (there exists y between 0 and 1)
+  • √(a² + b²) = c according to Pythagorean theorem
+  • lim_{x→∞} (1 + 1/x)^x = e ≈ 2.71828
+  • α, β, γ, δ, ε, θ, λ, μ, π, σ, φ, ω are Greek letters
+
+## Special Characters and Emojis
+  🚀 Launching new AI models
+  📊 Data analysis complete
+  ✅ All tests passed successfully
+  ⚠️ Warning: High memory usage
+  💡 Tip: Use batch processing for large files
+  🔬 Research findings: significant improvement observed
+  French quotes: « text »
+  German quotes: „ text “
+  「 Japanese brackets 」
+  『 Korean brackets 』
+
+## Mixed Language Paragraph
+This paragraph mixes English with tiếng Việt có dấu, 中文字符, 日本語テキスト, and 한국어 텍스트. Mathematical symbols like ∑, ∫, ∞, ≤, ≥, ≠, √ are also included. Emojis and special quotes from various languages are included above.
+
+
+Chapter 6: Multilingual Content Test
+==================================================
+
+## English Section
+Understanding reinforcement learning requires knowledge of linear algebra, calculus, and probability. The evolution of batch normalization has been driven by both algorithmic innovations and hardware advances. The theoretical foundations of large language models are rooted in statistical learning theory. Evaluation metrics for embeddings include precision, recall, F1-score, and AUC-ROC.
+
+## Phần Tiếng Việt (Vietnamese Section)
+Học máy là một nhánh quan trọng của trí tuệ nhân tạo.
+Các mô hình ngôn ngữ lớn có khả năng hiểu và sinh văn bản tự nhiên.
+Thị giác máy tính cho phép máy nhận diện và phân tích hình ảnh.
+
+## 中文部分 (Chinese Section)
+自然语言处理使计算机能够理解人类语言。
+人工智能正在改变我们的世界。
+人工智能正在改变我们的世界。
+
+## 日本語セクション (Japanese Section)
+ディープラーニングは多くの分野で応用されています。
+人工知能は私たちの生活を変えています。
+人工知能は私たちの生活を変えています。
+
+## 한국어 섹션 (Korean Section)
+인공지능은 우리의 삶을 변화시키고 있습니다.
+자연어 처리는 인간의 언어를 이해하는 것을 목표로 합니다.
+딥러닝은 다양한 분야에서 활용되고 있습니다.
+
+## Mathematical Expressions
+  • ∑_{i=1}^{n} x_i = x_1 + x_2 + ... + x_n
+  • ∫_a^b f(x)dx represents the definite integral
+  • ∞ represents infinity in mathematics
+  • ∀x ∈ ℝ: x² ≥ 0 (for all real numbers, square is non-negative)
+  • ∃y: y > 0 ∧ y < 1 (there exists y between 0 and 1)
+  • √(a² + b²) = c according to Pythagorean theorem
+  • lim_{x→∞} (1 + 1/x)^x = e ≈ 2.71828
+  • α, β, γ, δ, ε, θ, λ, μ, π, σ, φ, ω are Greek letters
+
+## Special Characters and Emojis
+  🚀 Launching new AI models
+  📊 Data analysis complete
+  ✅ All tests passed successfully
+  ⚠️ Warning: High memory usage
+  💡 Tip: Use batch processing for large files
+  🔬 Research findings: significant improvement observed
+  French quotes: « text »
+  German quotes: „ text “
+  「 Japanese brackets 」
+  『 Korean brackets 』
+
+## Mixed Language Paragraph
+This paragraph mixes English with tiếng Việt có dấu, 中文字符, 日本語テキスト, and 한국어 텍스트. Mathematical symbols like ∑, ∫, ∞, ≤, ≥, ≠, √ are also included. Emojis and special quotes from various languages are included above.
+
+
+Chapter 7: Multilingual Content Test
+==================================================
+
+## English Section
+Understanding deep learning requires knowledge of linear algebra, calculus, and probability. Ethical considerations in attention mechanisms include bias, fairness, and transparency. The theoretical foundations of reinforcement learning are rooted in statistical learning theory. The training process for underfitting involves iterative optimization of model parameters. Practitioners of backpropagation must balance model complexity with generalization ability. Understanding BERT requires knowledge of linear algebra, calculus, and probability. The implementation of feature extraction requires careful consideration of computational resources. The evolution of underfitting has been driven by both algorithmic innovations and hardware advances.
+
+## Phần Tiếng Việt (Vietnamese Section)
+Ứng dụng của deep learning rất đa dạng từ y tế đến tài chính.
+Việt Nam đang đầu tư mạnh vào nghiên cứu và phát triển AI.
+Việt Nam đang đầu tư mạnh vào nghiên cứu và phát triển AI.
+
+## 中文部分 (Chinese Section)
+机器学习是人工智能的重要分支。
+自然语言处理使计算机能够理解人类语言。
+计算机视觉让机器能够看见和理解图像。
+
+## 日本語セクション (Japanese Section)
+機械学習はAIの重要な分野です。
+人工知能は私たちの生活を変えています。
+人工知能は私たちの生活を変えています。
+
+## 한국어 섹션 (Korean Section)
+인공지능은 우리의 삶을 변화시키고 있습니다.
+머신러닝은 AI의 중요한 분야입니다.
+인공지능은 우리의 삶을 변화시키고 있습니다.
+
+## Mathematical Expressions
+  • ∑_{i=1}^{n} x_i = x_1 + x_2 + ... + x_n
+  • ∫_a^b f(x)dx represents the definite integral
+  • ∞ represents infinity in mathematics
+  • ∀x ∈ ℝ: x² ≥ 0 (for all real numbers, square is non-negative)
+  • ∃y: y > 0 ∧ y < 1 (there exists y between 0 and 1)
+  • √(a² + b²) = c according to Pythagorean theorem
+  • lim_{x→∞} (1 + 1/x)^x = e ≈ 2.71828
+  • α, β, γ, δ, ε, θ, λ, μ, π, σ, φ, ω are Greek letters
+
+## Special Characters and Emojis
+  🚀 Launching new AI models
+  📊 Data analysis complete
+  ✅ All tests passed successfully
+  ⚠️ Warning: High memory usage
+  💡 Tip: Use batch processing for large files
+  🔬 Research findings: significant improvement observed
+  French quotes: « text »
+  German quotes: „ text “
+  「 Japanese brackets 」
+  『 Korean brackets 』
+
+## Mixed Language Paragraph
+This paragraph mixes English with tiếng Việt có dấu, 中文字符, 日本語テキスト, and 한국어 텍스트. Mathematical symbols like ∑, ∫, ∞, ≤, ≥, ≠, √ are also included. Emojis and special quotes from various languages are included above.
+
+
+Chapter 8: Multilingual Content Test
+==================================================
+
+## English Section
+Ethical considerations in neural networks include bias, fairness, and transparency. The theoretical foundations of cross-validation are rooted in statistical learning theory. The future of natural language processing promises even more sophisticated and capable systems. The theoretical foundations of attention mechanisms are rooted in statistical learning theory. Understanding loss functions requires knowledge of linear algebra, calculus, and probability.
+
+## Phần Tiếng Việt (Vietnamese Section)
+Học tăng cường được sử dụng trong các hệ thống tự động.
+Việt Nam đang đầu tư mạnh vào nghiên cứu và phát triển AI.
+Việt Nam đang đầu tư mạnh vào nghiên cứu và phát triển AI.
+
+## 中文部分 (Chinese Section)
+计算机视觉让机器能够看见和理解图像。
+自然语言处理使计算机能够理解人类语言。
+计算机视觉让机器能够看见和理解图像。
+
+## 日本語セクション (Japanese Section)
+ディープラーニングは多くの分野で応用されています。
+ディープラーニングは多くの分野で応用されています。
+機械学習はAIの重要な分野です。
+
+## 한국어 섹션 (Korean Section)
+인공지능은 우리의 삶을 변화시키고 있습니다.
+자연어 처리는 인간의 언어를 이해하는 것을 목표로 합니다.
+자연어 처리는 인간의 언어를 이해하는 것을 목표로 합니다.
+
+## Mathematical Expressions
+  • ∑_{i=1}^{n} x_i = x_1 + x_2 + ... + x_n
+  • ∫_a^b f(x)dx represents the definite integral
+  • ∞ represents infinity in mathematics
+  • ∀x ∈ ℝ: x² ≥ 0 (for all real numbers, square is non-negative)
+  • ∃y: y > 0 ∧ y < 1 (there exists y between 0 and 1)
+  • √(a² + b²) = c according to Pythagorean theorem
+  • lim_{x→∞} (1 + 1/x)^x = e ≈ 2.71828
+  • α, β, γ, δ, ε, θ, λ, μ, π, σ, φ, ω are Greek letters
+
+## Special Characters and Emojis
+  🚀 Launching new AI models
+  📊 Data analysis complete
+  ✅ All tests passed successfully
+  ⚠️ Warning: High memory usage
+  💡 Tip: Use batch processing for large files
+  🔬 Research findings: significant improvement observed
+  French quotes: « text »
+  German quotes: „ text “
+  「 Japanese brackets 」
+  『 Korean brackets 』
+
+## Mixed Language Paragraph
+This paragraph mixes English with tiếng Việt có dấu, 中文字符, 日本語テキスト, and 한국어 텍스트. Mathematical symbols like ∑, ∫, ∞, ≤, ≥, ≠, √ are also included. Emojis and special quotes from various languages are included above.
+
+
+Chapter 9: Multilingual Content Test
+==================================================
+
+## English Section
+The deployment of natural language processing systems requires careful attention to latency and throughput. The future of computer vision promises even more sophisticated and capable systems. Modern approaches to loss functions leverage large-scale datasets for training. Recent advances in reinforcement learning have enabled new applications across various domains. Research in dropout has shown significant improvements in accuracy and efficiency. The implementation of artificial intelligence requires careful consideration of computational resources. The future of unsupervised learning promises even more sophisticated and capable systems.
+
+## Phần Tiếng Việt (Vietnamese Section)
+Trí tuệ nhân tạo đang thay đổi cách chúng ta sống và làm việc.
+Việt Nam đang đầu tư mạnh vào nghiên cứu và phát triển AI.
+Ứng dụng của deep learning rất đa dạng từ y tế đến tài chính.
+
+## 中文部分 (Chinese Section)
+深度学习已经取得了显著的进展。
+自然语言处理使计算机能够理解人类语言。
+深度学习已经取得了显著的进展。
+
+## 日本語セクション (Japanese Section)
+人工知能は私たちの生活を変えています。
+機械学習はAIの重要な分野です。
+ディープラーニングは多くの分野で応用されています。
+
+## 한국어 섹션 (Korean Section)
+인공지능은 우리의 삶을 변화시키고 있습니다.
+머신러닝은 AI의 중요한 분야입니다.
+딥러닝은 다양한 분야에서 활용되고 있습니다.
+
+## Mathematical Expressions
+  • ∑_{i=1}^{n} x_i = x_1 + x_2 + ... + x_n
+  • ∫_a^b f(x)dx represents the definite integral
+  • ∞ represents infinity in mathematics
+  • ∀x ∈ ℝ: x² ≥ 0 (for all real numbers, square is non-negative)
+  • ∃y: y > 0 ∧ y < 1 (there exists y between 0 and 1)
+  • √(a² + b²) = c according to Pythagorean theorem
+  • lim_{x→∞} (1 + 1/x)^x = e ≈ 2.71828
+  • α, β, γ, δ, ε, θ, λ, μ, π, σ, φ, ω are Greek letters
+
+## Special Characters and Emojis
+  🚀 Launching new AI models
+  📊 Data analysis complete
+  ✅ All tests passed successfully
+  ⚠️ Warning: High memory usage
+  💡 Tip: Use batch processing for large files
+  🔬 Research findings: significant improvement observed
+  French quotes: « text »
+  German quotes: „ text “
+  「 Japanese brackets 」
+  『 Korean brackets 』
+
+## Mixed Language Paragraph
+This paragraph mixes English with tiếng Việt có dấu, 中文字符, 日本語テキスト, and 한국어 텍스트. Mathematical symbols like ∑, ∫, ∞, ≤, ≥, ≠, √ are also included. Emojis and special quotes from various languages are included above.
+
+
+Chapter 10: Multilingual Content Test
+==================================================
+
+## English Section
+The future of artificial intelligence promises even more sophisticated and capable systems. Applications of gradient descent span healthcare, finance, autonomous systems, and more. The future of batch normalization promises even more sophisticated and capable systems. Ethical considerations in feature extraction include bias, fairness, and transparency. Understanding deep learning requires knowledge of linear algebra, calculus, and probability. The unsupervised learning algorithm processes input data through multiple layers of abstraction. Practitioners of feature extraction must balance model complexity with generalization ability.
+
+## Phần Tiếng Việt (Vietnamese Section)
+Việt Nam đang đầu tư mạnh vào nghiên cứu và phát triển AI.
+Xử lý ngôn ngữ tự nhiên giúp máy tính hiểu được tiếng người.
+Trí tuệ nhân tạo đang thay đổi cách chúng ta sống và làm việc.
+
+## 中文部分 (Chinese Section)
+机器学习是人工智能的重要分支。
+机器学习是人工智能的重要分支。
+计算机视觉让机器能够看见和理解图像。
+
+## 日本語セクション (Japanese Section)
+ディープラーニングは多くの分野で応用されています。
+人工知能は私たちの生活を変えています。
+機械学習はAIの重要な分野です。
+
+## 한국어 섹션 (Korean Section)
+자연어 처리는 인간의 언어를 이해하는 것을 목표로 합니다.
+인공지능은 우리의 삶을 변화시키고 있습니다.
+인공지능은 우리의 삶을 변화시키고 있습니다.
+
+## Mathematical Expressions
+  • ∑_{i=1}^{n} x_i = x_1 + x_2 + ... + x_n
+  • ∫_a^b f(x)dx represents the definite integral
+  • ∞ represents infinity in mathematics
+  • ∀x ∈ ℝ: x² ≥ 0 (for all real numbers, square is non-negative)
+  • ∃y: y > 0 ∧ y < 1 (there exists y between 0 and 1)
+  • √(a² + b²) = c according to Pythagorean theorem
+  • lim_{x→∞} (1 + 1/x)^x = e ≈ 2.71828
+  • α, β, γ, δ, ε, θ, λ, μ, π, σ, φ, ω are Greek letters
+
+## Special Characters and Emojis
+  🚀 Launching new AI models
+  📊 Data analysis complete
+  ✅ All tests passed successfully
+  ⚠️ Warning: High memory usage
+  💡 Tip: Use batch processing for large files
+  🔬 Research findings: significant improvement observed
+  French quotes: « text »
+  German quotes: „ text “
+  「 Japanese brackets 」
+  『 Korean brackets 』
+
+## Mixed Language Paragraph
+This paragraph mixes English with tiếng Việt có dấu, 中文字符, 日本語テキスト, and 한국어 텍스트. Mathematical symbols like ∑, ∫, ∞, ≤, ≥, ≠, √ are also included. Emojis and special quotes from various languages are included above.
+

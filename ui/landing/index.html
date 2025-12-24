@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Translator Pro - Dịch Tài Liệu Chuyên Nghiệp</title>
+    <meta name="description" content="Dịch tài liệu chuyên nghiệp với AI. Bảo toàn công thức, giữ nguyên code, định dạng hoàn hảo.">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500;600&display=swap" rel="stylesheet">
+
+    <!-- KaTeX for formula rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+    <!-- Auth System -->
+    <script src="../auth/auth.js"></script>
+
+    <style>
+        :root {
+            --bg: #191919;
+            --bg-secondary: #202020;
+            --bg-hover: #252525;
+            --text: #FFFFFF;
+            --text-secondary: #9B9A97;
+            --text-muted: #6B6B6B;
+            --border: #373737;
+            --accent: #FFFFFF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4A4A4A;
+        }
+
+        /* Animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+
+        .animate-fadeInUp {
+            animation: fadeInUp 0.8s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
+            opacity: 0;
+        }
+
+        .animate-bounce-slow {
+            animation: bounce 2s infinite;
+        }
+
+        .delay-100 { animation-delay: 100ms; }
+        .delay-200 { animation-delay: 200ms; }
+        .delay-300 { animation-delay: 300ms; }
+        .delay-400 { animation-delay: 400ms; }
+        .delay-500 { animation-delay: 500ms; }
+        .delay-600 { animation-delay: 600ms; }
+
+        /* Scroll reveal */
+        .reveal {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Navigation blur */
+        .nav-blur {
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        /* Button hover */
+        .btn-outline {
+            border: 1px solid var(--text);
+            color: var(--text);
+            transition: all 0.2s ease;
+        }
+        .btn-outline:hover {
+            background: var(--text);
+            color: var(--bg);
+        }
+
+        .btn-filled {
+            background: var(--text);
+            color: var(--bg);
+            transition: all 0.2s ease;
+        }
+        .btn-filled:hover {
+            background: #E0E0E0;
+        }
+
+        /* Feature card hover */
+        .feature-card {
+            transition: background-color 0.2s ease;
+        }
+        .feature-card:hover {
+            background: var(--bg-hover);
+        }
+
+        /* Arrow animation */
+        .arrow-animate {
+            transition: transform 0.2s ease;
+        }
+        .group:hover .arrow-animate {
+            transform: translateX(4px);
+        }
+
+        /* Typography */
+        .heading-hero {
+            font-size: clamp(48px, 9vw, 100px);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.02em;
+            line-height: 1.1;
+        }
+
+        .heading-section {
+            font-size: clamp(40px, 5vw, 48px);
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        .heading-large {
+            font-size: clamp(48px, 6vw, 72px);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: -0.02em;
+        }
+
+        .number-display {
+            font-size: clamp(48px, 8vw, 72px);
+            font-weight: 600;
+            letter-spacing: -0.02em;
+        }
+
+        .number-step {
+            font-size: clamp(80px, 12vw, 120px);
+            font-weight: 200;
+            color: var(--border);
+            line-height: 1;
+        }
+
+        /* Code blocks */
+        pre {
+            background: #0D0D0D !important;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="nav" class="fixed top-0 left-0 right-0 z-50 h-20 transition-all duration-300">
+        <div class="max-w-[1200px] mx-auto px-6 h-full flex items-center justify-between">
+            <a href="index.html" class="text-xl font-medium tracking-tight hover:opacity-70 transition-opacity">AI Translator</a>
+            <div class="flex items-center gap-6">
+                <a href="#demo" class="text-sm text-[#9B9A97] hover:text-white transition-colors hidden md:block">Minh Họa</a>
+                <a href="#features" class="text-sm text-[#9B9A97] hover:text-white transition-colors hidden md:block">Tính Năng</a>
+                <a href="/app" class="btn-outline px-6 py-2.5 text-sm uppercase tracking-wider font-medium">
+                    Đăng Nhập
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="min-h-screen flex flex-col items-center justify-center px-6 relative pt-20">
+        <div class="text-center">
+            <h1 class="heading-hero animate-fadeInUp delay-100">
+                Dịch Tài Liệu
+            </h1>
+            <h1 class="heading-hero animate-fadeInUp delay-200">
+                Chuyên Nghiệp
+            </h1>
+            <p class="text-lg text-[#9B9A97] mt-10 animate-fadeInUp delay-300">
+                Bảo toàn công thức. Giữ nguyên code. Định dạng hoàn hảo.
+            </p>
+            <a href="/app" class="btn-outline mt-12 px-10 py-5 text-base uppercase tracking-wider font-medium
+                       inline-flex items-center gap-3 group animate-fadeInUp delay-400">
+                Bắt Đầu Miễn Phí
+                <i data-lucide="arrow-right" class="w-5 h-5 arrow-animate"></i>
+            </a>
+        </div>
+
+        <!-- Scroll Indicator -->
+        <div class="absolute bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2
+                    animate-fadeInUp delay-600">
+            <span class="text-xs text-[#6B6B6B] uppercase tracking-widest">Cuộn</span>
+            <i data-lucide="chevron-down" class="w-5 h-5 text-[#6B6B6B] animate-bounce-slow"></i>
+        </div>
+    </section>
+
+    <!-- Product Demo Section -->
+    <section id="demo" class="py-20 md:py-40 px-6 reveal">
+        <div class="max-w-[1200px] mx-auto">
+
+            <!-- Translation Demo with Formula -->
+            <div class="border border-[#373737] p-8 md:p-16 mb-8 bg-[#202020]">
+                <div class="grid md:grid-cols-2 gap-8 md:gap-16 items-start">
+                    <!-- Source (English) -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-6">
+                            <span class="px-3 py-1 bg-[#373737] text-xs font-medium uppercase tracking-wider rounded text-[#9B9A97]">Tiếng Anh</span>
+                        </div>
+                        <div class="space-y-4 text-lg leading-relaxed text-[#E0E0E0]">
+                            <p>According to Einstein's theory of relativity, the relationship between energy and mass is expressed by the famous equation:</p>
+                            <div class="py-6 text-center">
+                                <div id="formula-en" class="text-3xl"></div>
+                            </div>
+                            <p>where <em>E</em> is energy, <em>m</em> is mass, and <em>c</em> is the speed of light in vacuum.</p>
+                        </div>
+                    </div>
+
+                    <!-- Output (Vietnamese) -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-6">
+                            <span class="px-3 py-1 bg-white text-black text-xs font-medium uppercase tracking-wider rounded">Tiếng Việt</span>
+                            <span class="text-xs text-green-400 flex items-center gap-1">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                                Đã dịch
+                            </span>
+                        </div>
+                        <div class="space-y-4 text-lg leading-relaxed text-[#E0E0E0]">
+                            <p>Theo thuyết tương đối của Einstein, mối quan hệ giữa năng lượng và khối lượng được biểu diễn bằng phương trình nổi tiếng:</p>
+                            <div class="py-6 text-center">
+                                <div id="formula-vi" class="text-3xl"></div>
+                            </div>
+                            <p>trong đó <em>E</em> là năng lượng, <em>m</em> là khối lượng, và <em>c</em> là tốc độ ánh sáng trong chân không.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formula preserved badge -->
+                <div class="mt-12 pt-8 border-t border-[#373737] text-center">
+                    <span class="inline-flex items-center gap-2 px-4 py-2 bg-green-900/30 text-green-400 text-sm rounded-full border border-green-800/50">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        Công thức được bảo toàn nguyên vẹn
+                    </span>
+                </div>
+            </div>
+
+            <!-- Code Translation Demo -->
+            <div class="border border-[#373737] p-8 md:p-16 bg-[#202020]">
+                <div class="grid md:grid-cols-2 gap-8">
+                    <!-- Source Code (English) -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="px-3 py-1 bg-[#373737] text-xs font-medium uppercase tracking-wider rounded text-[#9B9A97]">Python · Tiếng Anh</span>
+                        </div>
+                        <pre class="p-6 bg-[#0D0D0D] text-gray-100 font-mono text-sm leading-relaxed rounded overflow-x-auto border border-[#373737]"><code><span class="text-blue-400">def</span> <span class="text-yellow-300">calculate_energy</span>(mass):
+    <span class="text-green-400">"""Calculate energy using E=mc²
+
+    Args:
+        mass: Mass in kilograms
+    Returns:
+        Energy in Joules
+    """</span>
+    speed_of_light = <span class="text-purple-400">299792458</span>
+    <span class="text-blue-400">return</span> mass * speed_of_light ** <span class="text-purple-400">2</span></code></pre>
+                    </div>
+
+                    <!-- Output Code (Vietnamese) -->
+                    <div>
+                        <div class="flex items-center gap-2 mb-4">
+                            <span class="px-3 py-1 bg-white text-black text-xs font-medium uppercase tracking-wider rounded">Python · Tiếng Việt</span>
+                            <span class="text-xs text-green-400 flex items-center gap-1">
+                                <i data-lucide="check" class="w-3 h-3"></i>
+                                Đã dịch
+                            </span>
+                        </div>
+                        <pre class="p-6 bg-[#0D0D0D] text-gray-100 font-mono text-sm leading-relaxed rounded overflow-x-auto border border-[#373737]"><code><span class="text-blue-400">def</span> <span class="text-yellow-300">tinh_nang_luong</span>(khoi_luong):
+    <span class="text-green-400">"""Tính năng lượng theo E=mc²
+
+    Tham số:
+        khoi_luong: Khối lượng tính bằng kg
+    Trả về:
+        Năng lượng tính bằng Joule
+    """</span>
+    toc_do_anh_sang = <span class="text-purple-400">299792458</span>
+    <span class="text-blue-400">return</span> khoi_luong * toc_do_anh_sang ** <span class="text-purple-400">2</span></code></pre>
+                    </div>
+                </div>
+
+                <!-- Code preserved badge -->
+                <div class="mt-8 text-center">
+                    <span class="inline-flex items-center gap-2 px-4 py-2 bg-green-900/30 text-green-400 text-sm rounded-full border border-green-800/50">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i>
+                        Cú pháp & logic code nguyên vẹn
+                    </span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Metrics Section -->
+    <section class="py-20 md:py-32 px-6 reveal">
+        <div class="max-w-[1000px] mx-auto">
+            <div class="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-[#373737]">
+                <div class="text-center py-8">
+                    <div class="number-display" data-count="94">0</div>
+                    <div class="text-sm text-[#9B9A97] uppercase tracking-widest mt-2">Độ Chính Xác %</div>
+                </div>
+                <div class="text-center py-8">
+                    <div class="number-display" data-count="204">0</div>
+                    <div class="text-sm text-[#9B9A97] uppercase tracking-widest mt-2">Kiểm Thử +</div>
+                </div>
+                <div class="text-center py-8">
+                    <div class="number-display" data-count="100">0</div>
+                    <div class="text-sm text-[#9B9A97] uppercase tracking-widest mt-2">Trang/Phút +</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="py-20 md:py-40 px-6 reveal">
+        <div class="max-w-[1200px] mx-auto">
+            <h2 class="heading-section text-center mb-16">
+                Tính Năng
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 border border-[#373737]">
+                <!-- Feature 1 -->
+                <div class="feature-card p-8 md:p-16 border-b md:border-r border-[#373737]">
+                    <i data-lucide="languages" class="w-6 h-6 text-[#9B9A97]"></i>
+                    <h3 class="text-2xl font-medium mt-6">Dịch Thông Minh</h3>
+                    <p class="text-[#9B9A97] mt-3 leading-relaxed">GPT-4 & Claude với ngữ cảnh chuyên ngành</p>
+                </div>
+
+                <!-- Feature 2 -->
+                <div class="feature-card p-8 md:p-16 border-b border-[#373737]">
+                    <i data-lucide="code-2" class="w-6 h-6 text-[#9B9A97]"></i>
+                    <h3 class="text-2xl font-medium mt-6">Bảo Toàn STEM</h3>
+                    <p class="text-[#9B9A97] mt-3 leading-relaxed">Công thức LaTeX, code blocks nguyên vẹn</p>
+                </div>
+
+                <!-- Feature 3 -->
+                <div class="feature-card p-8 md:p-16 md:border-r border-[#373737]">
+                    <i data-lucide="layout" class="w-6 h-6 text-[#9B9A97]"></i>
+                    <h3 class="text-2xl font-medium mt-6">Định Dạng Chuyên Nghiệp</h3>
+                    <p class="text-[#9B9A97] mt-3 leading-relaxed">Sách · Báo Cáo · Pháp Lý · Học Thuật</p>
+                </div>
+
+                <!-- Feature 4 -->
+                <div class="feature-card p-8 md:p-16">
+                    <i data-lucide="zap" class="w-6 h-6 text-[#9B9A97]"></i>
+                    <h3 class="text-2xl font-medium mt-6">Xử Lý Hàng Loạt</h3>
+                    <p class="text-[#9B9A97] mt-3 leading-relaxed">Từ 1 đến hàng trăm trang</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How It Works Section -->
+    <section class="py-20 md:py-40 px-6 reveal">
+        <div class="max-w-[1200px] mx-auto">
+            <h2 class="heading-section text-center mb-20">
+                Cách Hoạt Động
+            </h2>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-8">
+                <!-- Step 1 -->
+                <div class="text-center md:text-left">
+                    <div class="number-step">01</div>
+                    <h3 class="text-2xl font-medium mt-2 uppercase tracking-wide">Tải Lên</h3>
+                    <p class="text-[#9B9A97] mt-2">Kéo thả file PDF, DOCX</p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="text-center md:text-left">
+                    <div class="number-step">02</div>
+                    <h3 class="text-2xl font-medium mt-2 uppercase tracking-wide">Chọn</h3>
+                    <p class="text-[#9B9A97] mt-2">Ngôn ngữ & mẫu định dạng</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="text-center md:text-left">
+                    <div class="number-step">03</div>
+                    <h3 class="text-2xl font-medium mt-2 uppercase tracking-wide">Nhận</h3>
+                    <p class="text-[#9B9A97] mt-2">Tài liệu hoàn chỉnh</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Trust Section -->
+    <section class="py-20 md:py-40 px-6 reveal">
+        <div class="max-w-[1200px] mx-auto">
+            <div class="max-w-[600px]">
+                <h2 class="heading-section mb-12">
+                    Đã Kiểm Chứng
+                </h2>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="flex items-center gap-3 text-[#E0E0E0]">
+                        <i data-lucide="check" class="w-4 h-4 flex-shrink-0 text-green-400"></i>
+                        <span>204+ bài kiểm tra tự động</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-[#E0E0E0]">
+                        <i data-lucide="check" class="w-4 h-4 flex-shrink-0 text-green-400"></i>
+                        <span>4 mẫu định dạng chuyên nghiệp</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-[#E0E0E0]">
+                        <i data-lucide="check" class="w-4 h-4 flex-shrink-0 text-green-400"></i>
+                        <span>Quy trình E2E đã xác minh</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-[#E0E0E0]">
+                        <i data-lucide="check" class="w-4 h-4 flex-shrink-0 text-green-400"></i>
+                        <span>Code chất lượng sản xuất</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-[#E0E0E0]">
+                        <i data-lucide="check" class="w-4 h-4 flex-shrink-0 text-green-400"></i>
+                        <span>Nội dung STEM được bảo toàn</span>
+                    </div>
+                    <div class="flex items-center gap-3 text-[#E0E0E0]">
+                        <i data-lucide="check" class="w-4 h-4 flex-shrink-0 text-green-400"></i>
+                        <span>Sẵn sàng cho doanh nghiệp</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Final CTA Section -->
+    <section class="py-32 md:py-52 px-6 text-center reveal">
+        <h2 class="heading-large">
+            Sẵn Sàng?
+        </h2>
+
+        <a href="/app" class="btn-filled mt-12 px-12 py-6 text-base uppercase tracking-wider font-medium
+                   inline-flex items-center gap-3 group">
+            Bắt Đầu Ngay
+            <i data-lucide="arrow-right" class="w-5 h-5 arrow-animate"></i>
+        </a>
+    </section>
+
+    <!-- Footer -->
+    <footer class="h-20 border-t border-[#373737] px-6">
+        <div class="max-w-[1200px] mx-auto h-full flex flex-col md:flex-row items-center justify-between gap-4">
+            <span class="text-sm text-[#6B6B6B]">
+                AI Translator Pro v2.0
+            </span>
+            <div class="text-sm text-[#6B6B6B] flex items-center gap-4">
+                <a href="#" class="hover:text-white transition-colors">Điều Khoản</a>
+                <span>·</span>
+                <a href="#" class="hover:text-white transition-colors">Bảo Mật</a>
+                <span>·</span>
+                <a href="#" class="hover:text-white transition-colors">Liên Hệ</a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Render KaTeX formulas when ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Wait for KaTeX to load
+            setTimeout(function() {
+                if (typeof katex !== 'undefined') {
+                    // E = mc² - English side
+                    const formulaEn = document.getElementById('formula-en');
+                    if (formulaEn) {
+                        katex.render('E = mc^2', formulaEn, {
+                            throwOnError: false,
+                            displayMode: true
+                        });
+                    }
+
+                    // E = mc² - Vietnamese side (same formula preserved!)
+                    const formulaVi = document.getElementById('formula-vi');
+                    if (formulaVi) {
+                        katex.render('E = mc^2', formulaVi, {
+                            throwOnError: false,
+                            displayMode: true
+                        });
+                    }
+                }
+            }, 500);
+        });
+
+        // Navigation scroll effect
+        const nav = document.getElementById('nav');
+        window.addEventListener('scroll', () => {
+            if (window.scrollY > 50) {
+                nav.classList.add('bg-[#191919]/80', 'nav-blur', 'border-b', 'border-[#373737]');
+            } else {
+                nav.classList.remove('bg-[#191919]/80', 'nav-blur', 'border-b', 'border-[#373737]');
+            }
+        });
+
+        // Scroll reveal
+        const revealElements = document.querySelectorAll('.reveal');
+        const revealObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    revealObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1 });
+
+        revealElements.forEach(el => revealObserver.observe(el));
+
+        // Counter animation
+        const counterElements = document.querySelectorAll('[data-count]');
+        const counterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const target = parseInt(entry.target.dataset.count);
+                    animateCounter(entry.target, target);
+                    counterObserver.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        counterElements.forEach(el => counterObserver.observe(el));
+
+        function animateCounter(element, target) {
+            const duration = 2000;
+            const start = 0;
+            const startTime = performance.now();
+
+            function update(currentTime) {
+                const elapsed = currentTime - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+
+                // Easing function (ease-out)
+                const easeOut = 1 - Math.pow(1 - progress, 3);
+                const current = Math.floor(easeOut * target);
+
+                element.textContent = current;
+
+                if (progress < 1) {
+                    requestAnimationFrame(update);
+                } else {
+                    element.textContent = target;
+                }
+            }
+
+            requestAnimationFrame(update);
+        }
+    </script>
+
+    <!-- Login Modal (Embedded) -->
+    <div id="loginModal" class="login-modal" style="display: none;">
+        <div class="login-overlay" onclick="closeLoginModal()"></div>
+        <div class="login-container">
+            <button class="login-close" onclick="closeLoginModal()" aria-label="Đóng">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+            </button>
+            <div class="login-header">
+                <h2>ĐĂNG NHẬP</h2>
+                <p>Truy cập AI Translator Pro</p>
+            </div>
+            <form id="loginForm" class="login-form">
+                <div class="form-group">
+                    <label for="loginEmail">EMAIL</label>
+                    <input type="email" id="loginEmail" placeholder="email@example.com" required autocomplete="email">
+                </div>
+                <div class="form-group">
+                    <label for="loginPassword">MẬT KHẨU</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <div id="loginError" class="login-error" style="display: none;"></div>
+                <button type="submit" id="loginBtn" class="login-btn">
+                    <span class="btn-text">ĐĂNG NHẬP</span>
+                    <span class="btn-loading" style="display: none;">
+                        <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
+                            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/>
+                            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+                        </svg>
+                    </span>
+                </button>
+            </form>
+            <p class="login-footer-text">Chỉ dành cho người dùng được cấp quyền</p>
+        </div>
+    </div>
+
+    <style>
+        /* Login Modal Styles - Dark Notion Theme */
+        .login-modal { position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; }
+        .login-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(4px); }
+        .login-container { position: relative; background: #202020; padding: 48px; width: 100%; max-width: 420px; margin: 20px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); border: 1px solid #373737; }
+        .login-close { position: absolute; top: 16px; right: 16px; width: 40px; height: 40px; border: none; background: none; cursor: pointer; color: #6B6B6B; display: flex; align-items: center; justify-content: center; }
+        .login-close:hover { color: #fff; }
+        .login-header { text-align: center; margin-bottom: 32px; }
+        .login-header h2 { font-size: 24px; font-weight: 600; letter-spacing: 0.15em; margin: 0 0 8px 0; color: #fff; }
+        .login-header p { color: #9B9A97; margin: 0; font-size: 14px; }
+        .login-form { display: flex; flex-direction: column; gap: 20px; }
+        .login-form .form-group { display: flex; flex-direction: column; gap: 8px; }
+        .login-form .form-group label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; color: #9B9A97; }
+        .login-form .form-group input { width: 100%; padding: 14px 16px; font-size: 16px; border: 1px solid #373737; background: #191919; color: #fff; font-family: inherit; box-sizing: border-box; }
+        .login-form .form-group input:focus { outline: none; border-color: #fff; background: #252525; }
+        .login-form .form-group input::placeholder { color: #6B6B6B; }
+        .login-error { padding: 12px 16px; background: rgba(220, 38, 38, 0.1); border: 1px solid rgba(220, 38, 38, 0.3); color: #F87171; font-size: 14px; text-align: center; }
+        .login-btn { width: 100%; padding: 16px; font-size: 14px; font-weight: 600; letter-spacing: 0.1em; background: #fff; color: #191919; border: none; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .login-btn:hover:not(:disabled) { background: #E0E0E0; }
+        .login-btn:disabled { background: #6B6B6B; cursor: not-allowed; }
+        .login-btn .spinner { animation: spin 1s linear infinite; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        .login-footer-text { text-align: center; font-size: 12px; color: #6B6B6B; margin-top: 24px; margin-bottom: 0; }
+    </style>
+
+    <script>
+        // Login Modal Controller
+        let loginRedirectUrl = null;
+
+        function showLoginModal(redirectUrl) {
+            loginRedirectUrl = redirectUrl;
+            document.getElementById('loginModal').style.display = 'flex';
+            document.body.style.overflow = 'hidden';
+            document.getElementById('loginEmail').focus();
+        }
+
+        function closeLoginModal() {
+            document.getElementById('loginModal').style.display = 'none';
+            document.body.style.overflow = '';
+            document.getElementById('loginError').style.display = 'none';
+        }
+
+        // Handle login form
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+            const errorEl = document.getElementById('loginError');
+            const btn = document.getElementById('loginBtn');
+            const btnText = btn.querySelector('.btn-text');
+            const btnLoading = btn.querySelector('.btn-loading');
+
+            errorEl.style.display = 'none';
+            btn.disabled = true;
+            btnText.style.display = 'none';
+            btnLoading.style.display = 'inline-flex';
+
+            try {
+                await new Promise(r => setTimeout(r, 500));
+                const result = await PrismyAuth.login(email, password);
+
+                if (result.success) {
+                    window.location.href = loginRedirectUrl || '/app';
+                } else {
+                    errorEl.textContent = result.error;
+                    errorEl.style.display = 'block';
+                    btn.disabled = false;
+                    btnText.style.display = 'inline';
+                    btnLoading.style.display = 'none';
+                }
+            } catch (err) {
+                errorEl.textContent = 'Có lỗi xảy ra';
+                errorEl.style.display = 'block';
+                btn.disabled = false;
+                btnText.style.display = 'inline';
+                btnLoading.style.display = 'none';
+            }
+        });
+
+        // Close on ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeLoginModal();
+        });
+
+        // Auto-show if redirected
+        if (new URLSearchParams(window.location.search).get('login') === 'required') {
+            showLoginModal();
+            window.history.replaceState({}, '', window.location.pathname);
+        }
+    </script>
+</body>
+</html>

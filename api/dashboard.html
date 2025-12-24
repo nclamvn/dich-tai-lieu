@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Translator Pro - Bảng Điều Khiển</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'shimmer': 'shimmer 2s linear infinite',
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'float': 'float 3s ease-in-out infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        @keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        @keyframes gradient {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+
+        /* Glass Morphism - Corporate Platinum */
+        .glass-card {
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .glass-card:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+        }
+
+        /* Body Background - True Dark Professional */
+        body {
+            background: linear-gradient(135deg, #0a0e14 0%, #161b22 50%, #0a0e14 100%);
+            background-size: 200% 200%;
+            animation: gradient 8s ease infinite;
+            color: #f9fafb;
+            min-height: 100vh;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+        }
+
+        /* Progress Shimmer */
+        .progress-shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+
+        .progress-shimmer::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        /* Stat Card Hover */
+        .stat-card-hover {
+            transition: all 0.3s ease;
+        }
+
+        .stat-card-hover:hover {
+            transform: scale(1.05);
+        }
+
+        /* Button Glow - Sky Blue */
+        .btn-glow {
+            transition: all 0.3s ease;
+        }
+
+        .btn-glow:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px rgba(14, 165, 233, 0.4);
+        }
+
+        /* Inputs - Platinum Text */
+        input, select {
+            color: #f9fafb !important;
+        }
+
+        input::placeholder {
+            color: rgba(249, 250, 251, 0.3) !important;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: rgba(14, 165, 233, 0.6) !important;
+            background: rgba(255, 255, 255, 0.08) !important;
+            box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1) !important;
+        }
+
+        /* Table Styling */
+        table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0 8px;
+        }
+
+        thead th {
+            text-align: left;
+            padding: 12px;
+            color: #9ca3af;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+        }
+
+        tbody tr {
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+        }
+
+        tbody tr:hover {
+            background: rgba(255, 255, 255, 0.06);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        tbody td {
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            padding: 16px 12px;
+            color: #d1d5db;
+        }
+
+        tbody td:first-child {
+            border-left: 1px solid rgba(255, 255, 255, 0.06);
+            border-top-left-radius: 12px;
+            border-bottom-left-radius: 12px;
+        }
+
+        tbody td:last-child {
+            border-right: 1px solid rgba(255, 255, 255, 0.06);
+            border-top-right-radius: 12px;
+            border-bottom-right-radius: 12px;
+        }
+
+        tbody td strong {
+            color: #f9fafb;
+        }
+
+        tbody td small {
+            color: #9ca3af;
+        }
+
+        /* Actions Column - Horizontal Layout */
+        td.actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            align-items: center;
+            justify-content: flex-start;
+        }
+
+        /* Action Buttons - Compact & Premium */
+        .action-btn {
+            padding: 6px 12px !important;
+            font-size: 12px !important;
+            border-radius: 8px !important;
+            font-weight: 600 !important;
+            transition: all 0.2s ease !important;
+            border: none !important;
+            cursor: pointer !important;
+            white-space: nowrap;
+        }
+
+        .action-btn.btn-success {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%) !important;
+            color: #f9fafb !important;
+            box-shadow: 0 2px 8px rgba(5, 150, 105, 0.3) !important;
+        }
+
+        .action-btn.btn-success:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.5) !important;
+        }
+
+        .action-btn.btn-danger {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%) !important;
+            color: #f9fafb !important;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3) !important;
+        }
+
+        .action-btn.btn-danger:hover:not(:disabled) {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5) !important;
+        }
+
+        .action-btn.btn-secondary {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%) !important;
+            color: #f9fafb !important;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.3) !important;
+        }
+
+        .action-btn.btn-secondary:hover:not(:disabled) {
+            transform: translateY(-2px) !important;
+            box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5) !important;
+        }
+
+        .action-btn:disabled {
+            opacity: 0.4 !important;
+            cursor: not-allowed !important;
+            filter: grayscale(0.5);
+        }
+
+        /* Toast Animation */
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .toast {
+            animation: slideIn 0.3s ease;
+        }
+
+        /* Spinner */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .spinner {
+            border: 3px solid rgba(255, 255, 255, 0.1);
+            border-top: 3px solid #3b82f6;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        /* Badge Styles - Keep existing colors */
+        .badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+        }
+
+        .badge.pending { background: #fef3c7; color: #92400e; }
+        .badge.queued { background: #dbeafe; color: #1e40af; }
+        .badge.running { background: #cffafe; color: #155e75; }
+        .badge.completed { background: #d1fae5; color: #065f46; }
+        .badge.failed { background: #fee2e2; color: #991b1b; }
+        .badge.cancelled { background: #f3f4f6; color: #374151; }
+
+        /* Loading Container */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 16px 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            display: none;
+            align-items: center;
+            gap: 12px;
+            z-index: 1000;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .toast.show {
+            display: flex;
+        }
+
+        .toast.success { border-left: 4px solid #059669; }
+        .toast.error { border-left: 4px solid #dc2626; }
+        .toast.info { border-left: 4px solid #0ea5e9; }
+    </style>
+</head>
+<body>
+    <!-- Animated Background Blobs - Subtle Corporate -->
+    <div class="fixed inset-0 overflow-hidden pointer-events-none">
+        <div class="absolute top-0 left-1/4 w-96 h-96 bg-slate-500/10 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-0 right-1/4 w-96 h-96 bg-sky-500/10 rounded-full blur-3xl animate-pulse" style="animation-delay: 700ms;"></div>
+    </div>
+
+    <!-- Header with Glass Effect -->
+    <header class="glass-card border-b border-white/8 mb-8">
+        <div class="max-w-7xl mx-auto px-6 py-6">
+            <div class="flex justify-between items-center mb-4">
+                <h1 class="text-3xl font-bold">
+                    <span class="bg-gradient-to-r from-gray-100 via-gray-200 to-gray-300 bg-clip-text text-transparent">
+                        AI Translator Pro
+                    </span>
+                </h1>
+                <a href="https://prismy.in/dashboard_premium_vn.html" class="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/30 bg-white/10 backdrop-blur-xl transition hover:bg-white/20 hover:border-white/50">
+                    <i data-lucide="upload-cloud" class="w-4 h-4"></i>
+                    <span class="text-sm font-semibold">Giao Diện Upload</span>
+                </a>
+            </div>
+            <div class="flex gap-12 flex-wrap text-sm">
+                <div class="flex items-center gap-2 text-gray-400">
+                    <i data-lucide="circle" id="ws-icon" class="w-3.5 h-3.5 text-emerald-700"></i>
+                    <span id="ws-text">Đã kết nối</span>
+                </div>
+                <div class="flex items-center gap-2 text-gray-400">
+                    <i data-lucide="cpu" class="w-3.5 h-3.5"></i>
+                    <span>Bộ xử lý:</span>
+                    <strong id="processor-status-text" class="text-gray-100">Đã dừng</strong>
+                    <i data-lucide="pause-circle" id="processor-icon" class="w-3.5 h-3.5 opacity-60"></i>
+                </div>
+                <div class="flex items-center gap-2 text-gray-400">
+                    <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+                    <span>Thời gian hoạt động:</span>
+                    <strong id="uptime" class="text-gray-100">--</strong>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto px-6 pb-12">
+        <!-- Stats Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+            <div class="glass-card stat-card-hover rounded-2xl p-6 shadow-xl">
+                <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2">Tổng Công Việc</h3>
+                <div class="text-4xl font-bold text-gray-300" id="stat-total">0</div>
+            </div>
+            <div class="glass-card stat-card-hover rounded-2xl p-6 shadow-xl">
+                <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2">Đang Chờ</h3>
+                <div class="text-4xl font-bold text-amber-700" id="stat-pending">0</div>
+            </div>
+            <div class="glass-card stat-card-hover rounded-2xl p-6 shadow-xl">
+                <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2">Đang Chạy</h3>
+                <div class="text-4xl font-bold text-sky-700" id="stat-running">0</div>
+            </div>
+            <div class="glass-card stat-card-hover rounded-2xl p-6 shadow-xl">
+                <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2">Hoàn Thành</h3>
+                <div class="text-4xl font-bold text-emerald-700" id="stat-completed">0</div>
+            </div>
+            <div class="glass-card stat-card-hover rounded-2xl p-6 shadow-xl">
+                <h3 class="text-xs uppercase tracking-wider text-gray-500 mb-2">Thất Bại</h3>
+                <div class="text-4xl font-bold text-rose-700" id="stat-failed">0</div>
+            </div>
+        </div>
+
+        <!-- Processor Control -->
+        <div class="glass-card rounded-3xl p-6 shadow-2xl mb-8">
+            <div class="flex justify-between items-center mb-6 pb-4">
+                <h2 class="text-2xl font-bold text-gray-100">Điều Khiển Bộ Xử Lý</h2>
+                <div class="flex gap-3">
+                    <button class="btn-glow flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-700 text-gray-50 font-semibold shadow-lg shadow-emerald-600/30" id="btn-start" onclick="startProcessor()">
+                        <i data-lucide="play" class="w-4 h-4"></i>
+                        Khởi Động
+                    </button>
+                    <button class="btn-glow flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-rose-600 to-rose-700 text-gray-50 font-semibold shadow-lg shadow-rose-600/30 disabled:opacity-50 disabled:cursor-not-allowed" id="btn-stop" onclick="stopProcessor()" disabled>
+                        <i data-lucide="pause" class="w-4 h-4"></i>
+                        Tạm Dừng
+                    </button>
+                    <button class="flex items-center gap-2 px-6 py-3 rounded-xl bg-white/6 backdrop-blur-xl border border-white/12 text-gray-100 font-semibold transition hover:bg-white/10" onclick="loadJobs()">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        Làm Mới
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Job List -->
+        <div class="glass-card rounded-3xl p-6 shadow-2xl mb-8">
+            <div class="flex justify-between items-center mb-6 pb-4">
+                <h2 class="text-2xl font-bold text-gray-100">Danh Sách Công Việc</h2>
+                <select id="filter-status" onchange="loadJobs()" class="px-4 py-2.5 rounded-xl bg-white/10 backdrop-blur-xl border border-white/20 text-gray-100 font-medium shadow-lg hover:bg-white/15 hover:border-white/30 transition cursor-pointer">
+                    <option value="" class="bg-slate-900">Tất Cả Trạng Thái</option>
+                    <option value="pending" class="bg-slate-900">Đang Chờ</option>
+                    <option value="queued" class="bg-slate-900">Đã Xếp Hàng</option>
+                    <option value="running" class="bg-slate-900">Đang Chạy</option>
+                    <option value="completed" class="bg-slate-900">Hoàn Thành</option>
+                    <option value="failed" class="bg-slate-900">Thất Bại</option>
+                </select>
+            </div>
+
+            <div id="jobs-container">
+                <div class="loading">
+                    <div class="spinner"></div>
+                    <p>Đang tải công việc...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Create Job Form -->
+        <div class="glass-card rounded-3xl p-6 shadow-2xl">
+            <div class="mb-6 pb-4 border-b border-white/10">
+                <h2 class="text-2xl font-bold">Tạo Công Việc Mới</h2>
+            </div>
+
+            <form id="create-job-form" onsubmit="createJob(event)">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold text-slate-300">Tên Công Việc *</label>
+                        <input type="text" name="job_name" required placeholder="Dự Án Dịch Thuật" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15 placeholder-white/40">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold text-slate-300">File Đầu Vào *</label>
+                        <input type="text" name="input_file" required placeholder="data/input/document.txt" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15 placeholder-white/40">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold text-slate-300">File Đầu Ra *</label>
+                        <input type="text" name="output_file" required placeholder="data/output/translated.txt" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15 placeholder-white/40">
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold text-slate-300">Ngôn Ngữ Nguồn</label>
+                        <select name="source_lang" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15">
+                            <option value="en" class="bg-slate-900">Tiếng Anh</option>
+                            <option value="vi" class="bg-slate-900">Tiếng Việt</option>
+                            <option value="zh" class="bg-slate-900">Tiếng Trung</option>
+                            <option value="ja" class="bg-slate-900">Tiếng Nhật</option>
+                            <option value="ko" class="bg-slate-900">Tiếng Hàn</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold text-slate-300">Ngôn Ngữ Đích</label>
+                        <select name="target_lang" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15">
+                            <option value="vi" selected class="bg-slate-900">Tiếng Việt</option>
+                            <option value="en" class="bg-slate-900">Tiếng Anh</option>
+                            <option value="zh" class="bg-slate-900">Tiếng Trung</option>
+                            <option value="ja" class="bg-slate-900">Tiếng Nhật</option>
+                            <option value="ko" class="bg-slate-900">Tiếng Hàn</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold text-slate-300">Độ Ưu Tiên</label>
+                        <select name="priority" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15">
+                            <option value="1" class="bg-slate-900">Thấp</option>
+                            <option value="5" selected class="bg-slate-900">Bình Thường</option>
+                            <option value="10" class="bg-slate-900">Cao</option>
+                            <option value="20" class="bg-slate-900">Khẩn Cấp</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold text-slate-300">Lĩnh Vực</label>
+                        <select name="domain" id="domain-select" onchange="toggleStemOptions()" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15">
+                            <option value="" class="bg-slate-900">Mặc Định</option>
+                            <option value="stem" class="bg-slate-900">STEM (Khoa học, Toán, Lập trình)</option>
+                            <option value="finance" class="bg-slate-900">Tài Chính</option>
+                            <option value="literature" class="bg-slate-900">Văn Học</option>
+                            <option value="medical" class="bg-slate-900">Y Tế</option>
+                            <option value="technology" class="bg-slate-900">Công Nghệ</option>
+                        </select>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <label class="text-sm font-semibold text-slate-300">Định Dạng Đầu Ra</label>
+                        <select name="output_format" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15">
+                            <option value="txt" class="bg-slate-900">Text (.txt)</option>
+                            <option value="docx" class="bg-slate-900">Word (.docx)</option>
+                            <option value="pdf" class="bg-slate-900">PDF (.pdf)</option>
+                            <option value="html" class="bg-slate-900">HTML (.html)</option>
+                            <option value="md" class="bg-slate-900">Markdown (.md)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- STEM Options Panel (kept exact same logic) -->
+                <div id="stem-options" style="display: none;" class="mt-6 p-6 bg-white/5 backdrop-blur-xl rounded-2xl border border-indigo-500/30">
+                    <h3 class="mb-4 text-indigo-400 font-semibold flex items-center gap-2">
+                        <i data-lucide="flask-conical" class="w-5 h-5"></i>
+                        Tùy Chọn STEM Nâng Cao
+                    </h3>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-semibold text-slate-300">📄 Loại Input</label>
+                            <select name="input_type" id="input-type-select" onchange="updateOcrFlag()" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15">
+                                <option value="native_pdf" class="bg-slate-900">Native PDF (text-based)</option>
+                                <option value="scanned_pdf" class="bg-slate-900">Scanned PDF (cần OCR)</option>
+                                <option value="handwritten_pdf" class="bg-slate-900">Handwritten PDF (cần OCR)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex flex-col gap-2" id="ocr-mode-group" style="display: none;">
+                            <label class="text-sm font-semibold text-slate-300">🤖 OCR Mode</label>
+                            <select name="ocr_mode" id="ocr-mode-select" onchange="updateMathPixFields()" class="px-4 py-3 rounded-xl bg-white/5 backdrop-filter-xl border border-white/15">
+                                <option value="auto" class="bg-slate-900">Auto (smart detection)</option>
+                                <option value="paddle" class="bg-slate-900">PaddleOCR only (local, free)</option>
+                                <option value="hybrid" selected class="bg-slate-900">Hybrid (Paddle + MathPix) - RECOMMENDED</option>
+                                <option value="mathpix" class="bg-slate-900">MathPix only (formula-specialized)</option>
+                                <option value="none" class="bg-slate-900">Disable OCR</option>
+                            </select>
+                            <small class="text-xs text-slate-400">Hybrid mode best for STEM documents with formulas</small>
+                        </div>
+
+                        <div class="flex flex-col gap-2" id="mathpix-id-group" style="display: none;">
+                            <label class="text-sm font-semibold text-slate-300">🔑 MathPix App ID (optional)</label>
+                            <input type="text" name="mathpix_app_id" placeholder="Leave empty to use server default" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15 placeholder-white/40">
+                            <small class="text-xs text-slate-400">Override server MATHPIX_APP_ID</small>
+                        </div>
+
+                        <div class="flex flex-col gap-2" id="mathpix-key-group" style="display: none;">
+                            <label class="text-sm font-semibold text-slate-300">🔐 MathPix App Key (optional)</label>
+                            <input type="password" name="mathpix_app_key" placeholder="Leave empty to use server default" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15 placeholder-white/40">
+                            <small class="text-xs text-slate-400">Override server MATHPIX_APP_KEY</small>
+                        </div>
+
+                        <div class="flex flex-col gap-2">
+                            <label class="text-sm font-semibold text-slate-300">📤 Chế Độ Output</label>
+                            <select name="output_mode" class="px-4 py-3 rounded-xl bg-white/5 backdrop-blur-xl border border-white/15">
+                                <option value="docx_reflow" selected class="bg-slate-900">Reflow DOCX (clean, editable)</option>
+                                <option value="pdf_preserve" class="bg-slate-900">Preserve Layout PDF (giữ nguyên layout)</option>
+                            </select>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" name="enable_chemical_formulas" checked class="w-5 h-5 rounded bg-white/10 border-white/20">
+                            <label class="text-sm font-semibold text-slate-300">⚗️ Phát hiện công thức hóa học</label>
+                        </div>
+
+                        <div class="flex items-center gap-3">
+                            <input type="checkbox" name="enable_quality_check" checked class="w-5 h-5 rounded bg-white/10 border-white/20">
+                            <label class="text-sm font-semibold text-slate-300">✅ Kiểm tra chất lượng dịch</label>
+                        </div>
+                    </div>
+
+                    <div id="ocr-notice" style="display: none;" class="mt-4 p-3 bg-amber-500/20 border border-amber-500/30 rounded-xl text-sm text-amber-200">
+                        <strong>⚠️ OCR Enabled:</strong> DeepSeek OCR API sẽ được sử dụng. Đảm bảo DEEPSEEK_OCR_ENDPOINT và DEEPSEEK_OCR_API_KEY đã được cấu hình.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn-glow mt-6 flex items-center gap-2 px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-500 to-cyan-500 text-white font-semibold shadow-lg shadow-indigo-500/30">
+                    <i data-lucide="plus" class="w-5 h-5"></i>
+                    Tạo Công Việc
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <span id="toast-message"></span>
+    </div>
+    <script>
+        // API Base URL
+        const API_URL = window.location.origin;
+        const WS_URL = `ws://${window.location.host}/ws`;
+
+        let ws = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            // Initialize Lucide icons
+            lucide.createIcons();
+
+            connectWebSocket();
+            loadSystemInfo();
+            loadJobs();
+
+            // Refresh every 10 seconds
+            setInterval(loadSystemInfo, 10000);
+        });
+
+        // WebSocket Connection
+        function connectWebSocket() {
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                updateWSStatus(true);
+                showToast('WebSocket đã kết nối', 'success');
+            };
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleWSMessage(data);
+            };
+
+            ws.onclose = () => {
+                updateWSStatus(false);
+                // Reconnect after 5 seconds
+                setTimeout(connectWebSocket, 5000);
+            };
+
+            ws.onerror = (error) => {
+                console.error('Lỗi WebSocket:', error);
+                updateWSStatus(false);
+            };
+        }
+
+        function handleWSMessage(data) {
+            if (data.event === 'stats_update' || data.event === 'connected') {
+                updateStats(data.stats);
+            }
+
+            if (data.event === 'job_created') {
+                showToast(`Đã tạo công việc: ${data.job_name}`, 'success');
+                loadJobs();
+            }
+
+            if (data.event === 'job_updated') {
+                loadJobs();
+            }
+        }
+
+        function updateWSStatus(connected) {
+            const icon = document.getElementById('ws-icon');
+            const text = document.getElementById('ws-text');
+
+            if (connected) {
+                icon.style.color = '#10b981'; // green
+                text.textContent = 'Đã kết nối';
+            } else {
+                icon.style.color = '#ef4444'; // red
+                text.textContent = 'Mất kết nối';
+            }
+        }
+
+        // Load System Info
+        async function loadSystemInfo() {
+            try {
+                const res = await fetch(`${API_URL}/api/system/info`);
+                const data = await res.json();
+
+                updateStats(data.queue_stats);
+
+                // Update processor status
+                const processorStatusText = document.getElementById('processor-status-text');
+                const processorIcon = document.getElementById('processor-icon');
+
+                if (data.processor_running) {
+                    processorStatusText.textContent = 'Đang chạy';
+                    processorIcon.setAttribute('data-lucide', 'play-circle');
+                    processorIcon.style.color = '#10b981'; // green
+                } else {
+                    processorStatusText.textContent = 'Đã dừng';
+                    processorIcon.setAttribute('data-lucide', 'pause-circle');
+                    processorIcon.style.color = 'rgba(255, 255, 255, 0.6)'; // light gray
+                }
+                lucide.createIcons(); // Refresh icons
+
+                // Update buttons
+                document.getElementById('btn-start').disabled = data.processor_running;
+                document.getElementById('btn-stop').disabled = !data.processor_running;
+
+                // Update uptime
+                const hours = Math.floor(data.uptime_seconds / 3600);
+                const minutes = Math.floor((data.uptime_seconds % 3600) / 60);
+                document.getElementById('uptime').textContent = `${hours}h ${minutes}m`;
+
+            } catch (error) {
+                console.error('Không thể tải thông tin hệ thống:', error);
+            }
+        }
+
+        // Update Stats
+        function updateStats(stats) {
+            document.getElementById('stat-total').textContent = stats.total || 0;
+            document.getElementById('stat-pending').textContent = stats.pending || 0;
+            document.getElementById('stat-running').textContent = stats.running || 0;
+            document.getElementById('stat-completed').textContent = stats.completed || 0;
+            document.getElementById('stat-failed').textContent = stats.failed || 0;
+        }
+
+        // Load Jobs
+        async function loadJobs() {
+            const container = document.getElementById('jobs-container');
+            const filterStatus = document.getElementById('filter-status').value;
+
+            try {
+                const url = filterStatus
+                    ? `${API_URL}/api/jobs?status=${filterStatus}`
+                    : `${API_URL}/api/jobs`;
+
+                const res = await fetch(url);
+                const jobs = await res.json();
+
+                if (jobs.length === 0) {
+                    container.innerHTML = '<div class="loading"><p>Không tìm thấy công việc nào</p></div>';
+                    return;
+                }
+
+                // Render table
+                let html = `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Tên Công Việc</th>
+                                    <th>Trạng Thái</th>
+                                    <th>Tiến Độ</th>
+                                    <th>Ngôn Ngữ</th>
+                                    <th>Chất Lượng</th>
+                                    <th>Hành Động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                jobs.forEach(job => {
+                    const langPair = `${job.source_lang} → ${job.target_lang}`;
+                    const progress = (job.progress * 100).toFixed(0);
+                    const quality = job.quality_score > 0 ? job.quality_score.toFixed(2) : '--';
+
+                    // Translate status badges
+                    const statusMap = {
+                        'pending': 'đang chờ',
+                        'queued': 'đã xếp hàng',
+                        'running': 'đang chạy',
+                        'completed': 'hoàn thành',
+                        'failed': 'thất bại',
+                        'cancelled': 'đã hủy',
+                        'paused': 'đã tạm dừng'
+                    };
+                    const statusText = statusMap[job.status] || job.status;
+
+                    // Business logic for button states
+                    // Cancel: works for pending, queued, paused, running jobs
+                    const canCancel = ['pending', 'queued', 'paused', 'running'].includes(job.status);
+                    const cancelTooltip = canCancel
+                        ? 'Hủy công việc này (dừng xử lý và đánh dấu đã hủy)'
+                        : 'Không thể hủy công việc đã hoàn thành, thất bại hoặc đã hủy';
+
+                    // Delete: only works for completed, failed, cancelled jobs
+                    const canDelete = ['completed', 'failed', 'cancelled'].includes(job.status);
+                    const deleteTooltip = canDelete
+                        ? 'Xóa công việc này khỏi danh sách'
+                        : 'Chỉ có thể xóa công việc đã hoàn thành, thất bại hoặc đã hủy. Hãy hủy job đang chạy trước.';
+
+                    // Status icon mapping
+                    const statusIcons = {
+                        'pending': '<i data-lucide="clock" style="width: 20px; height: 20px; color: #b45309;"></i>',
+                        'queued': '<i data-lucide="list" style="width: 20px; height: 20px; color: #1e40af;"></i>',
+                        'running': '<i data-lucide="loader" style="width: 20px; height: 20px; color: #0369a1;"></i>',
+                        'completed': '<i data-lucide="check-circle" style="width: 20px; height: 20px; color: #047857;"></i>',
+                        'failed': '<i data-lucide="x-circle" style="width: 20px; height: 20px; color: #b91c1c;"></i>',
+                        'cancelled': '<i data-lucide="slash" style="width: 20px; height: 20px; color: #6b7280;"></i>',
+                        'paused': '<i data-lucide="pause-circle" style="width: 20px; height: 20px; color: #6d28d9;"></i>'
+                    };
+                    const statusIcon = statusIcons[job.status] || statusIcons['pending'];
+
+                    html += `
+                        <tr>
+                            <td><strong>${job.job_name}</strong><br><small>${job.job_id}</small></td>
+                            <td>
+                                <div style="display: flex; align-items: center; gap: 8px;">
+                                    ${statusIcon}
+                                    <span style="font-size: 13px; font-weight: 500;">${statusText}</span>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="progress-bar">
+                                    <div class="progress-fill" style="width: ${progress}%"></div>
+                                </div>
+                                <small>${progress}%</small>
+                            </td>
+                            <td>${langPair}</td>
+                            <td>${quality}</td>
+                            <td class="actions">
+                                ${job.status === 'completed' ? `
+                                    <button class="btn action-btn btn-success"
+                                            onclick="downloadJob('${job.job_id}', 'docx')"
+                                            title="Tải về định dạng Word (.docx)"
+                                            style="display: flex; align-items: center; gap: 6px;">
+                                        <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+                                        DOCX
+                                    </button>
+                                    <button class="btn action-btn btn-success"
+                                            onclick="downloadJob('${job.job_id}', 'pdf')"
+                                            title="Tải về định dạng PDF (.pdf)"
+                                            style="display: flex; align-items: center; gap: 6px;">
+                                        <i data-lucide="file-text" style="width: 14px; height: 14px;"></i>
+                                        PDF
+                                    </button>
+                                ` : ''}
+                                <button class="btn action-btn btn-danger"
+                                        onclick="cancelJob('${job.job_id}')"
+                                        ${canCancel ? '' : 'disabled'}
+                                        title="${cancelTooltip}"
+                                        style="display: flex; align-items: center; gap: 6px;">
+                                    <i data-lucide="x-circle" style="width: 14px; height: 14px;"></i>
+                                    Hủy
+                                </button>
+                                <button class="btn action-btn btn-secondary"
+                                        onclick="deleteJob('${job.job_id}')"
+                                        ${canDelete ? '' : 'disabled'}
+                                        title="${deleteTooltip}"
+                                        style="display: flex; align-items: center; gap: 6px;">
+                                    <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+                                    Xóa
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += '</tbody></table></div>';
+                container.innerHTML = html;
+
+                // Re-initialize Lucide icons after DOM update
+                lucide.createIcons();
+
+            } catch (error) {
+                console.error('Không thể tải công việc:', error);
+                container.innerHTML = '<div class="loading"><p>Không thể tải danh sách công việc</p></div>';
+            }
+        }
+
+        // Toggle STEM Options
+        function toggleStemOptions() {
+            const domainSelect = document.getElementById('domain-select');
+            const stemOptions = document.getElementById('stem-options');
+
+            if (domainSelect.value === 'stem') {
+                stemOptions.style.display = 'block';
+                lucide.createIcons(); // Re-render icons
+                updateOcrFlag(); // Check OCR status
+            } else {
+                stemOptions.style.display = 'none';
+            }
+        }
+
+        // Update OCR Flag
+        function updateOcrFlag() {
+            const inputTypeSelect = document.getElementById('input-type-select');
+            const ocrModeGroup = document.getElementById('ocr-mode-group');
+            const ocrNotice = document.getElementById('ocr-notice');
+
+            if (!inputTypeSelect) return;
+
+            const inputType = inputTypeSelect.value;
+            const needsOcr = (inputType === 'scanned_pdf' || inputType === 'handwritten_pdf');
+
+            // Show/hide OCR mode selector
+            if (ocrModeGroup) {
+                ocrModeGroup.style.display = needsOcr ? 'block' : 'none';
+            }
+
+            // Update notice message
+            if (ocrNotice) {
+                if (needsOcr) {
+                    ocrNotice.innerHTML = '<strong>👁️ OCR Enabled:</strong> Choose OCR mode below. Hybrid mode (PaddleOCR + MathPix) recommended for STEM documents.';
+                    ocrNotice.style.display = 'block';
+                    ocrNotice.style.background = '#dbeafe';
+                    ocrNotice.style.color = '#1e40af';
+                } else {
+                    ocrNotice.style.display = 'none';
+                }
+            }
+
+            // Trigger MathPix fields update
+            updateMathPixFields();
+        }
+
+        // Update MathPix Fields Visibility
+        function updateMathPixFields() {
+            const ocrModeSelect = document.getElementById('ocr-mode-select');
+            const mathpixIdGroup = document.getElementById('mathpix-id-group');
+            const mathpixKeyGroup = document.getElementById('mathpix-key-group');
+
+            if (!ocrModeSelect) return;
+
+            const ocrMode = ocrModeSelect.value;
+            const needsMathPix = (ocrMode === 'hybrid' || ocrMode === 'mathpix');
+
+            if (mathpixIdGroup) {
+                mathpixIdGroup.style.display = needsMathPix ? 'block' : 'none';
+            }
+            if (mathpixKeyGroup) {
+                mathpixKeyGroup.style.display = needsMathPix ? 'block' : 'none';
+            }
+        }
+
+        // Create Job
+        async function createJob(event) {
+            event.preventDefault();
+
+            const form = event.target;
+            const formData = new FormData(form);
+
+            const jobData = {
+                job_name: formData.get('job_name'),
+                input_file: formData.get('input_file'),
+                output_file: formData.get('output_file'),
+                source_lang: formData.get('source_lang'),
+                target_lang: formData.get('target_lang'),
+                priority: parseInt(formData.get('priority')),
+                domain: formData.get('domain') || null,
+                output_format: formData.get('output_format')
+            };
+
+            // Phase 3: Add STEM-specific parameters
+            const domain = formData.get('domain');
+            if (domain === 'stem') {
+                const inputType = formData.get('input_type') || 'native_pdf';
+                const outputMode = formData.get('output_mode') || 'docx_reflow';
+                const enableOcr = (inputType === 'scanned_pdf' || inputType === 'handwritten_pdf');
+                const ocrMode = formData.get('ocr_mode') || 'auto';
+                const mathpixAppId = formData.get('mathpix_app_id') || null;
+                const mathpixAppKey = formData.get('mathpix_app_key') || null;
+
+                jobData.input_type = inputType;
+                jobData.output_mode = outputMode;
+                jobData.enable_ocr = enableOcr;
+                jobData.ocr_mode = ocrMode;
+                if (mathpixAppId) jobData.mathpix_app_id = mathpixAppId;
+                if (mathpixAppKey) jobData.mathpix_app_key = mathpixAppKey;
+                jobData.enable_quality_check = formData.get('enable_quality_check') === 'on';
+                jobData.enable_chemical_formulas = formData.get('enable_chemical_formulas') === 'on';
+            } else {
+                // Default values for non-STEM jobs
+                jobData.input_type = 'native_pdf';
+                jobData.output_mode = 'docx_reflow';
+                jobData.enable_ocr = false;
+                jobData.enable_quality_check = false;
+                jobData.enable_chemical_formulas = false;
+            }
+
+            try {
+                const res = await fetch(`${API_URL}/api/jobs`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(jobData)
+                });
+
+                if (res.ok) {
+                    showToast('Đã tạo công việc thành công!', 'success');
+                    form.reset();
+                    toggleStemOptions(); // Hide STEM options after reset
+                    loadJobs();
+                } else {
+                    const error = await res.json();
+                    showToast(`Lỗi: ${error.detail}`, 'error');
+                }
+            } catch (error) {
+                showToast('Không thể tạo công việc', 'error');
+            }
+        }
+
+        // Job Monitoring with polling
+        let jobMonitoringInterval = null;
+
+        function startJobMonitoring() {
+            if (jobMonitoringInterval) return; // Already running
+
+            // Poll every 3 seconds for job updates
+            jobMonitoringInterval = setInterval(() => {
+                loadJobs(); // Refresh job list
+            }, 3000);
+        }
+
+        function stopJobMonitoring() {
+            if (jobMonitoringInterval) {
+                clearInterval(jobMonitoringInterval);
+                jobMonitoringInterval = null;
+            }
+        }
+
+        // Start Processor
+        async function startProcessor() {
+            try {
+                const res = await fetch(`${API_URL}/api/processor/start`, { method: 'POST' });
+                if (res.ok) {
+                    showToast('Đã khởi động bộ xử lý', 'success');
+                    loadSystemInfo();
+                    startJobMonitoring(); // Start polling for realtime updates
+                }
+            } catch (error) {
+                showToast('Không thể khởi động bộ xử lý', 'error');
+            }
+        }
+
+        // Stop Processor
+        async function stopProcessor() {
+            try {
+                const res = await fetch(`${API_URL}/api/processor/stop`, { method: 'POST' });
+                if (res.ok) {
+                    showToast('Đã tạm dừng bộ xử lý', 'info');
+                    loadSystemInfo();
+                    stopJobMonitoring(); // Stop polling when processor stops
+                }
+            } catch (error) {
+                showToast('Không thể tạm dừng bộ xử lý', 'error');
+            }
+        }
+
+        // Cancel Job
+        async function cancelJob(jobId) {
+            if (!confirm('Bạn có chắc muốn hủy công việc này?')) return;
+
+            try {
+                const res = await fetch(`${API_URL}/api/jobs/${jobId}/cancel`, { method: 'POST' });
+                if (res.ok) {
+                    showToast('Đã hủy công việc', 'info');
+                    loadJobs();
+                } else {
+                    const error = await res.json();
+                    showToast(`Lỗi: ${error.detail}`, 'error');
+                }
+            } catch (error) {
+                showToast('Không thể hủy công việc', 'error');
+            }
+        }
+
+        // Delete Job
+        async function deleteJob(jobId) {
+            if (!confirm('Bạn có chắc muốn xóa công việc này?')) return;
+
+            try {
+                const res = await fetch(`${API_URL}/api/jobs/${jobId}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Đã xóa công việc', 'info');
+                    loadJobs();
+                } else {
+                    const error = await res.json();
+                    showToast(`Lỗi: ${error.detail}`, 'error');
+                }
+            } catch (error) {
+                showToast('Không thể xóa công việc', 'error');
+            }
+        }
+
+        // Download Job
+        async function downloadJob(jobId, format) {
+            try {
+                showToast(`Đang tải xuống ${format.toUpperCase()}...`, 'info');
+
+                const response = await fetch(`${API_URL}/api/jobs/${jobId}/download/${format}`);
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Download failed');
+                }
+
+                // Get filename from Content-Disposition header or use default
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `translated_${jobId}.${format}`;
+                if (contentDisposition) {
+                    const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(contentDisposition);
+                    if (matches && matches[1]) {
+                        filename = matches[1].replace(/['"]/g, '');
+                    }
+                }
+
+                // Download file
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                showToast(`Đã tải xuống: ${filename}`, 'success');
+            } catch (error) {
+                console.error('Download error:', error);
+                showToast(`Lỗi tải xuống: ${error.message}`, 'error');
+            }
+        }
+
+        // Toast Notification
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+
+            toastMessage.textContent = message;
+            toast.className = `toast ${type} show`;
+
+            setTimeout(() => {
+                toast.className = 'toast';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

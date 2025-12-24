@@ -1,0 +1,16 @@
+{
+  "Sarah": {
+    "name": "Sarah",
+    "aliases": [],
+    "description": "Character mentioned 3 times",
+    "role": "supporting",
+    "traits": [],
+    "relationships": {},
+    "first_appearance_chapter": 3,
+    "last_appearance_chapter": null,
+    "character_arc": "",
+    "mentioned_attributes": {},
+    "created_at": "2025-11-25T16:48:34.116336",
+    "updated_at": "2025-11-25T16:48:34.116337"
+  }
+}

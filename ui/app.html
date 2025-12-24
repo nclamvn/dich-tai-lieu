@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Xưởng Xuất Bản - AI Publisher Pro</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- MathJax for formula rendering -->
+  <script>
+    MathJax = {
+      tex: {
+        inlineMath: [['$', '$']],
+        displayMath: [['$$', '$$']]
+      },
+      svg: { fontCache: 'global' }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- Shared Styles -->
+  <link rel="stylesheet" href="/ui/shared/navbar.css">
+  <link rel="stylesheet" href="/ui/app/styles.css">
+</head>
+<body>
+  <!-- Main App Container -->
+  <div id="app" class="app-container">
+
+    <!-- 3-Agent Workflow Header -->
+    <section class="workflow-section">
+      <div class="workflow-header">
+        <h1><i data-lucide="book-open" class="header-icon"></i> Xưởng Xuất Bản</h1>
+        <p>Dịch & Xuất Bản Tài Liệu Với AI</p>
+      </div>
+
+      <!-- Agent Pipeline -->
+      <div class="agent-pipeline" id="agent-pipeline">
+        <!-- Editor Agent -->
+        <div class="agent-card" id="agent-editor" data-status="idle">
+          <div class="agent-avatar">
+            <i data-lucide="scan-search"></i>
+          </div>
+          <div class="agent-info">
+            <h3>Biên Tập Viên</h3>
+            <p class="agent-task">Phân Tích Tài Liệu</p>
+          </div>
+          <div class="agent-status">
+            <span class="status-indicator"></span>
+            <span class="status-text">Chờ</span>
+          </div>
+          <div class="agent-progress">
+            <div class="progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- Connector -->
+        <div class="agent-connector">
+          <div class="connector-line"></div>
+          <i data-lucide="arrow-right" class="connector-arrow"></i>
+        </div>
+
+        <!-- Translator Agent -->
+        <div class="agent-card" id="agent-translator" data-status="idle">
+          <div class="agent-avatar">
+            <i data-lucide="languages"></i>
+          </div>
+          <div class="agent-info">
+            <h3>Dịch Giả</h3>
+            <p class="agent-task">Dịch Nội Dung</p>
+          </div>
+          <div class="agent-status">
+            <span class="status-indicator"></span>
+            <span class="status-text">Chờ</span>
+          </div>
+          <div class="agent-progress">
+            <div class="progress-bar"></div>
+          </div>
+        </div>
+
+        <!-- Connector -->
+        <div class="agent-connector">
+          <div class="connector-line"></div>
+          <i data-lucide="arrow-right" class="connector-arrow"></i>
+        </div>
+
+        <!-- Publisher Agent -->
+        <div class="agent-card" id="agent-publisher" data-status="idle">
+          <div class="agent-avatar">
+            <i data-lucide="book-copy"></i>
+          </div>
+          <div class="agent-info">
+            <h3>Nhà Xuất Bản</h3>
+            <p class="agent-task">Tạo Đầu Ra</p>
+          </div>
+          <div class="agent-status">
+            <span class="status-indicator"></span>
+            <span class="status-text">Chờ</span>
+          </div>
+          <div class="agent-progress">
+            <div class="progress-bar"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+
+      <!-- Left Panel: Upload & Settings -->
+      <aside class="panel panel-left">
+        <!-- Mode Toggle -->
+        <div class="mode-toggle">
+          <button class="mode-btn active" data-mode="single">
+            <i data-lucide="file"></i> Một File
+          </button>
+          <a href="/ui/batch-upload.html" class="mode-btn" style="text-decoration: none;">
+            <i data-lucide="files"></i> Hàng Loạt
+          </a>
+        </div>
+
+        <!-- Upload Zone (Single Mode) -->
+        <div class="upload-section" id="upload-section">
+          <div class="dropzone" id="dropzone">
+            <div class="dropzone-icon">
+              <i data-lucide="upload-cloud"></i>
+            </div>
+            <h3>Kéo thả tài liệu vào đây</h3>
+            <p>hoặc nhấn để chọn file</p>
+            <span class="dropzone-hint">Hỗ trợ: PDF, DOCX, TXT, MD, TEX</span>
+            <input type="file" id="file-input" accept=".pdf,.docx,.txt,.md,.tex" hidden>
+          </div>
+
+          <!-- File Preview -->
+          <div class="file-preview hidden" id="file-preview">
+            <div class="file-icon">
+              <i data-lucide="file-text" id="file-type-icon"></i>
+            </div>
+            <div class="file-info">
+              <span class="file-name" id="file-name">document.pdf</span>
+              <span class="file-size" id="file-size">2.3 MB</span>
+            </div>
+            <button class="file-remove" id="file-remove">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Batch Upload Zone (Hidden by default) -->
+        <div class="batch-section hidden" id="batch-section">
+          <div class="dropzone batch-dropzone" id="batch-dropzone">
+            <div class="dropzone-icon">
+              <i data-lucide="folder-up"></i>
+            </div>
+            <h3>Kéo thả nhiều file vào đây</h3>
+            <p>Tối đa 10 file mỗi lần</p>
+            <input type="file" id="batch-input" accept=".pdf,.docx,.txt,.md,.tex" multiple hidden>
+          </div>
+          <div class="batch-files" id="batch-files"></div>
+        </div>
+
+        <!-- Profile Selector -->
+        <div class="settings-section">
+          <label class="settings-label">
+            <i data-lucide="layers"></i> Hồ Sơ Xuất Bản
+          </label>
+          <div class="profile-selector" id="profile-selector">
+            <div class="profile-selected" id="profile-selected">
+              <span class="profile-icon"><i data-lucide="book-open"></i></span>
+              <div class="profile-info">
+                <span class="profile-name">Tiểu Thuyết / Văn Học</span>
+                <span class="profile-desc">Tác phẩm văn học có hội thoại</span>
+              </div>
+              <i data-lucide="chevron-down" class="profile-arrow"></i>
+            </div>
+            <div class="profile-dropdown hidden" id="profile-dropdown">
+              <!-- Populated by JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Provider Selector - Monochrome -->
+        <div class="settings-section">
+          <label class="settings-label">
+            <i data-lucide="cpu"></i> AI Engine
+          </label>
+          <div class="ai-provider-card relative w-full" id="ai-provider-card">
+            <!-- Selected Provider Display -->
+            <div class="provider-selected flex flex-row items-center gap-2.5 p-2.5 rounded-xl cursor-pointer border border-gray-600 hover:border-gray-500 transition-all" id="provider-selected" onclick="toggleProviderDropdown(event)" style="background:#1E1E1E;">
+              <div class="provider-logo w-9 h-9 min-w-[36px] flex items-center justify-center rounded-lg" style="background:#2A2A2A; border: 1px solid #404040; color: #9CA3AF;">
+                <i data-lucide="brain" class="w-[18px] h-[18px]"></i>
+              </div>
+              <div class="provider-info flex-1 min-w-0 flex flex-col">
+                <span class="provider-name text-[13px] font-semibold text-white truncate">Claude Sonnet 4</span>
+                <span class="provider-company text-[11px] text-gray-400">Anthropic</span>
+              </div>
+              <div class="provider-badges flex flex-row items-center gap-1">
+                <span class="badge w-[22px] h-[22px] inline-flex items-center justify-center rounded text-gray-400" style="background:#2A2A2A;" title="Vision"><i data-lucide="eye" class="w-3 h-3"></i></span>
+                <span class="badge w-[22px] h-[22px] inline-flex items-center justify-center rounded text-gray-400" style="background:#2A2A2A;" title="Streaming"><i data-lucide="zap" class="w-3 h-3"></i></span>
+              </div>
+              <i data-lucide="chevron-down" class="provider-arrow w-4 h-4 text-gray-400 transition-transform"></i>
+            </div>
+            <!-- Provider Dropdown -->
+            <div class="provider-dropdown absolute top-full left-0 right-0 mt-1.5 rounded-xl border border-gray-700 shadow-2xl z-[1000] overflow-hidden" id="provider-dropdown" style="background:#1E1E1E;display:none;">
+              <div class="provider-option active flex items-center gap-2.5 px-3 py-2.5 cursor-pointer border-b border-gray-700 hover:bg-white/5" data-provider="claude" onclick="selectProvider('claude', event)" style="background:#252525;">
+                <div class="provider-logo w-[30px] h-[30px] min-w-[30px] flex items-center justify-center rounded-md" style="background:#333333; border: 1px solid #FFFFFF; color: #FFFFFF;"><i data-lucide="brain" class="w-3.5 h-3.5"></i></div>
+                <div class="provider-details flex-1 flex flex-col">
+                  <span class="provider-name text-xs font-semibold text-white">Claude Sonnet 4</span>
+                  <span class="provider-desc text-[10px] text-gray-400">Anthropic · Tối ưu cho dịch thuật</span>
+                </div>
+                <div class="provider-status w-[18px] h-[18px] flex items-center justify-center"><i data-lucide="check" class="w-3.5 h-3.5 text-white"></i></div>
+              </div>
+              <div class="provider-option flex items-center gap-2.5 px-3 py-2.5 cursor-pointer border-b border-gray-700 hover:bg-white/5" data-provider="openai" onclick="selectProvider('openai', event)">
+                <div class="provider-logo w-[30px] h-[30px] min-w-[30px] flex items-center justify-center rounded-md" style="background:#2A2A2A; border: 1px solid #404040; color: #9CA3AF;"><i data-lucide="message-square" class="w-3.5 h-3.5"></i></div>
+                <div class="provider-details flex-1 flex flex-col">
+                  <span class="provider-name text-xs font-semibold text-white">GPT-4o</span>
+                  <span class="provider-desc text-[10px] text-gray-400">OpenAI · Đa năng, nhanh</span>
+                </div>
+                <div class="provider-status w-[18px] h-[18px]"></div>
+              </div>
+              <div class="provider-option flex items-center gap-2.5 px-3 py-2.5 cursor-pointer border-b border-gray-700 hover:bg-white/5" data-provider="gemini" onclick="selectProvider('gemini', event)">
+                <div class="provider-logo w-[30px] h-[30px] min-w-[30px] flex items-center justify-center rounded-md" style="background:#2A2A2A; border: 1px solid #404040; color: #9CA3AF;"><i data-lucide="sparkles" class="w-3.5 h-3.5"></i></div>
+                <div class="provider-details flex-1 flex flex-col">
+                  <span class="provider-name text-xs font-semibold text-white">Gemini 2.0 Flash</span>
+                  <span class="provider-desc text-[10px] text-gray-400">Google · Siêu nhanh</span>
+                </div>
+                <div class="provider-status w-[18px] h-[18px]"></div>
+              </div>
+              <div class="provider-option flex items-center gap-2.5 px-3 py-2.5 cursor-pointer hover:bg-white/5" data-provider="deepseek" onclick="selectProvider('deepseek', event)">
+                <div class="provider-logo w-[30px] h-[30px] min-w-[30px] flex items-center justify-center rounded-md" style="background:#2A2A2A; border: 1px solid #404040; color: #9CA3AF;"><i data-lucide="search" class="w-3.5 h-3.5"></i></div>
+                <div class="provider-details flex-1 flex flex-col">
+                  <span class="provider-name text-xs font-semibold text-white">DeepSeek V3</span>
+                  <span class="provider-desc text-[10px] text-gray-400">DeepSeek · Tiết kiệm chi phí</span>
+                </div>
+                <div class="provider-status w-[18px] h-[18px]"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Language Settings -->
+        <div class="settings-section">
+          <label class="settings-label">
+            <i data-lucide="globe"></i> Ngôn Ngữ
+          </label>
+          <div class="language-row">
+            <div class="language-select">
+              <label>Từ</label>
+              <div class="language-detected" id="source-lang-display">
+                <span class="detected-lang" id="detected-lang-text">Tự động phát hiện</span>
+                <span class="detected-badge hidden" id="detected-badge">
+                  <i data-lucide="sparkles" class="w-3 h-3"></i> Auto
+                </span>
+              </div>
+              <select id="source-lang" class="hidden">
+                <option value="auto" selected>Tự động phát hiện</option>
+                <option value="en">Tiếng Anh</option>
+                <option value="zh">Tiếng Trung</option>
+                <option value="ja">Tiếng Nhật</option>
+                <option value="ko">Tiếng Hàn</option>
+                <option value="fr">Tiếng Pháp</option>
+                <option value="de">Tiếng Đức</option>
+                <option value="es">Tiếng Tây Ban Nha</option>
+                <option value="ru">Tiếng Nga</option>
+              </select>
+            </div>
+            <i data-lucide="arrow-right" class="language-arrow"></i>
+            <div class="language-select">
+              <label>Sang</label>
+              <select id="target-lang">
+                <option value="vi" selected>Tiếng Việt</option>
+                <option value="en">Tiếng Anh</option>
+                <option value="zh">Tiếng Trung</option>
+                <option value="ja">Tiếng Nhật</option>
+                <option value="ko">Tiếng Hàn</option>
+                <option value="fr">Tiếng Pháp</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Output Formats -->
+        <div class="settings-section">
+          <label class="settings-label">
+            <i data-lucide="package"></i> Định Dạng Xuất
+          </label>
+          <div class="format-options">
+            <label class="format-option">
+              <input type="checkbox" value="docx" checked>
+              <i data-lucide="file-text" class="format-icon"></i>
+              <span>DOCX</span>
+            </label>
+            <label class="format-option">
+              <input type="checkbox" value="pdf" checked>
+              <i data-lucide="file-type" class="format-icon"></i>
+              <span>PDF</span>
+            </label>
+            <label class="format-option">
+              <input type="checkbox" value="epub">
+              <i data-lucide="book" class="format-icon"></i>
+              <span>EPUB</span>
+            </label>
+            <label class="format-option">
+              <input type="checkbox" value="html">
+              <i data-lucide="globe" class="format-icon"></i>
+              <span>HTML</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Cost Mode Selector - Monochrome Design -->
+        <div class="settings-section">
+          <label class="settings-label">
+            <i data-lucide="wallet"></i> Chế Độ Chi Phí
+          </label>
+          <div id="cost-mode-selector" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;">
+            <!-- Economy -->
+            <label class="cost-card" data-mode="economy" style="position: relative; display: flex; flex-direction: column; align-items: center; padding: 16px 8px 14px; background: #1E1E1E; border: 1px solid #333; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
+              <input type="radio" name="cost-mode" value="economy" style="position: absolute; opacity: 0; pointer-events: none;">
+              <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #2A2A2A; border: 1px solid #404040; color: #9CA3AF; margin-bottom: 10px;">
+                <i data-lucide="zap" style="width: 20px; height: 20px;"></i>
+              </div>
+              <div style="font-size: 18px; font-weight: 700; color: #FFFFFF;">$0.50</div>
+              <div style="font-size: 11px; font-weight: 500; color: #9CA3AF; margin-top: 4px;">Tiết Kiệm</div>
+              <div style="font-size: 9px; color: #6B7280; margin-top: 2px;">Gemini Flash</div>
+            </label>
+            <!-- Balanced - Default Active -->
+            <label class="cost-card active" data-mode="balanced" style="position: relative; display: flex; flex-direction: column; align-items: center; padding: 16px 8px 14px; background: #252525; border: 1.5px solid #FFFFFF; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
+              <input type="radio" name="cost-mode" value="balanced" checked style="position: absolute; opacity: 0; pointer-events: none;">
+              <span style="position: absolute; top: -8px; left: 50%; transform: translateX(-50%); padding: 2px 8px; background: #666666; border-radius: 4px; font-size: 8px; font-weight: 600; color: white; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.3px;">Phổ Biến</span>
+              <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #333333; border: 1px solid #FFFFFF; color: #FFFFFF; margin-bottom: 10px;">
+                <i data-lucide="sparkles" style="width: 20px; height: 20px;"></i>
+              </div>
+              <div style="font-size: 18px; font-weight: 700; color: #FFFFFF;">$1.50</div>
+              <div style="font-size: 11px; font-weight: 500; color: #FFFFFF; margin-top: 4px;">Cân Bằng</div>
+              <div style="font-size: 9px; color: #9CA3AF; margin-top: 2px;">GPT-4o-mini</div>
+            </label>
+            <!-- Quality -->
+            <label class="cost-card" data-mode="quality" style="position: relative; display: flex; flex-direction: column; align-items: center; padding: 16px 8px 14px; background: #1E1E1E; border: 1px solid #333; border-radius: 12px; cursor: pointer; text-align: center; transition: all 0.2s ease;">
+              <input type="radio" name="cost-mode" value="quality" style="position: absolute; opacity: 0; pointer-events: none;">
+              <div style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 10px; background: #2A2A2A; border: 1px solid #404040; color: #9CA3AF; margin-bottom: 10px;">
+                <i data-lucide="crown" style="width: 20px; height: 20px;"></i>
+              </div>
+              <div style="font-size: 18px; font-weight: 700; color: #FFFFFF;">$5-15</div>
+              <div style="font-size: 11px; font-weight: 500; color: #9CA3AF; margin-top: 4px;">Cao Cấp</div>
+              <div style="font-size: 9px; color: #6B7280; margin-top: 2px;">Claude Sonnet</div>
+            </label>
+          </div>
+          <!-- Cost Estimate Bar -->
+          <div id="cost-estimate" style="display: flex; align-items: center; justify-content: space-between; margin-top: 12px; padding: 10px 14px; background: #1E1E1E; border: 1px solid #333; border-radius: 10px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="calculator" style="width: 14px; height: 14px; color: #6B7280;"></i>
+              <span style="font-size: 12px; color: #9CA3AF;">Ước tính chi phí</span>
+            </div>
+            <span id="cost-estimate-value" style="font-size: 14px; font-weight: 600; color: #9CA3AF;">--</span>
+          </div>
+        </div>
+
+        <!-- Start Button -->
+        <button class="btn-start" id="btn-start" disabled>
+          <i data-lucide="rocket" class="btn-icon"></i>
+          <span class="btn-text">Bắt Đầu Xuất Bản</span>
+        </button>
+      </aside>
+
+      <!-- Right Panel: Preview & Results -->
+      <main class="panel panel-right">
+        <!-- Tabs -->
+        <div class="preview-tabs">
+          <button class="tab-btn active" data-tab="preview">
+            <i data-lucide="eye"></i> Xem Trước
+          </button>
+          <button class="tab-btn" data-tab="dna">
+            <i data-lucide="dna"></i> DNA
+          </button>
+          <button class="tab-btn" data-tab="progress">
+            <i data-lucide="activity"></i> Tiến Trình
+          </button>
+          <button class="tab-btn" data-tab="downloads">
+            <i data-lucide="download"></i> Tải Xuống
+          </button>
+        </div>
+
+        <!-- Tab Content: Preview -->
+        <div class="tab-content active" id="tab-preview">
+          <div class="preview-placeholder" id="preview-placeholder">
+            <div class="placeholder-icon">
+              <i data-lucide="file-search"></i>
+            </div>
+            <h3>Xem Trước Tài Liệu</h3>
+            <p>Tải file lên để xem nội dung đã dịch</p>
+          </div>
+          <div class="preview-content hidden" id="preview-content">
+            <!-- Rendered content with MathJax -->
+          </div>
+        </div>
+
+        <!-- Tab Content: DNA -->
+        <div class="tab-content" id="tab-dna">
+          <div class="dna-placeholder" id="dna-placeholder">
+            <div class="placeholder-icon">
+              <i data-lucide="dna"></i>
+            </div>
+            <h3>DNA Tài Liệu</h3>
+            <p>Kết quả phân tích sẽ hiện ở đây</p>
+          </div>
+          <div class="dna-content hidden" id="dna-content">
+            <!-- DNA viewer component -->
+          </div>
+        </div>
+
+        <!-- Tab Content: Progress -->
+        <div class="tab-content" id="tab-progress">
+          <div class="progress-overview">
+            <div class="progress-bar-container">
+              <div class="progress-bar-fill" id="overall-progress" style="width: 0%"></div>
+            </div>
+            <span class="progress-text" id="progress-text">0%</span>
+          </div>
+          <div class="progress-stages" id="progress-stages">
+            <div class="stage-item" data-status="pending" data-stage="vision_reading">
+              <i data-lucide="eye" class="stage-icon"></i>
+              <span class="stage-name">Đọc Hình Ảnh</span>
+              <span class="stage-status"><i data-lucide="pause"></i></span>
+            </div>
+            <div class="stage-item" data-status="pending" data-stage="analyzing">
+              <i data-lucide="dna" class="stage-icon"></i>
+              <span class="stage-name">Phân Tích DNA</span>
+              <span class="stage-status"><i data-lucide="pause"></i></span>
+            </div>
+            <div class="stage-item" data-status="pending" data-stage="chunking">
+              <i data-lucide="scissors" class="stage-icon"></i>
+              <span class="stage-name">Chia Khối</span>
+              <span class="stage-status"><i data-lucide="pause"></i></span>
+            </div>
+            <div class="stage-item" data-status="pending" data-stage="translating">
+              <i data-lucide="languages" class="stage-icon"></i>
+              <span class="stage-name">Dịch Thuật</span>
+              <span class="stage-status"><i data-lucide="pause"></i></span>
+            </div>
+            <div class="stage-item" data-status="pending" data-stage="assembling">
+              <i data-lucide="puzzle" class="stage-icon"></i>
+              <span class="stage-name">Ghép Nối</span>
+              <span class="stage-status"><i data-lucide="pause"></i></span>
+            </div>
+            <div class="stage-item" data-status="pending" data-stage="converting">
+              <i data-lucide="file-output" class="stage-icon"></i>
+              <span class="stage-name">Chuyển Đổi</span>
+              <span class="stage-status"><i data-lucide="pause"></i></span>
+            </div>
+            <div class="stage-item" data-status="pending" data-stage="verifying">
+              <i data-lucide="check-circle" class="stage-icon"></i>
+              <span class="stage-name">Xác Minh</span>
+              <span class="stage-status"><i data-lucide="pause"></i></span>
+            </div>
+            <div class="stage-item" data-status="pending" data-stage="complete">
+              <i data-lucide="party-popper" class="stage-icon"></i>
+              <span class="stage-name">Hoàn Thành</span>
+              <span class="stage-status"><i data-lucide="pause"></i></span>
+            </div>
+          </div>
+          <div class="current-task" id="current-task-display">
+            <i data-lucide="loader-2" class="task-icon"></i>
+            <span>Đang chờ bắt đầu...</span>
+          </div>
+
+          <!-- Usage Stats -->
+          <div class="usage-stats" id="usage-stats">
+            <div class="stats-grid">
+              <div class="stat-item">
+                <i data-lucide="clock" class="stat-icon"></i>
+                <div class="stat-content">
+                  <span class="stat-value" id="stat-elapsed">0s</span>
+                  <span class="stat-label">Thời gian</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <i data-lucide="coins" class="stat-icon"></i>
+                <div class="stat-content">
+                  <span class="stat-value" id="stat-tokens">0</span>
+                  <span class="stat-label">Tokens</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <i data-lucide="zap" class="stat-icon"></i>
+                <div class="stat-content">
+                  <span class="stat-value" id="stat-calls">0</span>
+                  <span class="stat-label">API Calls</span>
+                </div>
+              </div>
+              <div class="stat-item">
+                <i data-lucide="dollar-sign" class="stat-icon"></i>
+                <div class="stat-content">
+                  <span class="stat-value" id="stat-cost">$0.00</span>
+                  <span class="stat-label">Chi phí</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab Content: Downloads -->
+        <div class="tab-content" id="tab-downloads">
+          <div class="downloads-placeholder" id="downloads-placeholder">
+            <div class="placeholder-icon">
+              <i data-lucide="download-cloud"></i>
+            </div>
+            <h3>Tải Xuống</h3>
+            <p>File hoàn thành sẽ hiện ở đây</p>
+          </div>
+          <div class="downloads-grid hidden" id="downloads-grid">
+            <!-- Download cards populated by JS -->
+          </div>
+        </div>
+      </main>
+
+    </div>
+
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-container"></div>
+
+  <!-- Scripts -->
+  <script src="/ui/shared/navbar.js"></script>
+  <script src="/ui/app/main.js"></script>
+  <script src="/ui/components/ai_provider_selector.js"></script>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Initialize navbar
+    NavBar.init('app');
+
+    // Global toggle function for AI Provider dropdown
+    function toggleProviderDropdown(e) {
+      if (e) e.stopPropagation();
+      const dropdown = document.getElementById('provider-dropdown');
+      const card = document.getElementById('ai-provider-card');
+      if (dropdown) {
+        const isHidden = dropdown.style.display === 'none' || dropdown.style.display === '';
+        dropdown.style.display = isHidden ? 'block' : 'none';
+        if (card) card.classList.toggle('open', isHidden);
+      }
+    }
+
+    // Select provider function
+    async function selectProvider(provider, event) {
+      event.stopPropagation();
+      const option = event.currentTarget;
+      if (option.classList.contains('unavailable')) return;
+
+      try {
+        const response = await fetch('/api/v2/providers/set', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ provider })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+
+          // Update active state - pure grayscale
+          document.querySelectorAll('.provider-option').forEach(o => {
+            const isActive = o.dataset.provider === provider;
+            o.classList.toggle('active', isActive);
+            // Update background
+            o.style.background = isActive ? '#252525' : '';
+            // Update icon style
+            const logoEl = o.querySelector('.provider-logo');
+            if (logoEl) {
+              if (isActive) {
+                logoEl.style.background = '#333333';
+                logoEl.style.borderColor = '#FFFFFF';
+                logoEl.style.color = '#FFFFFF';
+              } else {
+                logoEl.style.background = '#2A2A2A';
+                logoEl.style.borderColor = '#404040';
+                logoEl.style.color = '#9CA3AF';
+              }
+            }
+            const statusEl = o.querySelector('.provider-status');
+            if (statusEl) {
+              statusEl.innerHTML = isActive ? '<i data-lucide="check" class="w-3.5 h-3.5 text-white"></i>' : '';
+            }
+          });
+
+          // Update selected display
+          if (typeof PublisherApp !== 'undefined') {
+            PublisherApp.updateProviderDisplay(provider, data);
+          }
+
+          // Close dropdown
+          const dropdown = document.getElementById('provider-dropdown');
+          const card = document.getElementById('ai-provider-card');
+          dropdown.style.display = 'none';
+          if (card) card.classList.remove('open');
+
+          // Re-init icons
+          lucide.createIcons();
+
+          // Show toast
+          if (typeof PublisherApp !== 'undefined') {
+            PublisherApp.showToast('Đã chuyển sang ' + data.model, 'success');
+          }
+        }
+      } catch (error) {
+        console.error('Failed to switch provider:', error);
+      }
+    }
+
+    // Close dropdown on outside click
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.ai-provider-card')) {
+        const dropdown = document.getElementById('provider-dropdown');
+        const card = document.getElementById('ai-provider-card');
+        if (dropdown && dropdown.style.display !== 'none') {
+          dropdown.style.display = 'none';
+          if (card) card.classList.remove('open');
+        }
+      }
+    });
+
+    // Initialize app
+    document.addEventListener('DOMContentLoaded', () => {
+      PublisherApp.init();
+      // Re-init Lucide after dynamic content
+      lucide.createIcons();
+    });
+  </script>
+</body>
+</html>

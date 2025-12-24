@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Publisher Pro - Batch Upload</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    body { font-family: 'Inter', sans-serif; }
+    .drag-over { transform: scale(1.02); }
+    @keyframes pulse-border {
+      0%, 100% { border-color: rgb(59, 130, 246); }
+      50% { border-color: rgb(147, 197, 253); }
+    }
+    .animate-pulse-border { animation: pulse-border 2s infinite; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useCallback, useEffect, useRef } = React;
+
+    // API Base URL - connect to main FastAPI server
+    const API_BASE = '/api/batch';
+
+    // =========================================
+    // Icons (using inline SVG)
+    // =========================================
+    const Icons = {
+      Upload: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+        </svg>
+      ),
+      FileText: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+      ),
+      Play: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="5 3 19 12 5 21 5 3"/>
+        </svg>
+      ),
+      Pause: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/>
+        </svg>
+      ),
+      X: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      ),
+      Check: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      ),
+      AlertCircle: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        </svg>
+      ),
+      Clock: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      ),
+      DollarSign: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+      ),
+      Zap: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+        </svg>
+      ),
+      Settings: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      ),
+      Trash2: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/>
+        </svg>
+      ),
+      RotateCcw: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/>
+        </svg>
+      ),
+      ChevronDown: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="6 9 12 15 18 9"/>
+        </svg>
+      ),
+      ChevronUp: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="18 15 12 9 6 15"/>
+        </svg>
+      ),
+      Loader: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="animate-spin">
+          <line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/>
+        </svg>
+      ),
+      Download: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+      ),
+      Home: () => (
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+        </svg>
+      ),
+    };
+
+    // =========================================
+    // Constants
+    // =========================================
+    const JOB_STATUS = {
+      PENDING: 'pending',
+      PREPARING: 'preparing',
+      PROCESSING: 'processing',
+      PAUSED: 'paused',
+      COMPLETED: 'completed',
+      FAILED: 'failed',
+      CANCELLED: 'cancelled'
+    };
+
+    const PRIORITY = { LOW: 1, NORMAL: 2, HIGH: 3, URGENT: 4 };
+
+    const TRANSLATION_MODES = [
+      { id: 'economy', name: 'Tiết Kiệm', icon: '💰', cost: 0.001, model: 'Gemini Flash', desc: 'Nhanh nhất, rẻ nhất' },
+      { id: 'balanced', name: 'Cân Bằng', icon: '⚖️', cost: 0.004, model: 'GPT-4o-mini', desc: 'Chất lượng tốt, giá hợp lý' },
+      { id: 'quality', name: 'Chất Lượng', icon: '✨', cost: 0.05, model: 'Claude Sonnet', desc: 'Chất lượng cao nhất' }
+    ];
+
+    const LANGUAGES = [
+      { code: 'zh', name: 'Chinese', flag: '🇨🇳' },
+      { code: 'en', name: 'English', flag: '🇺🇸' },
+      { code: 'vi', name: 'Vietnamese', flag: '🇻🇳' },
+      { code: 'ja', name: 'Japanese', flag: '🇯🇵' },
+      { code: 'ko', name: 'Korean', flag: '🇰🇷' },
+    ];
+
+    // =========================================
+    // Utilities
+    // =========================================
+    const generateId = () => Math.random().toString(36).substr(2, 8);
+    const formatTime = (s) => s < 60 ? `${Math.round(s)}s` : s < 3600 ? `${Math.round(s/60)}m` : `${(s/3600).toFixed(1)}h`;
+    const formatCost = (c) => `$${c.toFixed(4)}`;
+    const estimatePages = (size) => Math.max(1, Math.round(size / (1024 * 1024) * 10));
+
+    // =========================================
+    // Drop Zone Component
+    // =========================================
+    function DropZone({ onFilesAdded, disabled }) {
+      const [isDragging, setIsDragging] = useState(false);
+      const fileInputRef = useRef(null);
+
+      const handleDrag = (e) => { e.preventDefault(); e.stopPropagation(); };
+      const handleDragIn = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
+      const handleDragOut = (e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
+
+      const handleDrop = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsDragging(false);
+        const files = Array.from(e.dataTransfer.files).filter(f => f.name.toLowerCase().endsWith('.pdf'));
+        if (files.length > 0) onFilesAdded(files);
+      };
+
+      const handleFileSelect = (e) => {
+        const files = Array.from(e.target.files);
+        if (files.length > 0) onFilesAdded(files);
+      };
+
+      return (
+        <div
+          className={`
+            relative border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-300
+            ${isDragging ? 'border-blue-500 bg-blue-50 scale-[1.02] animate-pulse-border' : 'border-gray-300 hover:border-blue-400 bg-white'}
+            ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
+          `}
+          onDragEnter={handleDragIn}
+          onDragLeave={handleDragOut}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => !disabled && fileInputRef.current?.click()}
+        >
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".pdf"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+
+          <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl flex items-center justify-center transition-all duration-300 ${isDragging ? 'bg-blue-500 text-white scale-110 rotate-6' : 'bg-gradient-to-br from-blue-500 to-purple-600 text-white'}`}>
+            <Icons.Upload />
+          </div>
+
+          <h3 className="text-xl font-bold text-gray-800 mb-2">
+            {isDragging ? '🎯 Thả files vào đây!' : 'Kéo & thả PDF files'}
+          </h3>
+          <p className="text-gray-500 mb-6">hoặc click để chọn files từ máy tính</p>
+
+          <div className="flex items-center justify-center gap-6 text-sm text-gray-400">
+            <span className="flex items-center gap-2 bg-gray-100 px-3 py-1 rounded-full">
+              <Icons.FileText />
+              PDF only
+            </span>
+            <span className="bg-gray-100 px-3 py-1 rounded-full">Max 100 files</span>
+            <span className="bg-gray-100 px-3 py-1 rounded-full">1000 pages/file</span>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================
+    // Settings Panel
+    // =========================================
+    function SettingsPanel({ settings, onChange }) {
+      const [isOpen, setIsOpen] = useState(true);
+
+      return (
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+          <button
+            onClick={() => setIsOpen(!isOpen)}
+            className="w-full px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gray-100 rounded-xl flex items-center justify-center text-gray-600">
+                <Icons.Settings />
+              </div>
+              <div className="text-left">
+                <span className="font-semibold text-gray-800">Cài đặt dịch</span>
+                <p className="text-xs text-gray-500">
+                  {TRANSLATION_MODES.find(m => m.id === settings.mode)?.model} • {settings.sourceLang} → {settings.targetLang}
+                </p>
+              </div>
+            </div>
+            {isOpen ? <Icons.ChevronUp /> : <Icons.ChevronDown />}
+          </button>
+
+          {isOpen && (
+            <div className="px-6 pb-6 space-y-6 border-t border-gray-100 pt-6">
+              {/* Translation Mode */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-3">Chế độ dịch</label>
+                <div className="grid grid-cols-3 gap-3">
+                  {TRANSLATION_MODES.map(mode => (
+                    <button
+                      key={mode.id}
+                      onClick={() => onChange({ ...settings, mode: mode.id })}
+                      className={`
+                        p-4 rounded-xl border-2 transition-all text-left relative overflow-hidden
+                        ${settings.mode === mode.id
+                          ? 'border-blue-500 bg-blue-50 shadow-lg shadow-blue-100'
+                          : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                        }
+                      `}
+                    >
+                      {settings.mode === mode.id && (
+                        <div className="absolute top-2 right-2 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center">
+                          <Icons.Check />
+                        </div>
+                      )}
+                      <div className="text-2xl mb-2">{mode.icon}</div>
+                      <div className="font-semibold text-gray-800">{mode.name}</div>
+                      <div className="text-xs text-gray-500 mt-1">{mode.desc}</div>
+                      <div className="text-sm font-bold text-blue-600 mt-2">${mode.cost}/trang</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Languages */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Ngôn ngữ nguồn</label>
+                  <select
+                    value={settings.sourceLang}
+                    onChange={(e) => onChange({ ...settings, sourceLang: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                  >
+                    {LANGUAGES.map(lang => (
+                      <option key={lang.code} value={lang.name}>{lang.flag} {lang.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">Ngôn ngữ đích</label>
+                  <select
+                    value={settings.targetLang}
+                    onChange={(e) => onChange({ ...settings, targetLang: e.target.value })}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
+                  >
+                    {LANGUAGES.map(lang => (
+                      <option key={lang.code} value={lang.name}>{lang.flag} {lang.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Output Format */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">Định dạng output</label>
+                <div className="flex gap-2">
+                  {['docx', 'pdf', 'md', 'txt'].map(format => (
+                    <button
+                      key={format}
+                      onClick={() => onChange({ ...settings, outputFormat: format })}
+                      className={`
+                        flex-1 px-4 py-3 rounded-xl border-2 transition-all uppercase text-sm font-bold
+                        ${settings.outputFormat === format
+                          ? 'border-blue-500 bg-blue-50 text-blue-700'
+                          : 'border-gray-200 hover:border-gray-300 text-gray-600'
+                        }
+                      `}
+                    >
+                      .{format}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    }
+
+    // =========================================
+    // Job Card
+    // =========================================
+    function JobCard({ job, onPause, onResume, onCancel, onRetry, onRemove }) {
+      const statusConfig = {
+        [JOB_STATUS.PENDING]: { icon: Icons.Clock, color: 'gray', text: 'Đang chờ', bg: 'bg-gray-100' },
+        [JOB_STATUS.PREPARING]: { icon: Icons.Loader, color: 'yellow', text: 'Chuẩn bị', bg: 'bg-yellow-100' },
+        [JOB_STATUS.PROCESSING]: { icon: Icons.Loader, color: 'blue', text: 'Đang dịch', bg: 'bg-blue-100' },
+        [JOB_STATUS.PAUSED]: { icon: Icons.Pause, color: 'orange', text: 'Tạm dừng', bg: 'bg-orange-100' },
+        [JOB_STATUS.COMPLETED]: { icon: Icons.Check, color: 'green', text: 'Hoàn thành', bg: 'bg-green-100' },
+        [JOB_STATUS.FAILED]: { icon: Icons.AlertCircle, color: 'red', text: 'Lỗi', bg: 'bg-red-100' },
+        [JOB_STATUS.CANCELLED]: { icon: Icons.X, color: 'gray', text: 'Đã hủy', bg: 'bg-gray-100' },
+      };
+
+      const config = statusConfig[job.status];
+      const StatusIcon = config.icon;
+
+      return (
+        <div className={`
+          bg-white rounded-xl border-2 shadow-sm overflow-hidden transition-all hover:shadow-md
+          ${job.status === JOB_STATUS.PROCESSING ? 'border-blue-300 ring-4 ring-blue-50' : 'border-gray-100'}
+        `}>
+          {/* Progress bar */}
+          <div className="h-1.5 bg-gray-100">
+            <div
+              className={`h-full transition-all duration-500 ${
+                job.status === JOB_STATUS.COMPLETED ? 'bg-green-500' :
+                job.status === JOB_STATUS.FAILED ? 'bg-red-500' :
+                'bg-gradient-to-r from-blue-500 to-cyan-400'
+              }`}
+              style={{ width: `${job.progress || 0}%` }}
+            />
+          </div>
+
+          <div className="p-4">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${config.bg} text-${config.color}-600`}>
+                  <StatusIcon />
+                </div>
+                <div>
+                  <h4 className="font-semibold text-gray-800 truncate max-w-[180px]">{job.name}</h4>
+                  <p className="text-sm text-gray-500">{config.text}</p>
+                </div>
+              </div>
+              {job.priority === PRIORITY.URGENT && (
+                <span className="px-2 py-1 text-xs font-bold bg-red-100 text-red-700 rounded-full animate-pulse">
+                  🔥 URGENT
+                </span>
+              )}
+            </div>
+
+            {/* Progress */}
+            <div className="mb-4">
+              <div className="flex justify-between text-sm mb-1">
+                <span className="text-gray-600">{job.completedPages || 0} / {job.totalPages || '?'} trang</span>
+                <span className="font-bold text-gray-800">{(job.progress || 0).toFixed(1)}%</span>
+              </div>
+            </div>
+
+            {/* Stats */}
+            <div className="flex items-center gap-3 text-xs text-gray-500 mb-4 bg-gray-50 rounded-lg p-2">
+              <span className="flex items-center gap-1">
+                <Icons.Clock /> {formatTime(job.elapsed || 0)}
+              </span>
+              <span className="flex items-center gap-1">
+                <Icons.DollarSign /> {formatCost(job.cost || 0)}
+              </span>
+              <span className="flex items-center gap-1">
+                <Icons.Zap /> {(job.pagesPerMin || 0).toFixed(1)} p/m
+              </span>
+            </div>
+
+            {/* Error */}
+            {job.error && (
+              <div className="mb-4 px-3 py-2 bg-red-50 rounded-lg text-xs text-red-600 border border-red-100">
+                ⚠️ {job.error}
+              </div>
+            )}
+
+            {/* Actions */}
+            <div className="flex items-center gap-2">
+              {job.status === JOB_STATUS.PROCESSING && (
+                <button onClick={() => onPause(job.id)} className="flex-1 px-3 py-2 text-sm font-medium text-orange-600 bg-orange-50 rounded-lg hover:bg-orange-100 transition-colors flex items-center justify-center gap-1">
+                  <Icons.Pause /> Tạm dừng
+                </button>
+              )}
+              {job.status === JOB_STATUS.PAUSED && (
+                <button onClick={() => onResume(job.id)} className="flex-1 px-3 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-1">
+                  <Icons.Play /> Tiếp tục
+                </button>
+              )}
+              {job.status === JOB_STATUS.FAILED && (
+                <button onClick={() => onRetry(job.id)} className="flex-1 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center gap-1">
+                  <Icons.RotateCcw /> Thử lại
+                </button>
+              )}
+              {job.status === JOB_STATUS.COMPLETED && (
+                <button className="flex-1 px-3 py-2 text-sm font-medium text-green-600 bg-green-50 rounded-lg hover:bg-green-100 transition-colors flex items-center justify-center gap-1">
+                  <Icons.Download /> Tải về
+                </button>
+              )}
+              {[JOB_STATUS.PENDING, JOB_STATUS.PROCESSING, JOB_STATUS.PAUSED].includes(job.status) && (
+                <button onClick={() => onCancel(job.id)} className="px-3 py-2 text-sm text-gray-500 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Icons.X />
+                </button>
+              )}
+              {[JOB_STATUS.COMPLETED, JOB_STATUS.FAILED, JOB_STATUS.CANCELLED].includes(job.status) && (
+                <button onClick={() => onRemove(job.id)} className="px-3 py-2 text-sm text-gray-500 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
+                  <Icons.Trash2 />
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================
+    // Queue Summary
+    // =========================================
+    function QueueSummary({ jobs, isProcessing, onStartAll, onPauseAll, onClearCompleted, settings }) {
+      const pending = jobs.filter(j => j.status === JOB_STATUS.PENDING).length;
+      const processing = jobs.filter(j => j.status === JOB_STATUS.PROCESSING).length;
+      const completed = jobs.filter(j => j.status === JOB_STATUS.COMPLETED).length;
+      const failed = jobs.filter(j => j.status === JOB_STATUS.FAILED).length;
+
+      const totalPages = jobs.reduce((sum, j) => sum + (j.totalPages || 0), 0);
+      const completedPages = jobs.reduce((sum, j) => sum + (j.completedPages || 0), 0);
+      const totalCost = jobs.reduce((sum, j) => sum + (j.cost || 0), 0);
+
+      const mode = TRANSLATION_MODES.find(m => m.id === settings.mode);
+      const estimatedCost = totalPages * (mode?.cost || 0.004);
+      const progress = totalPages > 0 ? (completedPages / totalPages) * 100 : 0;
+
+      return (
+        <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl p-6 text-white shadow-xl">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h2 className="text-2xl font-bold mb-1">📚 Batch Queue</h2>
+              <p className="text-gray-400 text-sm">
+                {isProcessing ? '🔄 Đang xử lý...' : pending > 0 ? `${pending} jobs đang chờ` : 'Sẵn sàng'}
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              {!isProcessing ? (
+                <button
+                  onClick={onStartAll}
+                  disabled={pending === 0}
+                  className="px-6 py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg shadow-green-500/30"
+                >
+                  <Icons.Play /> Bắt đầu
+                </button>
+              ) : (
+                <button
+                  onClick={onPauseAll}
+                  className="px-6 py-3 bg-gradient-to-r from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 rounded-xl font-bold transition-all flex items-center gap-2 shadow-lg shadow-orange-500/30"
+                >
+                  <Icons.Pause /> Tạm dừng
+                </button>
+              )}
+              {completed > 0 && (
+                <button onClick={onClearCompleted} className="px-4 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-medium transition-colors">
+                  Xóa đã xong
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Progress */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="text-gray-400">Tiến độ tổng</span>
+              <span className="font-bold text-lg">{progress.toFixed(1)}%</span>
+            </div>
+            <div className="h-4 bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-green-400 transition-all duration-500 rounded-full"
+                style={{ width: `${progress}%` }}
+              />
+            </div>
+          </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="bg-gray-800/50 rounded-xl p-4 text-center border border-gray-700">
+              <div className="text-3xl font-bold text-yellow-400">{pending}</div>
+              <div className="text-xs text-gray-400 mt-1">Đang chờ</div>
+            </div>
+            <div className="bg-gray-800/50 rounded-xl p-4 text-center border border-blue-500/30">
+              <div className="text-3xl font-bold text-blue-400">{processing}</div>
+              <div className="text-xs text-gray-400 mt-1">Đang xử lý</div>
+            </div>
+            <div className="bg-gray-800/50 rounded-xl p-4 text-center border border-green-500/30">
+              <div className="text-3xl font-bold text-green-400">{completed}</div>
+              <div className="text-xs text-gray-400 mt-1">Hoàn thành</div>
+            </div>
+            <div className="bg-gray-800/50 rounded-xl p-4 text-center border border-red-500/30">
+              <div className="text-3xl font-bold text-red-400">{failed}</div>
+              <div className="text-xs text-gray-400 mt-1">Lỗi</div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between text-sm pt-4 border-t border-gray-700">
+            <div className="flex items-center gap-4 text-gray-400">
+              <span>📄 {completedPages.toLocaleString()} / {totalPages.toLocaleString()} trang</span>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-gray-400">Ước tính: <span className="text-white font-medium">${estimatedCost.toFixed(2)}</span></span>
+              <span className="text-green-400 font-bold">Chi phí: ${totalCost.toFixed(4)}</span>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // =========================================
+    // Main App
+    // =========================================
+    function App() {
+      const [jobs, setJobs] = useState([]);
+      const [isProcessing, setIsProcessing] = useState(false);
+      const [settings, setSettings] = useState({
+        mode: 'balanced',
+        sourceLang: 'Chinese',
+        targetLang: 'Vietnamese',
+        outputFormat: 'docx'
+      });
+
+      // Simulate processing
+      useEffect(() => {
+        if (!isProcessing) return;
+
+        const interval = setInterval(() => {
+          setJobs(prev => {
+            let hasProcessing = false;
+            const updated = prev.map(job => {
+              if (job.status !== JOB_STATUS.PROCESSING) return job;
+              hasProcessing = true;
+
+              const newCompleted = Math.min(job.completedPages + Math.floor(Math.random() * 5) + 1, job.totalPages);
+              const newProgress = (newCompleted / job.totalPages) * 100;
+              const newElapsed = job.elapsed + 1;
+              const mode = TRANSLATION_MODES.find(m => m.id === settings.mode);
+              const newCost = newCompleted * (mode?.cost || 0.004);
+
+              if (newCompleted >= job.totalPages) {
+                return { ...job, status: JOB_STATUS.COMPLETED, completedPages: job.totalPages, progress: 100, elapsed: newElapsed, cost: newCost };
+              }
+
+              return { ...job, completedPages: newCompleted, progress: newProgress, elapsed: newElapsed, cost: newCost, pagesPerMin: (newCompleted / newElapsed) * 60 };
+            });
+
+            // Start next pending
+            const processingCount = updated.filter(j => j.status === JOB_STATUS.PROCESSING).length;
+            if (processingCount < 2) {
+              const nextIdx = updated.findIndex(j => j.status === JOB_STATUS.PENDING);
+              if (nextIdx !== -1) {
+                updated[nextIdx] = { ...updated[nextIdx], status: JOB_STATUS.PROCESSING };
+              }
+            }
+
+            return updated;
+          });
+        }, 1000);
+
+        return () => clearInterval(interval);
+      }, [isProcessing, settings.mode]);
+
+      // Check if all done
+      useEffect(() => {
+        if (!isProcessing || jobs.length === 0) return;
+        const allDone = jobs.every(j => [JOB_STATUS.COMPLETED, JOB_STATUS.FAILED, JOB_STATUS.CANCELLED].includes(j.status));
+        if (allDone) setIsProcessing(false);
+      }, [jobs, isProcessing]);
+
+      const handleFilesAdded = (files) => {
+        const newJobs = files.map(file => ({
+          id: generateId(),
+          name: file.name.replace('.pdf', ''),
+          file,
+          status: JOB_STATUS.PENDING,
+          priority: PRIORITY.NORMAL,
+          totalPages: estimatePages(file.size),
+          completedPages: 0,
+          progress: 0,
+          elapsed: 0,
+          cost: 0,
+          pagesPerMin: 0,
+          error: null
+        }));
+        setJobs(prev => [...prev, ...newJobs]);
+      };
+
+      const handlers = {
+        onPause: (id) => setJobs(prev => prev.map(j => j.id === id ? { ...j, status: JOB_STATUS.PAUSED } : j)),
+        onResume: (id) => setJobs(prev => prev.map(j => j.id === id ? { ...j, status: JOB_STATUS.PROCESSING } : j)),
+        onCancel: (id) => setJobs(prev => prev.map(j => j.id === id ? { ...j, status: JOB_STATUS.CANCELLED } : j)),
+        onRetry: (id) => setJobs(prev => prev.map(j => j.id === id ? { ...j, status: JOB_STATUS.PENDING, progress: 0, completedPages: 0, error: null } : j)),
+        onRemove: (id) => setJobs(prev => prev.filter(j => j.id !== id)),
+      };
+
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200">
+          {/* Header */}
+          <header className="bg-white/80 backdrop-blur-lg border-b border-gray-200 sticky top-0 z-50">
+            <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-500/30">
+                  <span className="text-white text-2xl">📚</span>
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-800">AI Publisher Pro</h1>
+                  <p className="text-sm text-gray-500">Batch Translation Queue</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <a
+                  href="/ui/app.html"
+                  className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-xl text-gray-700 font-medium transition-colors"
+                >
+                  <Icons.Home />
+                  Single Mode
+                </a>
+                <div className="text-right bg-gray-100 px-4 py-2 rounded-xl">
+                  <div className="text-xs text-gray-500">Model mặc định</div>
+                  <div className="font-bold text-gray-800">{TRANSLATION_MODES.find(m => m.id === settings.mode)?.model}</div>
+                </div>
+              </div>
+            </div>
+          </header>
+
+          {/* Main */}
+          <main className="max-w-6xl mx-auto px-4 py-8 space-y-6">
+            <DropZone onFilesAdded={handleFilesAdded} disabled={isProcessing} />
+            <SettingsPanel settings={settings} onChange={setSettings} />
+
+            {jobs.length > 0 && (
+              <>
+                <QueueSummary
+                  jobs={jobs}
+                  isProcessing={isProcessing}
+                  onStartAll={() => setIsProcessing(true)}
+                  onPauseAll={() => setIsProcessing(false)}
+                  onClearCompleted={() => setJobs(prev => prev.filter(j => ![JOB_STATUS.COMPLETED, JOB_STATUS.CANCELLED].includes(j.status)))}
+                  settings={settings}
+                />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {jobs
+                    .sort((a, b) => {
+                      const order = { processing: 0, preparing: 1, pending: 2, paused: 3, failed: 4, completed: 5, cancelled: 6 };
+                      return (order[a.status] || 99) - (order[b.status] || 99);
+                    })
+                    .map(job => <JobCard key={job.id} job={job} {...handlers} />)
+                  }
+                </div>
+              </>
+            )}
+
+            {jobs.length === 0 && (
+              <div className="text-center py-16 bg-white rounded-2xl border border-gray-200">
+                <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <span className="text-5xl">📁</span>
+                </div>
+                <h3 className="text-xl font-bold text-gray-700 mb-2">Chưa có documents</h3>
+                <p className="text-gray-500">Kéo thả PDF files vào ô phía trên để bắt đầu</p>
+              </div>
+            )}
+          </main>
+
+          {/* Footer */}
+          <footer className="border-t border-gray-200 bg-white/50 mt-12">
+            <div className="max-w-6xl mx-auto px-4 py-4 text-center text-sm text-gray-500">
+              AI Publisher Pro • Batch Queue System • GPT-4o-mini Default • Built with ❤️
+            </div>
+          </footer>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

@@ -1,0 +1,42 @@
+{
+  "name": "ai-translator-pro-ui",
+  "version": "1.0.0",
+  "description": "Premium UI for AI Translator Pro with Glass Morphism and Framer Motion",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "next": "^14.0.4",
+    "framer-motion": "^10.16.16",
+    "tailwindcss": "^3.4.0",
+    "autoprefixer": "^10.4.16",
+    "postcss": "^8.4.32"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.7",
+    "@types/node": "^20.10.6",
+    "@types/react": "^18.2.46",
+    "@types/react-dom": "^18.2.18",
+    "typescript": "^5.3.3",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "^14.0.4"
+  },
+  "keywords": [
+    "translator",
+    "ai",
+    "ui",
+    "react",
+    "nextjs",
+    "tailwindcss",
+    "framer-motion",
+    "glassmorphism"
+  ],
+  "author": "AI Translator Pro Team",
+  "license": "MIT"
+}

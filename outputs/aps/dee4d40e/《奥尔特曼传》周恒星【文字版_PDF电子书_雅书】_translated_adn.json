@@ -1,0 +1,6151 @@
+{
+  "version": "1.0",
+  "metadata": {
+    "source_language": "en",
+    "target_language": "vi",
+    "document_type": "unknown"
+  },
+  "adn": {
+    "characters": [
+      {
+        "name": "Paul Graham",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 1,
+        "occurrences": [
+          1
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Jessica Livingston",
+        "variants": [
+          "Livingston"
+        ],
+        "role": "mentioned",
+        "first_appearance": 1,
+        "occurrences": [
+          1
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Jessica Lessin",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 1,
+        "occurrences": [
+          1
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Frontier Model Forum",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 1,
+        "occurrences": [
+          1
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Geoffrey\nHinton",
+        "variants": [
+          "Hinton"
+        ],
+        "role": "mentioned",
+        "first_appearance": 2,
+        "occurrences": [
+          2
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Demis Hassabis",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 2,
+        "occurrences": [
+          2
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Steve Levy",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 3,
+        "occurrences": [
+          3
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Walter Isaacson",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 3,
+        "occurrences": [
+          3
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Alan Turing",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 4,
+        "occurrences": [
+          4
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Pedro Domingos",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 4,
+        "occurrences": [
+          4
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Christopher Longuet Higgins",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 5,
+        "occurrences": [
+          5
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "John Polanyi",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 5,
+        "occurrences": [
+          5
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Frank Rosenblatt",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 5,
+        "occurrences": [
+          5
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Kunihiko\nFukushima",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 5,
+        "occurrences": [
+          5
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Ilya Sutskever",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 6,
+        "occurrences": [
+          6
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Alex Krizhevsky",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 6,
+        "occurrences": [
+          6
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Jeff Dean",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 6,
+        "occurrences": [
+          6
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Yoshua Bengio",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 6,
+        "occurrences": [
+          6
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Peter Thiel",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 7,
+        "occurrences": [
+          7
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Satya\nNadella",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 7,
+        "occurrences": [
+          7
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Artificial General Intelligence",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 7,
+        "occurrences": [
+          7
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Larry Page",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 7,
+        "occurrences": [
+          7
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Justine Wilson",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 7,
+        "occurrences": [
+          7
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Talulah Riley",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 7,
+        "occurrences": [
+          7
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Ashlee Vance",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 8,
+        "occurrences": [
+          8
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Rahul Vohra",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 8,
+        "occurrences": [
+          8
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Shane Legg",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 8,
+        "occurrences": [
+          8
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Greg Brockman",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 9,
+        "occurrences": [
+          9
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Patrick\nCollison",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 9,
+        "occurrences": [
+          9
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Alan Kay",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 10,
+        "occurrences": [
+          10
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "John Schulman",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 10,
+        "occurrences": [
+          10
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Wojciech Zaremba",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 10,
+        "occurrences": [
+          10
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Trevor\nBlackwell",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 11,
+        "occurrences": [
+          11
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Vicki Cheung",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 11,
+        "occurrences": [
+          11
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Andrej Karpathy",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 11,
+        "occurrences": [
+          11
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Durk Kingma",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 11,
+        "occurrences": [
+          11
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Pamela Vagata",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 11,
+        "occurrences": [
+          11
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Pieter Abbeel",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 11,
+        "occurrences": [
+          11
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Sergey Levine",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 11,
+        "occurrences": [
+          11
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Vishal Sikka",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 11,
+        "occurrences": [
+          11
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Yuri Milner",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 11,
+        "occurrences": [
+          11
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Cade Metz",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 12,
+        "occurrences": [
+          12,
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Hyman Rickover",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 12,
+        "occurrences": [
+          12
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Peter Lee",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 12,
+        "occurrences": [
+          12
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Dario Amodei",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 12,
+        "occurrences": [
+          12
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Nick\nBostrom",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 12,
+        "occurrences": [
+          12
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Ian Goodfellow",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 12,
+        "occurrences": [
+          12
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Linxi Fan",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 12,
+        "occurrences": [
+          12
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Ludwig Pettersson",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 12,
+        "occurrences": [
+          12
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Jonas\nSchneider",
+        "variants": [
+          "ID"
+        ],
+        "role": "mentioned",
+        "first_appearance": 12,
+        "occurrences": [
+          12
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Daniela Amodei",
+        "variants": [
+          "Dario Amodei"
+        ],
+        "role": "mentioned",
+        "first_appearance": 12,
+        "occurrences": [
+          12
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Yaroslav Bulatov",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 13,
+        "occurrences": [
+          13
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Alec\nRadford",
+        "variants": [
+          "Radford"
+        ],
+        "role": "mentioned",
+        "first_appearance": 13,
+        "occurrences": [
+          13
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Scaling Law",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 14,
+        "occurrences": [
+          14
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Kara Swisher",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 17,
+        "occurrences": [
+          17,
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Pioneer Building",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 17,
+        "occurrences": [
+          17
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Brain Computer Interface",
+        "variants": [
+          "AI"
+        ],
+        "role": "mentioned",
+        "first_appearance": 17,
+        "occurrences": [
+          17
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Tim Urban",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 18,
+        "occurrences": [
+          18
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Jared Birchall",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 18,
+        "occurrences": [
+          18
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Shivon Zilis",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 18,
+        "occurrences": [
+          18
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Open Philanthropy",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 18,
+        "occurrences": [
+          18
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Dustin Moskovitz",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 18,
+        "occurrences": [
+          18
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Holden\nKarnofsky",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 18,
+        "occurrences": [
+          18
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Reid Hoffman",
+        "variants": [
+          "ID"
+        ],
+        "role": "mentioned",
+        "first_appearance": 18,
+        "occurrences": [
+          18
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "John\nLilly",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 18,
+        "occurrences": [
+          18
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Sun Valley",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 19,
+        "occurrences": [
+          19
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Company Sun Valley",
+        "variants": [
+          "Sun Valley",
+          "Company"
+        ],
+        "role": "mentioned",
+        "first_appearance": 19,
+        "occurrences": [
+          19
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Steve Ballmer",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 19,
+        "occurrences": [
+          19
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Kevin Scott",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 20,
+        "occurrences": [
+          20
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Amy Hood",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 20,
+        "occurrences": [
+          20
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Vinod Khosla",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 21,
+        "occurrences": [
+          21,
+          42
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Thrive\nCapital",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 21,
+        "occurrences": [
+          21
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Brad Lightcap",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 21,
+        "occurrences": [
+          21
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Ben Horowitz",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 23,
+        "occurrences": [
+          23
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "The Innovator",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 23,
+        "occurrences": [
+          23
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Prafulla Dhariwal",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 24,
+        "occurrences": [
+          24
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Christopher Olah",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 24,
+        "occurrences": [
+          24
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Real Life Experience",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 24,
+        "occurrences": [
+          24
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Aditya Ramesh",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 24,
+        "occurrences": [
+          24
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Bill Peebles",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 24,
+        "occurrences": [
+          24
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Diane Yoon",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 24,
+        "occurrences": [
+          24
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Mustafa\nSuleyman",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 25,
+        "occurrences": [
+          25
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Kent Walker",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 25,
+        "occurrences": [
+          25
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Sam Bankman",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 26,
+        "occurrences": [
+          26
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Blake Lemoine",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 26,
+        "occurrences": [
+          26
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Chat With",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 27,
+        "occurrences": [
+          27
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Gaurav Nemade",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 28,
+        "occurrences": [
+          28
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Blueshift Team",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 29,
+        "occurrences": [
+          29
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Nick Bostrom",
+        "variants": [
+          "Nick\nBostrom"
+        ],
+        "role": "mentioned",
+        "first_appearance": 29,
+        "occurrences": [
+          29
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Nick Land",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 30,
+        "occurrences": [
+          30
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Garry Tan",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 30,
+        "occurrences": [
+          30
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Marc\nAnderessen",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 30,
+        "occurrences": [
+          30
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Peter Singer",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 30,
+        "occurrences": [
+          30
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Gary Marcus",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 31,
+        "occurrences": [
+          31
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Beff Jezos",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 31,
+        "occurrences": [
+          31
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Guillaume Verdon",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 32,
+        "occurrences": [
+          32
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Chris Prucha",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 32,
+        "occurrences": [
+          32
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Vitalik\nButerin",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 32,
+        "occurrences": [
+          32
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Madison Campbell",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 32,
+        "occurrences": [
+          32
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Cory Booker",
+        "variants": [
+          "OK"
+        ],
+        "role": "mentioned",
+        "first_appearance": 32,
+        "occurrences": [
+          32
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Ted Lieu",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 33,
+        "occurrences": [
+          33
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Haley\nStevens",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 33,
+        "occurrences": [
+          33
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "John Neely Kennedy",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 33,
+        "occurrences": [
+          33
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Life Institute",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 34,
+        "occurrences": [
+          34
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Stephen Wozniak",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 34,
+        "occurrences": [
+          34
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Pink Floyd",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 35,
+        "occurrences": [
+          35
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Grateful\nDead",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 35,
+        "occurrences": [
+          35
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Elton John",
+        "variants": [
+          "Elton"
+        ],
+        "role": "mentioned",
+        "first_appearance": 35,
+        "occurrences": [
+          35
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Mira Murati",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 36,
+        "occurrences": [
+          36
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Helen Toner",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 37,
+        "occurrences": [
+          37
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Chris Clark",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 37,
+        "occurrences": [
+          37
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Jakub Pachocki",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 38,
+        "occurrences": [
+          38
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Jeffrey Irving",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 39,
+        "occurrences": [
+          39
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Jason Kwon",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 39,
+        "occurrences": [
+          39
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Aleksander Madry",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 39,
+        "occurrences": [
+          39
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Szymon Sidor",
+        "variants": [
+          "ID"
+        ],
+        "role": "mentioned",
+        "first_appearance": 39,
+        "occurrences": [
+          39
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Trevor Noah",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 40,
+        "occurrences": [
+          40
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Marc Benioff",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 41,
+        "occurrences": [
+          41
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Daniel Jeffries",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 41,
+        "occurrences": [
+          41
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Matt Mochary",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 41,
+        "occurrences": [
+          41
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Brian Chesky",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 41,
+        "occurrences": [
+          41
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Alfred Lin",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 42,
+        "occurrences": [
+          42
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Ron Conway",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 42,
+        "occurrences": [
+          42
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Bob Muglia",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 42,
+        "occurrences": [
+          42
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Penny Pritzker",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 43,
+        "occurrences": [
+          43
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Diane\nGreene",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 43,
+        "occurrences": [
+          43
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Nat Friedman",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 44,
+        "occurrences": [
+          44
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Alex Wang",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 44,
+        "occurrences": [
+          44
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Emmett Shear",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 44,
+        "occurrences": [
+          44
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Charlie Cheever",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 45,
+        "occurrences": [
+          45
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Anna Makanju",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 45,
+        "occurrences": [
+          45
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Bret Taylor",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 45,
+        "occurrences": [
+          45
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Laurene Powell Jobs",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 46,
+        "occurrences": [
+          46
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Matt Turck",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 46,
+        "occurrences": [
+          46
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Sue Desmond",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 47,
+        "occurrences": [
+          47
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Nicole Seligman",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 47,
+        "occurrences": [
+          47
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Fidji Simo",
+        "variants": [
+          "ID"
+        ],
+        "role": "mentioned",
+        "first_appearance": 47,
+        "occurrences": [
+          47
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Petyr Baelish",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 47,
+        "occurrences": [
+          47
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Lex Fridman",
+        "variants": [
+          "ID"
+        ],
+        "role": "mentioned",
+        "first_appearance": 47,
+        "occurrences": [
+          47
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Lightspeed Venture Partners",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 48,
+        "occurrences": [
+          48
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Safe\nSuperintelligence",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 48,
+        "occurrences": [
+          48
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "John Hopfield",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 48,
+        "occurrences": [
+          48
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Barret Zoph",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 49,
+        "occurrences": [
+          49
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Naveen Rao",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 49,
+        "occurrences": [
+          49
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Kevin Weil",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 49,
+        "occurrences": [
+          49
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Sarah\nFriar",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 49,
+        "occurrences": [
+          49
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Sheryl Sandberg",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 50,
+        "occurrences": [
+          50
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Kevin Kelly",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 50,
+        "occurrences": [
+          50
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Jerry Altman",
+        "variants": [
+          "Sam Altman"
+        ],
+        "role": "mentioned",
+        "first_appearance": 50,
+        "occurrences": [
+          50
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Connie Gibstine",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 50,
+        "occurrences": [
+          50
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Andy Abbott",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 51,
+        "occurrences": [
+          51
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "John Sculley",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 51,
+        "occurrences": [
+          51
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "John Hennessy",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 52,
+        "occurrences": [
+          52
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Based Services",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 52,
+        "occurrences": [
+          52
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Nick Sivo",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 53,
+        "occurrences": [
+          53
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Elizabeth Holmes",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 53,
+        "occurrences": [
+          53
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Robert Morris",
+        "variants": [
+          "BERT"
+        ],
+        "role": "mentioned",
+        "first_appearance": 53,
+        "occurrences": [
+          53
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Summer\nFounders Program",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 54,
+        "occurrences": [
+          54
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Alok Deshpande",
+        "variants": [
+          "OK"
+        ],
+        "role": "mentioned",
+        "first_appearance": 54,
+        "occurrences": [
+          54
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Rick Pernikoff",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 54,
+        "occurrences": [
+          54
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Tom Pernikoff",
+        "variants": [
+          "Rick Pernikoff"
+        ],
+        "role": "mentioned",
+        "first_appearance": 54,
+        "occurrences": [
+          54
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "New\nEnterprise Associates",
+        "variants": [
+          "New\nEnterprise"
+        ],
+        "role": "mentioned",
+        "first_appearance": 54,
+        "occurrences": [
+          54
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Tad Friend",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 55,
+        "occurrences": [
+          55,
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Charlie Rose",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 55,
+        "occurrences": [
+          55
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Mark Jacobstein",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 55,
+        "occurrences": [
+          55
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Michael Moritz",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 55,
+        "occurrences": [
+          55
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Hacker News",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 55,
+        "occurrences": [
+          55
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "John Collison",
+        "variants": [
+          "Patrick\nCollison"
+        ],
+        "role": "mentioned",
+        "first_appearance": 56,
+        "occurrences": [
+          56
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Patrick Collison",
+        "variants": [
+          "Patrick\nCollison",
+          "John Collison"
+        ],
+        "role": "mentioned",
+        "first_appearance": 56,
+        "occurrences": [
+          56
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Julian Weber",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 56,
+        "occurrences": [
+          56
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Steven Blank",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 56,
+        "occurrences": [
+          56
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Eric Ries",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 56,
+        "occurrences": [
+          56
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Andrew Mason",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 57,
+        "occurrences": [
+          57
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Chris Dixon",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 57,
+        "occurrences": [
+          57
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Aaron Swartz",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 58,
+        "occurrences": [
+          58
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Tim\nBerners",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 58,
+        "occurrences": [
+          58
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "John Coogan",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 58,
+        "occurrences": [
+          58
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Michael Siebel",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 59,
+        "occurrences": [
+          59
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Bing Fund",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 60,
+        "occurrences": [
+          60
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Microsoft Ventures",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 60,
+        "occurrences": [
+          60
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Geoff Ralston",
+        "variants": [
+          "Ralston"
+        ],
+        "role": "mentioned",
+        "first_appearance": 60,
+        "occurrences": [
+          60
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Apollo Projects",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 61,
+        "occurrences": [
+          61
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "The Boring",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 61,
+        "occurrences": [
+          61
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Gordon Moore",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 62,
+        "occurrences": [
+          62
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "American Equity Fund",
+        "variants": [
+          "Bing Fund"
+        ],
+        "role": "mentioned",
+        "first_appearance": 63,
+        "occurrences": [
+          63
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Universal Basic Income",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 63,
+        "occurrences": [
+          63
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Alex Blania",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 64,
+        "occurrences": [
+          64
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Yuval Harari",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 66,
+        "occurrences": [
+          66
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Sam Altman",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 67,
+        "occurrences": [
+          67,
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Jon Victor",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 67,
+        "occurrences": [
+          67,
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Berber Jin",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 67,
+        "occurrences": [
+          67,
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Keach Hagey",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 67,
+        "occurrences": [
+          67,
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Elon Musk",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 67,
+        "occurrences": [
+          67,
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Karen Hao",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 67,
+        "occurrences": [
+          67,
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Mike Isaac",
+        "variants": [],
+        "role": "minor",
+        "first_appearance": 67,
+        "occurrences": [
+          67,
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Really Wants",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Emily Jane Fox",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "His Plan",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Bad Guys",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Coder Who Spun",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Tech On",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Year Sam Altman",
+        "variants": [
+          "Sam Altman",
+          "Jerry Altman"
+        ],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Ross Andersen",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Does Sam Altman",
+        "variants": [
+          "Sam Altman",
+          "Jerry Altman",
+          "Year Sam Altman"
+        ],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Know What He",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Manifest Destiny",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Is Pretty Sure",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "All\nGoing",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "The Contradictions",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Crusader Behind",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Reed Albergotti",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Tom Simonite",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Make Ultra",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "But Not",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Bad Way",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Elizabeth Weil",
+        "variants": [
+          "Kevin Weil"
+        ],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Who Is",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Our Age",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Arms\nRace That",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Changed Silicon Valley",
+        "variants": [
+          "Sun Valley",
+          "Company Sun Valley",
+          "Silicon Valley"
+        ],
+        "role": "mentioned",
+        "first_appearance": 67,
+        "occurrences": [
+          67
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Fuse Was Lit",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Chips Power",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Dollar Surge",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Stephen Witt",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "How Jensen Huang",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Nvidia Is Powering",
+        "variants": [
+          "ID",
+          "NVIDIA"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "How Sam Altman",
+        "variants": [
+          "Sam Altman",
+          "Jerry Altman",
+          "Year Sam Altman",
+          "Does Sam Altman"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Silicon Valley",
+        "variants": [
+          "Sun Valley",
+          "Company Sun Valley",
+          "Changed Silicon Valley"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Ronan Farrow",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Shadow Rule",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "On With Kara",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Charlie Warzel",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Inside Effective Accelerationism",
+        "variants": [
+          "ID"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Movement Taking Over",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Deepa Seetharaman",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Fervent Belief Split",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Tom Dotan",
+        "variants": [
+          "DOTA"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "The Opaque Investment",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Empire\nMaking",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Sam Altman Rich",
+        "variants": [
+          "Sam Altman"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Kate Linebaugh",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Sam\nAltman",
+        "variants": [
+          "Sam Altman",
+          "Jerry Altman",
+          "Year Sam Altman",
+          "Does Sam Altman",
+          "How Sam Altman"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Dodging Bullets",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Little Help From",
+        "variants": [
+          "LP"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Bigshot\nFriends",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "The People Who",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Run Fast",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Paris Martineau",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Julia Black",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "From King",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "King Again",
+        "variants": [
+          "AI"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "The Inside Story",
+        "variants": [
+          "ID"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Whiplash Week",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Five Days",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Sam Altman Building",
+        "variants": [
+          "Sam Altman",
+          "Pioneer Building"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Tech Dream",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Fi Nightmare",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Steven Levy",
+        "variants": [
+          "Steve Levy"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Combinator Has Gone",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Max Chafkin",
+        "variants": [],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Rachel Metz",
+        "variants": [
+          "Cade Metz"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      },
+      {
+        "name": "Inside His\nShock",
+        "variants": [
+          "ID"
+        ],
+        "role": "mentioned",
+        "first_appearance": 68,
+        "occurrences": [
+          68
+        ],
+        "attributes": {}
+      }
+    ],
+    "terms": [],
+    "proper_nouns": [
+      {
+        "text": "AI",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          0,
+          4,
+          7,
+          8,
+          14,
+          26,
+          35,
+          66,
+          67,
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "GPT",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          14,
+          21,
+          24,
+          27,
+          29,
+          36,
+          68
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "GP"
+        ]
+      },
+      {
+        "text": "AGI",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          7,
+          8,
+          29,
+          48
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "YC",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          1,
+          57
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Cade Metz",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          12,
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "GPU",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          15,
+          26
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "GP"
+        ]
+      },
+      {
+        "text": "Kara Swisher",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          17,
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "AWS",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          18,
+          19
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Vinod Khosla",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          21,
+          42
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "CEO",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          38,
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "ID",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          51,
+          64
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Tad Friend",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          55,
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Sam Altman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67,
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Jon Victor",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67,
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Berber Jin",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67,
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Keach Hagey",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67,
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Elon Musk",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67,
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Karen Hao",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67,
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Mike Isaac",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67,
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Paul Graham",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          1
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Jessica Livingston",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          1
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Livingston"
+        ]
+      },
+      {
+        "text": "Jessica Lessin",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          1
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Frontier Model Forum",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          1
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Livingston",
+        "type": "place",
+        "translations": {},
+        "occurrences": [
+          1
+        ],
+        "confidence": 0.6,
+        "variants": []
+      },
+      {
+        "text": "Geoffrey\nHinton",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          2
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Hinton"
+        ]
+      },
+      {
+        "text": "Demis Hassabis",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          2
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Hinton",
+        "type": "place",
+        "translations": {},
+        "occurrences": [
+          2
+        ],
+        "confidence": 0.6,
+        "variants": []
+      },
+      {
+        "text": "Steve Levy",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          3
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Walter Isaacson",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          3
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "LC",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          3
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Alan Turing",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          4
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Pedro Domingos",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          4
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Christopher Longuet Higgins",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          5
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "John Polanyi",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          5
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Frank Rosenblatt",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          5
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Kunihiko\nFukushima",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          5
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Ilya Sutskever",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          6
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Alex Krizhevsky",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          6
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Jeff Dean",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          6
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Yoshua Bengio",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          6
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "DBNN",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          6
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Peter Thiel",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          7
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Satya\nNadella",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          7
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Artificial General Intelligence",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          7
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Larry Page",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          7
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Justine Wilson",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          7
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Talulah Riley",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          7
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Ashlee Vance",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          8
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Rahul Vohra",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          8
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Shane Legg",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          8
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "SMI",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          8
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Greg Brockman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          9
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Patrick\nCollison",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          9
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Alan Kay",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          10
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "John Schulman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          10
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Wojciech Zaremba",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          10
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "PARC",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          10
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Trevor\nBlackwell",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          11
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Vicki Cheung",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          11
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Andrej Karpathy",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          11
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Durk Kingma",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          11
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Pamela Vagata",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          11
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Pieter Abbeel",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          11
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Sergey Levine",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          11
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Vishal Sikka",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          11
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Yuri Milner",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          11
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Hyman Rickover",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          12
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Peter Lee",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          12
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Dario Amodei",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          12
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Nick\nBostrom",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          12
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Ian Goodfellow",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          12
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Linxi Fan",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          12
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Ludwig Pettersson",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          12
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Jonas\nSchneider",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          12
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "ID"
+        ]
+      },
+      {
+        "text": "Daniela Amodei",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          12
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Dario Amodei"
+        ]
+      },
+      {
+        "text": "NFL",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          12
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Yaroslav Bulatov",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          13
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Alec\nRadford",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          13
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Radford"
+        ]
+      },
+      {
+        "text": "Radford",
+        "type": "place",
+        "translations": {},
+        "occurrences": [
+          13
+        ],
+        "confidence": 0.6,
+        "variants": []
+      },
+      {
+        "text": "DOTA",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          13
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Scaling Law",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          14
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "CPU",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          15
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "DNN",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          15
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "DGX",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          15
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Pioneer Building",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          17
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Brain Computer Interface",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          17
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "AI"
+        ]
+      },
+      {
+        "text": "BCI",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          17
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Tim Urban",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          18
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Jared Birchall",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          18
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Shivon Zilis",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          18
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Open Philanthropy",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          18
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Dustin Moskovitz",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          18
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Holden\nKarnofsky",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          18
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Reid Hoffman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          18
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "ID"
+        ]
+      },
+      {
+        "text": "John\nLilly",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          18
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Sun Valley",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          19
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Company Sun Valley",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          19
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Sun Valley",
+          "Company"
+        ]
+      },
+      {
+        "text": "Steve Ballmer",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          19
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Company",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          19
+        ],
+        "confidence": 0.5,
+        "variants": []
+      },
+      {
+        "text": "ABC",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          19
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "ABWA",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          19
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Kevin Scott",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          20
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Amy Hood",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          20
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "BERT",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          20
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Thrive\nCapital",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          21
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Brad Lightcap",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          21
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Inc.",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          21
+        ],
+        "confidence": 0.5,
+        "variants": []
+      },
+      {
+        "text": "LLC",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          21
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "LC"
+        ]
+      },
+      {
+        "text": "LP",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          21
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "GP",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          21
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Ben Horowitz",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          23
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "The Innovator",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          23
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Prafulla Dhariwal",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          24
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Christopher Olah",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          24
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Real Life Experience",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          24
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Aditya Ramesh",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          24
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Bill Peebles",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          24
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Diane Yoon",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          24
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "University of Real",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          24
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Mustafa\nSuleyman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          25
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Kent Walker",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          25
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Sam Bankman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          26
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Blake Lemoine",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          26
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Chat With",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          27
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Gaurav Nemade",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          28
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Blueshift Team",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          29
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Nick Bostrom",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          29
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Nick\nBostrom"
+        ]
+      },
+      {
+        "text": "Nick Land",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          30
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Garry Tan",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          30
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Marc\nAnderessen",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          30
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Peter Singer",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          30
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Gary Marcus",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          31
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Beff Jezos",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          31
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Guillaume Verdon",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          32
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Chris Prucha",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          32
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Vitalik\nButerin",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          32
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Madison Campbell",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          32
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Cory Booker",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          32
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "OK"
+        ]
+      },
+      {
+        "text": "Ted Lieu",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          33
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Haley\nStevens",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          33
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "John Neely Kennedy",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          33
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "IAEA",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          33
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Life Institute",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          34
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Stephen Wozniak",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          34
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Pink Floyd",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          35
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Grateful\nDead",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          35
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Elton John",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          35
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Elton"
+        ]
+      },
+      {
+        "text": "Elton",
+        "type": "place",
+        "translations": {},
+        "occurrences": [
+          35
+        ],
+        "confidence": 0.6,
+        "variants": []
+      },
+      {
+        "text": "Mira Murati",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          36
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Helen Toner",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          37
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Chris Clark",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          37
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Jakub Pachocki",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          38
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Jeffrey Irving",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          39
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Jason Kwon",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          39
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Aleksander Madry",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          39
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Szymon Sidor",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          39
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "ID"
+        ]
+      },
+      {
+        "text": "Trevor Noah",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          40
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Marc Benioff",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          41
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Daniel Jeffries",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          41
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Matt Mochary",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          41
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Brian Chesky",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          41
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Alfred Lin",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          42
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Ron Conway",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          42
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Bob Muglia",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          42
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Penny Pritzker",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          43
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Diane\nGreene",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          43
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Nat Friedman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          44
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Alex Wang",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          44
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Emmett Shear",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          44
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Charlie Cheever",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          45
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Anna Makanju",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          45
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Bret Taylor",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          45
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "POE",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          45
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Laurene Powell Jobs",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          46
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Matt Turck",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          46
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Sue Desmond",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          47
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Nicole Seligman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          47
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Fidji Simo",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          47
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "ID"
+        ]
+      },
+      {
+        "text": "Petyr Baelish",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          47
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Lex Fridman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          47
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "ID"
+        ]
+      },
+      {
+        "text": "Lightspeed Venture Partners",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          48
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Safe\nSuperintelligence",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          48
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "John Hopfield",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          48
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Barret Zoph",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          49
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Naveen Rao",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          49
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Kevin Weil",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          49
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Sarah\nFriar",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          49
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Sheryl Sandberg",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          50
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Kevin Kelly",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          50
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Jerry Altman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          50
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Sam Altman"
+        ]
+      },
+      {
+        "text": "Connie Gibstine",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          50
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Andy Abbott",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          51
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "John Sculley",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          51
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "NCSA",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          51
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "CERN",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          51
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "AOL",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          51
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "AIM",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          51
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "AI"
+        ]
+      },
+      {
+        "text": "QQ",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          51
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "John Hennessy",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          52
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Based Services",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          52
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "NVIDIA",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          52
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "ID"
+        ]
+      },
+      {
+        "text": "GPS",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          52
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "GP"
+        ]
+      },
+      {
+        "text": "LBS",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          52
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Nick Sivo",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          53
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Elizabeth Holmes",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          53
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Robert Morris",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          53
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "BERT"
+        ]
+      },
+      {
+        "text": "Summer\nFounders Program",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          54
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Alok Deshpande",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          54
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "OK"
+        ]
+      },
+      {
+        "text": "Rick Pernikoff",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          54
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Tom Pernikoff",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          54
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Rick Pernikoff"
+        ]
+      },
+      {
+        "text": "New\nEnterprise Associates",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          54
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "New\nEnterprise"
+        ]
+      },
+      {
+        "text": "New\nEnterprise",
+        "type": "place",
+        "translations": {},
+        "occurrences": [
+          54
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "SFP",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          54
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Charlie Rose",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          55
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Mark Jacobstein",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          55
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Michael Moritz",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          55
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Hacker News",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          55
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "CNN",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          55
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "John Collison",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          56
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Patrick\nCollison"
+        ]
+      },
+      {
+        "text": "Patrick Collison",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          56
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Patrick\nCollison",
+          "John Collison"
+        ]
+      },
+      {
+        "text": "Julian Weber",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          56
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Steven Blank",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          56
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Eric Ries",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          56
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Andrew Mason",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          57
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Chris Dixon",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          57
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Aaron Swartz",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          58
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Tim\nBerners",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          58
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "John Coogan",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          58
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Michael Siebel",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          59
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Bing Fund",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          60
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Microsoft Ventures",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          60
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Geoff Ralston",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          60
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Ralston"
+        ]
+      },
+      {
+        "text": "Ralston",
+        "type": "place",
+        "translations": {},
+        "occurrences": [
+          60
+        ],
+        "confidence": 0.6,
+        "variants": []
+      },
+      {
+        "text": "Apollo Projects",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          61
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "The Boring",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          61
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Bradford",
+        "type": "place",
+        "translations": {},
+        "occurrences": [
+          61
+        ],
+        "confidence": 0.6,
+        "variants": [
+          "Radford"
+        ]
+      },
+      {
+        "text": "Gordon Moore",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          62
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "American Equity Fund",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          63
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Bing Fund"
+        ]
+      },
+      {
+        "text": "Universal Basic Income",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          63
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "UBI",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          63
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Alex Blania",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          64
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "WLD",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          64
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Yuval Harari",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          66
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Really Wants",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Emily Jane Fox",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "His Plan",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Bad Guys",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Coder Who Spun",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Tech On",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Year Sam Altman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Sam Altman",
+          "Jerry Altman"
+        ]
+      },
+      {
+        "text": "Ross Andersen",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Does Sam Altman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Sam Altman",
+          "Jerry Altman",
+          "Year Sam Altman"
+        ]
+      },
+      {
+        "text": "Know What He",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Manifest Destiny",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Is Pretty Sure",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "All\nGoing",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "The Contradictions",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Crusader Behind",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Reed Albergotti",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Tom Simonite",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Make Ultra",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "But Not",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Bad Way",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Elizabeth Weil",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Kevin Weil"
+        ]
+      },
+      {
+        "text": "Who Is",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Our Age",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Arms\nRace That",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Changed Silicon Valley",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Sun Valley",
+          "Company Sun Valley",
+          "Silicon Valley"
+        ]
+      },
+      {
+        "text": "OK",
+        "type": "organization",
+        "translations": {},
+        "occurrences": [
+          67
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Fuse Was Lit",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Chips Power",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Dollar Surge",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Stephen Witt",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "How Jensen Huang",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Nvidia Is Powering",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "ID",
+          "NVIDIA"
+        ]
+      },
+      {
+        "text": "How Sam Altman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Sam Altman",
+          "Jerry Altman",
+          "Year Sam Altman",
+          "Does Sam Altman"
+        ]
+      },
+      {
+        "text": "Silicon Valley",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Sun Valley",
+          "Company Sun Valley",
+          "Changed Silicon Valley"
+        ]
+      },
+      {
+        "text": "Ronan Farrow",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Shadow Rule",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "On With Kara",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Charlie Warzel",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Inside Effective Accelerationism",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "ID"
+        ]
+      },
+      {
+        "text": "Movement Taking Over",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Deepa Seetharaman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Fervent Belief Split",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Tom Dotan",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "DOTA"
+        ]
+      },
+      {
+        "text": "The Opaque Investment",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Empire\nMaking",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Sam Altman Rich",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Sam Altman"
+        ]
+      },
+      {
+        "text": "Kate Linebaugh",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Sam\nAltman",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Sam Altman",
+          "Jerry Altman",
+          "Year Sam Altman",
+          "Does Sam Altman",
+          "How Sam Altman"
+        ]
+      },
+      {
+        "text": "Dodging Bullets",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Little Help From",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "LP"
+        ]
+      },
+      {
+        "text": "Bigshot\nFriends",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "The People Who",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Run Fast",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Paris Martineau",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Julia Black",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "From King",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "King Again",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "AI"
+        ]
+      },
+      {
+        "text": "The Inside Story",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "ID"
+        ]
+      },
+      {
+        "text": "Whiplash Week",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Five Days",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Sam Altman Building",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "Sam Altman",
+          "Pioneer Building"
+        ]
+      },
+      {
+        "text": "Tech Dream",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Fi Nightmare",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Steven Levy",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Steve Levy"
+        ]
+      },
+      {
+        "text": "Combinator Has Gone",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": []
+      },
+      {
+        "text": "Max Chafkin",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": []
+      },
+      {
+        "text": "Rachel Metz",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.65,
+        "variants": [
+          "Cade Metz"
+        ]
+      },
+      {
+        "text": "Inside His\nShock",
+        "type": "person",
+        "translations": {},
+        "occurrences": [
+          68
+        ],
+        "confidence": 0.75,
+        "variants": [
+          "ID"
+        ]
+      }
+    ],
+    "patterns": [
+      {
+        "type": "dialogue",
+        "markers": [
+          "——史蒂芬·列维",
+          "——奥尔特曼写于X"
+        ],
+        "regex": "^—\\s*.+",
+        "occurrences": 35,
+        "examples": [
+          "——史蒂芬·列维",
+          "——奥尔特曼写于X",
+          "——奥尔特曼"
+        ]
+      },
+      {
+        "type": "list_structure",
+        "markers": [
+          "1.",
+          "2."
+        ],
+        "regex": "^\\s*\\d+[.\\)]\\s+.+",
+        "occurrences": 23,
+        "examples": [
+          "1. 作者简介",
+          "2. 推荐序 硅谷“新王”——山姆·奥尔特曼",
+          "3. 引子 注定要走进历史的人"
+        ]
+      },
+      {
+        "type": "footnote",
+        "markers": [
+          "在《究竟什么是有效加速主义》(w"
+        ],
+        "regex": "\\*{1,3}(?!\\*)",
+        "occurrences": 3,
+        "examples": [
+          "*",
+          "在《究竟什么是有效加速主义》(w h a t  t h e  f *  i s  e / a c c )的另一篇博客文章",
+          "Q*（发音为Q-Star）的项目，OpenAI的一些员工认为Q*已显示出接近人类的高级"
+        ]
+      },
+      {
+        "type": "emphasis",
+        "markers": [
+          "Q*（发音为Q-Star）的项目，OpenAI的一些员工认为Q*已显示出接近人类的高级"
+        ],
+        "regex": "\\*.+?\\*",
+        "occurrences": 1,
+        "examples": [
+          "Q*（发音为Q-Star）的项目，OpenAI的一些员工认为Q*已显示出接近人类的高级"
+        ]
+      },
+      {
+        "type": "other",
+        "markers": [
+          "——奥尔特曼"
+        ],
+        "regex": "^——奥尔特曼",
+        "occurrences": 14,
+        "examples": [
+          "——奥尔特曼"
+        ]
+      },
+      {
+        "type": "other",
+        "markers": [
+          "1."
+        ],
+        "regex": "^\\d\\+\\.",
+        "occurrences": 4,
+        "examples": [
+          "1."
+        ]
+      },
+      {
+        "type": "other",
+        "markers": [
+          "2."
+        ],
+        "regex": "^\\d\\+\\.",
+        "occurrences": 4,
+        "examples": [
+          "2."
+        ]
+      },
+      {
+        "type": "other",
+        "markers": [
+          "3."
+        ],
+        "regex": "^\\d\\+\\.",
+        "occurrences": 4,
+        "examples": [
+          "3."
+        ]
+      },
+      {
+        "type": "other",
+        "markers": [
+          "4."
+        ],
+        "regex": "^\\d\\+\\.",
+        "occurrences": 4,
+        "examples": [
+          "4."
+        ]
+      },
+      {
+        "type": "other",
+        "markers": [
+          "Karen"
+        ],
+        "regex": "^Karen",
+        "occurrences": 3,
+        "examples": [
+          "Karen"
+        ]
+      },
+      {
+        "type": "other",
+        "markers": [
+          "5."
+        ],
+        "regex": "^\\d\\+\\.",
+        "occurrences": 3,
+        "examples": [
+          "5."
+        ]
+      },
+      {
+        "type": "other",
+        "markers": [
+          "——奥尔特曼"
+        ],
+        "regex": "^——奥尔特曼$",
+        "occurrences": 14,
+        "examples": [
+          "——奥尔特曼"
+        ]
+      }
+    ]
+  },
+  "statistics": {
+    "total_segments": 69,
+    "total_characters": 179969,
+    "unique_terms": 0
+  }
+}

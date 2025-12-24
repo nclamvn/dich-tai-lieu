@@ -1,0 +1,2 @@
+[TRANSLATION FAILED: name 'warnings' is not defined]
+The quick brown fox jumps over the lazy dog. This is a simple test sentence for translation.

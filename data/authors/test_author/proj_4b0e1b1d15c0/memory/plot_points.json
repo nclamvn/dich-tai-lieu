@@ -1,0 +1,13 @@
+{
+  "plot_0": {
+    "point_id": "plot_0",
+    "type": "theme",
+    "description": "Main story spanning 5 chapters",
+    "first_introduced_chapter": 1,
+    "development": [],
+    "resolution_chapter": null,
+    "status": "active",
+    "created_at": "2025-11-25T16:37:54.154575",
+    "updated_at": "2025-11-25T16:37:54.154575"
+  }
+}

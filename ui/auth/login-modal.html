@@ -1,0 +1,362 @@
+<!-- Login Modal Component for AI Translator Pro -->
+<div id="loginModal" class="login-modal" style="display: none;">
+  <div class="login-overlay" onclick="closeLoginModal()"></div>
+  <div class="login-container">
+    <button class="login-close" onclick="closeLoginModal()" aria-label="Close">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="18" y1="6" x2="6" y2="18"></line>
+        <line x1="6" y1="6" x2="18" y2="18"></line>
+      </svg>
+    </button>
+
+    <div class="login-header">
+      <h2>ĐĂNG NHẬP</h2>
+      <p>Truy cập AI Translator Pro</p>
+    </div>
+
+    <form id="loginForm" class="login-form">
+      <div class="form-group">
+        <label for="loginEmail">EMAIL</label>
+        <input
+          type="email"
+          id="loginEmail"
+          placeholder="your@email.com"
+          required
+          autocomplete="email"
+        >
+      </div>
+
+      <div class="form-group">
+        <label for="loginPassword">MẬT KHẨU</label>
+        <input
+          type="password"
+          id="loginPassword"
+          placeholder="••••••••"
+          required
+          autocomplete="current-password"
+        >
+      </div>
+
+      <div id="loginError" class="login-error" style="display: none;"></div>
+
+      <button type="submit" id="loginBtn" class="login-btn">
+        <span class="btn-text">ĐĂNG NHẬP</span>
+        <span class="btn-loading" style="display: none;">
+          <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke="currentColor" stroke-width="3" fill="none" stroke-linecap="round"/>
+          </svg>
+        </span>
+      </button>
+    </form>
+
+    <p class="login-footer">
+      Chỉ dành cho người dùng được cấp quyền
+    </p>
+  </div>
+</div>
+
+<style>
+/* Login Modal Styles - Notion + Apple Minimalist */
+.login-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.login-container {
+  position: relative;
+  background: #fff;
+  padding: 48px;
+  width: 100%;
+  max-width: 420px;
+  margin: 20px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.login-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.login-close:hover {
+  color: #000;
+}
+
+.login-header {
+  text-align: center;
+  margin-bottom: 32px;
+}
+
+.login-header h2 {
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  margin: 0 0 8px 0;
+  color: #000;
+}
+
+.login-header p {
+  color: #6B6B6B;
+  margin: 0;
+  font-size: 14px;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: #6B6B6B;
+}
+
+.form-group input {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+  border: 1px solid #E5E5E5;
+  background: #FAFAFA;
+  transition: all 0.2s ease;
+  font-family: inherit;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #000;
+  background: #fff;
+}
+
+.form-group input::placeholder {
+  color: #999;
+}
+
+.login-error {
+  padding: 12px 16px;
+  background: #FEF2F2;
+  border: 1px solid #FECACA;
+  color: #DC2626;
+  font-size: 14px;
+  text-align: center;
+}
+
+.login-btn {
+  width: 100%;
+  padding: 16px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  background: #000;
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.login-btn:hover:not(:disabled) {
+  background: #333;
+}
+
+.login-btn:disabled {
+  background: #666;
+  cursor: not-allowed;
+}
+
+.login-btn .spinner {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.login-footer {
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+  margin-top: 24px;
+  margin-bottom: 0;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 32px 24px;
+    margin: 16px;
+  }
+
+  .login-header h2 {
+    font-size: 20px;
+  }
+}
+</style>
+
+<script>
+// Login Modal Controller
+const LoginModal = {
+  modal: null,
+  form: null,
+  redirectUrl: null,
+
+  init() {
+    this.modal = document.getElementById('loginModal');
+    this.form = document.getElementById('loginForm');
+
+    if (this.form) {
+      this.form.addEventListener('submit', (e) => this.handleSubmit(e));
+    }
+
+    // Check URL params for auto-show
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('login') === 'required') {
+      this.show();
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+
+    // ESC key to close
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && this.modal?.style.display === 'flex') {
+        this.hide();
+      }
+    });
+  },
+
+  show(redirectUrl = null) {
+    this.redirectUrl = redirectUrl;
+    if (this.modal) {
+      this.modal.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      document.getElementById('loginEmail')?.focus();
+    }
+  },
+
+  hide() {
+    if (this.modal) {
+      this.modal.style.display = 'none';
+      document.body.style.overflow = '';
+      this.clearError();
+    }
+  },
+
+  showError(message) {
+    const errorEl = document.getElementById('loginError');
+    if (errorEl) {
+      errorEl.textContent = message;
+      errorEl.style.display = 'block';
+    }
+  },
+
+  clearError() {
+    const errorEl = document.getElementById('loginError');
+    if (errorEl) {
+      errorEl.style.display = 'none';
+    }
+  },
+
+  setLoading(loading) {
+    const btn = document.getElementById('loginBtn');
+    const btnText = btn?.querySelector('.btn-text');
+    const btnLoading = btn?.querySelector('.btn-loading');
+
+    if (btn) {
+      btn.disabled = loading;
+      if (btnText) btnText.style.display = loading ? 'none' : 'inline';
+      if (btnLoading) btnLoading.style.display = loading ? 'inline-flex' : 'none';
+    }
+  },
+
+  async handleSubmit(e) {
+    e.preventDefault();
+
+    const email = document.getElementById('loginEmail')?.value;
+    const password = document.getElementById('loginPassword')?.value;
+
+    if (!email || !password) {
+      this.showError('Vui lòng nhập đầy đủ thông tin');
+      return;
+    }
+
+    this.clearError();
+    this.setLoading(true);
+
+    try {
+      // Small delay for UX
+      await new Promise(r => setTimeout(r, 500));
+
+      const result = await PrismyAuth.login(email, password);
+
+      if (result.success) {
+        // Redirect to dashboard or specified URL
+        const redirect = this.redirectUrl || '/app';
+        window.location.href = redirect;
+      } else {
+        this.showError(result.error);
+        this.setLoading(false);
+      }
+    } catch (err) {
+      console.error('Login error:', err);
+      this.showError('Có lỗi xảy ra, vui lòng thử lại');
+      this.setLoading(false);
+    }
+  }
+};
+
+// Global functions for onclick handlers
+function showLoginModal(redirectUrl) {
+  LoginModal.show(redirectUrl);
+}
+
+function closeLoginModal() {
+  LoginModal.hide();
+}
+
+// Initialize when DOM ready
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', () => LoginModal.init());
+} else {
+  LoginModal.init();
+}
+</script>

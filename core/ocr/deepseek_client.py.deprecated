@@ -1,0 +1,283 @@
+"""
+DeepSeek OCR Client
+
+HTTP-based client for DeepSeek OCR API.
+Configurable via environment variables or config file.
+"""
+
+import os
+import time
+import requests
+from typing import Optional
+from pathlib import Path
+import base64
+
+from .base import OcrClient, OcrError, OcrConnectionError, OcrQuotaError, OcrInvalidInputError
+
+
+class DeepseekOcrClient:
+    """
+    DeepSeek OCR Client
+
+    Environment Variables:
+    - DEEPSEEK_OCR_ENDPOINT: API endpoint URL
+    - DEEPSEEK_OCR_API_KEY: API key
+    - DEEPSEEK_OCR_TIMEOUT: Request timeout (default: 30s)
+
+    Example:
+        client = DeepseekOcrClient()
+        with open("document.png", "rb") as f:
+            text = client.extract(f.read())
+    """
+
+    def __init__(
+        self,
+        api_endpoint: Optional[str] = None,
+        api_key: Optional[str] = None,
+        timeout: int = 30,
+        max_retries: int = 3
+    ):
+        """
+        Initialize DeepSeek OCR client
+
+        Args:
+            api_endpoint: API endpoint (or use DEEPSEEK_OCR_ENDPOINT env var)
+            api_key: API key (or use DEEPSEEK_OCR_API_KEY env var)
+            timeout: Request timeout in seconds
+            max_retries: Maximum retry attempts
+        """
+        self.api_endpoint = api_endpoint or os.getenv(
+            "DEEPSEEK_OCR_ENDPOINT",
+            "https://api.deepseek.com/v1/ocr"  # Placeholder URL
+        )
+        self.api_key = api_key or os.getenv("DEEPSEEK_OCR_API_KEY")
+        self.timeout = timeout
+        self.max_retries = max_retries
+
+        if not self.api_key:
+            print("Warning: DEEPSEEK_OCR_API_KEY not set. OCR may fail.")
+
+    def extract(
+        self,
+        image_bytes: bytes,
+        mode: str = "document",
+        language: Optional[str] = None
+    ) -> str:
+        """
+        Extract text from image
+
+        Args:
+            image_bytes: Image data
+            mode: OCR mode ("document", "handwriting", "scene")
+            language: Language hint
+
+        Returns:
+            Extracted text
+
+        Raises:
+            OcrError: If OCR fails
+        """
+        result = self.extract_structured(image_bytes, mode, language)
+        return result.get("text", "")
+
+    def extract_structured(
+        self,
+        image_bytes: bytes,
+        mode: str = "document",
+        language: Optional[str] = None
+    ) -> dict:
+        """
+        Extract structured data from image
+
+        Args:
+            image_bytes: Image data
+            mode: OCR mode
+            language: Language hint
+
+        Returns:
+            Dictionary with text, confidence, blocks, metadata
+
+        Raises:
+            OcrError: If OCR fails
+        """
+        # Encode image as base64
+        image_b64 = base64.b64encode(image_bytes).decode('utf-8')
+
+        # Prepare request payload
+        payload = {
+            "image": image_b64,
+            "mode": mode,
+            "language": language or "auto"
+        }
+
+        # Headers
+        headers = {
+            "Content-Type": "application/json"
+        }
+
+        if self.api_key:
+            headers["Authorization"] = f"Bearer {self.api_key}"
+
+        # Retry logic with exponential backoff
+        for attempt in range(self.max_retries):
+            try:
+                response = requests.post(
+                    self.api_endpoint,
+                    json=payload,
+                    headers=headers,
+                    timeout=self.timeout
+                )
+
+                # Handle response
+                if response.status_code == 200:
+                    data = response.json()
+                    return self._parse_response(data)
+
+                elif response.status_code == 429:
+                    # Rate limit
+                    if attempt < self.max_retries - 1:
+                        delay = (2 ** attempt) * 1.0  # Exponential backoff
+                        print(f"Rate limited. Retrying in {delay}s...")
+                        time.sleep(delay)
+                        continue
+                    else:
+                        raise OcrQuotaError("Rate limit exceeded")
+
+                elif response.status_code == 400:
+                    raise OcrInvalidInputError(f"Invalid input: {response.text}")
+
+                elif response.status_code >= 500:
+                    # Server error - retry
+                    if attempt < self.max_retries - 1:
+                        delay = (2 ** attempt) * 1.0
+                        print(f"Server error. Retrying in {delay}s...")
+                        time.sleep(delay)
+                        continue
+                    else:
+                        raise OcrConnectionError(f"Server error: {response.status_code}")
+
+                else:
+                    raise OcrError(f"OCR failed: {response.status_code} - {response.text}")
+
+            except requests.exceptions.Timeout:
+                if attempt < self.max_retries - 1:
+                    print(f"Request timeout. Retrying...")
+                    continue
+                else:
+                    raise OcrConnectionError("Request timeout")
+
+            except requests.exceptions.ConnectionError as e:
+                if attempt < self.max_retries - 1:
+                    delay = (2 ** attempt) * 1.0
+                    print(f"Connection error. Retrying in {delay}s...")
+                    time.sleep(delay)
+                    continue
+                else:
+                    raise OcrConnectionError(f"Connection error: {e}")
+
+        raise OcrError("Max retries exceeded")
+
+    def _parse_response(self, data: dict) -> dict:
+        """
+        Parse API response into standardized format
+
+        Args:
+            data: Raw API response
+
+        Returns:
+            Structured OCR result
+
+        Note:
+            This parsing logic should be updated once actual API schema is known.
+            Current implementation assumes a common OCR response format.
+        """
+        # Expected format (may need adjustment based on actual API):
+        # {
+        #   "text": "extracted text",
+        #   "confidence": 0.95,
+        #   "blocks": [
+        #     {
+        #       "text": "block text",
+        #       "bbox": [x0, y0, x1, y1],
+        #       "confidence": 0.98
+        #     },
+        #     ...
+        #   ]
+        # }
+
+        return {
+            "text": data.get("text", data.get("result", "")),
+            "confidence": data.get("confidence", 1.0),
+            "blocks": data.get("blocks", []),
+            "metadata": {
+                "model": data.get("model", "unknown"),
+                "duration_ms": data.get("duration_ms", 0)
+            }
+        }
+
+    def health_check(self) -> bool:
+        """
+        Check if OCR service is available
+
+        Returns:
+            True if service is healthy
+        """
+        try:
+            # Could implement a ping/health endpoint check
+            # For now, just check if endpoint and key are configured
+            return bool(self.api_endpoint and self.api_key)
+        except Exception:
+            return False
+
+
+# Example usage and testing
+if __name__ == "__main__":
+    import sys
+
+    print("DeepSeek OCR Client - Demo")
+    print("=" * 80)
+
+    # Check configuration
+    client = DeepseekOcrClient()
+
+    print(f"Endpoint: {client.api_endpoint}")
+    print(f"API Key configured: {bool(client.api_key)}")
+    print(f"Health check: {client.health_check()}")
+    print()
+
+    if len(sys.argv) > 1:
+        # Test with an image file
+        image_path = Path(sys.argv[1])
+
+        if not image_path.exists():
+            print(f"Error: Image not found: {image_path}")
+            sys.exit(1)
+
+        print(f"Testing OCR on: {image_path}")
+        print()
+
+        try:
+            with open(image_path, 'rb') as f:
+                image_bytes = f.read()
+
+            print("Calling OCR API...")
+            result = client.extract_structured(image_bytes, mode="document")
+
+            print("\nResult:")
+            print(f"  Text length: {len(result['text'])} chars")
+            print(f"  Confidence: {result['confidence']:.2%}")
+            print(f"  Blocks: {len(result.get('blocks', []))}")
+            print(f"\nExtracted text (first 500 chars):")
+            print("-" * 80)
+            print(result['text'][:500])
+            print("..." if len(result['text']) > 500 else "")
+
+        except OcrError as e:
+            print(f"\nOCR Error: {e}")
+            sys.exit(1)
+
+    else:
+        print("Usage: python deepseek_client.py <image_path>")
+        print("\nTo use this client, set environment variables:")
+        print("  export DEEPSEEK_OCR_ENDPOINT='https://api.deepseek.com/v1/ocr'")
+        print("  export DEEPSEEK_OCR_API_KEY='your-api-key'")

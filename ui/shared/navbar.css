@@ -1,0 +1,214 @@
+/* ============================================
+   THANH ĐIỀU HƯỚNG - AI Publisher Pro
+   Dark Notion Theme - Thuần Khiết Cao Cấp
+   ============================================ */
+
+#main-navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background: rgba(25, 25, 25, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid #373737;
+  z-index: 1000;
+}
+
+.nav-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 24px;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Logo */
+.nav-logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  color: white;
+}
+
+.nav-logo .logo-icon {
+  width: 24px;
+  height: 24px;
+  color: #9B9A97;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #FFFFFF;
+}
+
+/* Nav Links */
+.nav-links {
+  display: flex;
+  gap: 4px;
+}
+
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  color: #9B9A97;
+  text-decoration: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.2s;
+}
+
+.nav-link:hover {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.nav-link.active {
+  color: #FFFFFF;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.nav-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Actions */
+.nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.nav-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #6B6B6B;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #6B6B6B;
+}
+
+.status-dot.online {
+  background: #4ADE80;
+  box-shadow: 0 0 8px rgba(74, 222, 128, 0.5);
+}
+
+.status-dot.offline {
+  background: #F87171;
+}
+
+.nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.nav-btn .btn-icon {
+  width: 16px;
+  height: 16px;
+}
+
+.nav-btn-primary {
+  background: #FFFFFF;
+  color: #191919;
+}
+
+.nav-btn-primary:hover {
+  background: #E0E0E0;
+}
+
+/* Mobile */
+.nav-mobile-toggle {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+}
+
+.nav-mobile-toggle span {
+  width: 24px;
+  height: 2px;
+  background: #FFFFFF;
+  transition: all 0.2s;
+}
+
+.nav-mobile-toggle.open span:nth-child(1) {
+  transform: rotate(45deg) translate(5px, 5px);
+}
+
+.nav-mobile-toggle.open span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-mobile-toggle.open span:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+.nav-mobile-menu {
+  display: none;
+  flex-direction: column;
+  padding: 16px 24px;
+  background: rgba(25, 25, 25, 0.98);
+  border-bottom: 1px solid #373737;
+}
+
+.nav-mobile-menu.open {
+  display: flex;
+}
+
+.mobile-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  color: #9B9A97;
+  text-decoration: none;
+  font-size: 16px;
+  border-bottom: 1px solid #373737;
+}
+
+.mobile-link svg {
+  width: 20px;
+  height: 20px;
+}
+
+.mobile-link:hover {
+  color: #FFFFFF;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-links,
+  .nav-actions .nav-status,
+  .nav-actions .nav-btn {
+    display: none;
+  }
+
+  .nav-mobile-toggle {
+    display: flex;
+  }
+}
