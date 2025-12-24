@@ -173,6 +173,75 @@ Keep all content in {target_lang}. Do NOT translate anything.
 Preserve ALL mathematical notation exactly as provided.
 """
 
+# ==================== JAPANESE-SPECIFIC TRANSLATION ADDITIONS ====================
+
+JAPANESE_TRANSLATION_ADDITIONS = """
+JAPANESE → VIETNAMESE SPECIFIC REQUIREMENTS:
+
+1. **HONORIFICS (敬称)** - Translate with appropriate Vietnamese equivalents:
+   - 先生 (sensei) → Thầy/Cô (teacher) hoặc Bác sĩ (doctor, based on context)
+   - さん (san) → Anh/Chị/Ông/Bà (based on gender/age context)
+   - 様 (sama) → Ngài/Quý ông/Quý bà
+   - 君 (kun), ちゃん (chan) → có thể giữ nguyên hoặc bỏ qua tùy ngữ cảnh
+
+2. **SENTENCE ENDINGS (文末表現)** - Preserve register/formality:
+   - です/ます (polite form) → giữ văn phong lịch sự trong tiếng Việt
+   - だ/である (plain/academic) → văn phong học thuật/trang trọng
+   - だろう/でしょう → "có lẽ", "chắc là", "chắc hẳn"
+
+3. **COUNTING WORDS (助数詞)** - Use appropriate Vietnamese counters:
+   - 一人、二人 → một người, hai người
+   - 一冊、二冊 → một quyển, hai quyển
+   - 一枚、二枚 → một tờ/tấm, hai tờ/tấm
+   - 一本、二本 → một cây/chai, hai cây/chai
+
+4. **ONOMATOPOEIA (擬音語・擬態語)** - Translate with Vietnamese equivalents:
+   - ドキドキ → tim đập thình thịch
+   - ワクワク → háo hức, hồi hộp
+   - キラキラ → lấp lánh
+   - ニコニコ → tươi cười
+   - サラサラ → mượt mà, trơn tru
+
+5. **JAPANESE PARTICLES** - Understand context:
+   - は (topic marker) affects sentence emphasis
+   - が (subject marker) indicates new/important information
+   - を, に, で, から, まで, へ, より → translate based on context
+
+6. **PRESERVE SPECIAL ELEMENTS**:
+   - Japanese names: Keep original + romanization if helpful (田中 - Tanaka)
+   - Technical terms: Original Japanese + Vietnamese translation
+   - Ruby text (furigana): Preserve if present
+   - Japanese punctuation: 。→ . and 、→ ,
+
+7. **ACADEMIC/NOVEL STYLE**:
+   - For academic papers: Use formal Vietnamese (học thuật)
+   - For novels/light novels: Natural, flowing Vietnamese dialogue
+"""
+
+JAPANESE_TO_ENGLISH_ADDITIONS = """
+JAPANESE → ENGLISH SPECIFIC REQUIREMENTS:
+
+1. **HONORIFICS**: Keep or translate based on context:
+   - 先生 (sensei) → "Professor", "Doctor", "Teacher", or keep as "Sensei"
+   - さん (san) → "Mr./Ms." or omit in casual context
+   - 様 (sama) → "Lord/Lady" (formal) or "Dear" (letters)
+
+2. **SENTENCE STRUCTURE**: Japanese is SOV, English is SVO
+   - Restructure sentences for natural English flow
+   - Don't translate word-by-word
+
+3. **PASSIVE VOICE**: Japanese uses passive more frequently
+   - Convert to active voice where natural in English
+
+4. **ONOMATOPOEIA**: Translate or adapt:
+   - ドキドキ → "heart pounding", "nervous"
+   - ワクワク → "excited", "thrilled"
+
+5. **CULTURAL CONTEXT**: Add brief explanations for:
+   - Japanese-specific concepts (tatami, hanami, etc.)
+   - Cultural references that Western readers may not understand
+"""
+
 
 class UniversalPublisher:
     """
@@ -423,6 +492,15 @@ class UniversalPublisher:
             target_lang=target_lang,
             source_text=chunk.content,
         )
+
+        # Add Japanese-specific instructions for JA source
+        if source_lang == 'ja':
+            if target_lang == 'vi':
+                prompt += "\n\n" + JAPANESE_TRANSLATION_ADDITIONS
+                logger.debug(f"[Chunk {chunk.index}] Added JA→VI translation instructions")
+            elif target_lang == 'en':
+                prompt += "\n\n" + JAPANESE_TO_ENGLISH_ADDITIONS
+                logger.debug(f"[Chunk {chunk.index}] Added JA→EN translation instructions")
 
         for attempt in range(max_retries):
             try:

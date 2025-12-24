@@ -1,0 +1,138 @@
+{
+  "app": {
+    "title": "Xuong Xuat Ban",
+    "fullTitle": "Xuong Xuat Ban - AI Publisher Pro",
+    "subtitle": "Dich & Xuat Ban Tai Lieu Voi AI"
+  },
+  "agents": {
+    "editor": {
+      "name": "Bien Tap Vien",
+      "task": "Phan Tich Tai Lieu"
+    },
+    "translator": {
+      "name": "Dich Gia",
+      "task": "Dich Noi Dung"
+    },
+    "publisher": {
+      "name": "Nha Xuat Ban",
+      "task": "Tao Dau Ra"
+    },
+    "status": {
+      "idle": "Cho",
+      "working": "Dang xu ly",
+      "complete": "Hoan thanh",
+      "error": "Loi"
+    }
+  },
+  "upload": {
+    "dragDrop": "Keo tha tai lieu vao day",
+    "clickToSelect": "hoac nhan de chon file",
+    "supportedFormats": "Ho tro: PDF, DOCX, TXT, MD, TEX",
+    "singleFile": "Mot File",
+    "batchFiles": "Hang Loat",
+    "dragDropMultiple": "Keo tha nhieu file vao day",
+    "maxFiles": "Toi da 10 file moi lan"
+  },
+  "settings": {
+    "publishingProfile": "Ho So Xuat Ban",
+    "aiEngine": "AI Engine",
+    "language": "Ngon Ngu",
+    "from": "Tu",
+    "to": "Sang",
+    "outputFormat": "Dinh Dang Xuat",
+    "autoDetect": "Tu dong phat hien"
+  },
+  "profiles": {
+    "novel": {
+      "name": "Tieu Thuyet / Van Hoc",
+      "desc": "Tac pham van hoc co hoi thoai"
+    },
+    "academic": {
+      "name": "Hoc Thuat / Nghien Cuu",
+      "desc": "Bai bao khoa hoc, luan van"
+    },
+    "business": {
+      "name": "Kinh Doanh / Bao Cao",
+      "desc": "Bao cao, trinh bay chuyen nghiep"
+    },
+    "technical": {
+      "name": "Ky Thuat / Huong Dan",
+      "desc": "Tai lieu ky thuat, manual"
+    }
+  },
+  "providers": {
+    "claude": {
+      "name": "Claude Sonnet 4",
+      "company": "Anthropic",
+      "desc": "Toi uu cho dich thuat"
+    },
+    "openai": {
+      "name": "GPT-4o",
+      "company": "OpenAI",
+      "desc": "Da nang, nhanh"
+    },
+    "gemini": {
+      "name": "Gemini 2.0 Flash",
+      "company": "Google",
+      "desc": "Sieu nhanh"
+    },
+    "deepseek": {
+      "name": "DeepSeek V3",
+      "company": "DeepSeek",
+      "desc": "Tiet kiem chi phi"
+    }
+  },
+  "languages": {
+    "auto": "Tu dong phat hien",
+    "vi": "Tieng Viet",
+    "en": "Tieng Anh",
+    "ja": "Tieng Nhat",
+    "zh": "Tieng Trung",
+    "ko": "Tieng Han",
+    "fr": "Tieng Phap",
+    "de": "Tieng Duc",
+    "es": "Tieng Tay Ban Nha",
+    "ru": "Tieng Nga"
+  },
+  "actions": {
+    "translate": "Dich Ngay",
+    "translating": "Dang dich...",
+    "cancel": "Huy",
+    "download": "Tai Xuong",
+    "preview": "Xem Truoc",
+    "reset": "Lam Moi",
+    "retry": "Thu Lai"
+  },
+  "status": {
+    "ready": "San sang",
+    "uploading": "Dang tai len...",
+    "analyzing": "Dang phan tich...",
+    "translating": "Dang dich...",
+    "generating": "Dang tao file...",
+    "complete": "Hoan thanh!",
+    "error": "Co loi xay ra"
+  },
+  "results": {
+    "title": "Ket Qua",
+    "downloadAll": "Tai Tat Ca",
+    "originalPages": "Trang goc",
+    "translatedChunks": "Doan da dich",
+    "processingTime": "Thoi gian xu ly",
+    "cost": "Chi phi uoc tinh"
+  },
+  "errors": {
+    "noFile": "Vui long chon file",
+    "fileTooLarge": "File qua lon (toi da {{max}}MB)",
+    "unsupportedFormat": "Dinh dang khong ho tro",
+    "networkError": "Loi ket noi mang",
+    "serverError": "Loi may chu",
+    "translationFailed": "Dich that bai"
+  },
+  "nav": {
+    "home": "Trang Chu",
+    "app": "Ung Dung",
+    "admin": "Quan Tri",
+    "docs": "Tai Lieu",
+    "language": "Ngon ngu"
+  }
+}

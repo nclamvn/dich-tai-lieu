@@ -520,17 +520,24 @@ class APSV2Service:
         file_path.write_bytes(content)
         return file_path
 
-    async def read_upload(self, file_path: Path, use_vision: bool = True) -> str:
+    async def read_upload(
+        self,
+        file_path: Path,
+        use_vision: bool = True,
+        source_lang: str = None
+    ) -> str:
         """
         Read uploaded file content.
 
         For PDFs:
         - use_vision=True: Uses Smart Extraction Router (auto-detect strategy)
         - use_vision=False: Forces fast PyMuPDF extraction
+        - source_lang='ja': Uses PaddleOCR for Japanese scanned docs (FREE)
 
         Smart Extraction analyzes the PDF and chooses:
         - FAST_TEXT for text-only (novels, articles) → FREE, 0.1s/page
         - HYBRID for mixed content → Text + Vision for complex pages
+        - OCR for scanned docs with known language → FREE (PaddleOCR)
         - FULL_VISION for scanned/complex → Full Vision API
         """
         suffix = file_path.suffix.lower()
@@ -551,26 +558,38 @@ class APSV2Service:
                 raise RuntimeError("python-docx required for .docx files")
 
         elif suffix == '.pdf':
-            return await self._smart_extract_pdf(file_path, use_vision)
+            return await self._smart_extract_pdf(file_path, use_vision, source_lang)
 
         else:
             # Try reading as text
             return file_path.read_text(encoding='utf-8', errors='ignore')
 
-    async def _smart_extract_pdf(self, file_path: Path, use_vision: bool = True) -> str:
+    async def _smart_extract_pdf(
+        self,
+        file_path: Path,
+        use_vision: bool = True,
+        source_lang: str = None
+    ) -> str:
         """
         Smart PDF extraction with automatic strategy selection.
 
         Analyzes PDF and routes to optimal extraction:
         - FAST_TEXT: Novel, articles (text-only) → PyMuPDF, FREE
         - HYBRID: Text + some tables/images → PyMuPDF + selective Vision
+        - OCR: Scanned docs with known language → PaddleOCR, FREE
         - FULL_VISION: Scanned, complex layouts → Full Vision API
+
+        Args:
+            file_path: Path to PDF file
+            use_vision: Enable Vision API fallback
+            source_lang: Source language for OCR routing ('ja', 'zh', 'ko', etc.)
         """
         try:
             from core.smart_extraction import (
                 SmartExtractionRouter,
                 ExtractionStrategy,
                 analyze_document,
+                smart_extract,
             )
 
             # First, analyze the document
@@ -579,8 +598,11 @@ class APSV2Service:
             logger.info(f"📊 Document Analysis:")
             logger.info(f"   Pages: {analysis.total_pages}")
             logger.info(f"   Text coverage: {analysis.text_coverage:.0%}")
+            logger.info(f"   Scanned pages: {analysis.scanned_pages}")
             logger.info(f"   Strategy: {analysis.strategy.value}")
             logger.info(f"   Reason: {analysis.strategy_reason}")
+            if source_lang:
+                logger.info(f"   Source language: {source_lang}")
 
             # If use_vision=False, force FAST_TEXT
             if not use_vision:
@@ -607,10 +629,37 @@ class APSV2Service:
                 logger.info(f"   Complex pages that could use Vision: {len(analysis.complex_page_numbers)}")
                 return result.full_content
 
-            else:  # FULL_VISION
-                # Return path for Vision processing by orchestrator
-                logger.info(f"   🔍 Document requires Vision API (scanned/complex)")
-                return str(file_path)
+            elif analysis.strategy == ExtractionStrategy.FULL_VISION:
+                # Check if we can use OCR instead (for scanned docs with known language)
+                ocr_supported = {'ja', 'zh', 'zh-Hans', 'zh-Hant', 'ko', 'en', 'fr', 'de', 'es', 'vi'}
+                if source_lang and source_lang in ocr_supported and analysis.scanned_pages > 0:
+                    # Use PaddleOCR instead of Vision API (FREE!)
+                    logger.info(f"   🔤 Using PaddleOCR for {source_lang} scanned document (FREE)")
+                    result = await smart_extract(
+                        str(file_path),
+                        source_lang=source_lang,
+                        use_vision=False  # Disable Vision to force OCR path
+                    )
+                    logger.info(f"   ✅ OCR extracted {result.total_pages} pages")
+                    logger.info(f"   📊 OCR confidence: {result.ocr_confidence:.1%}")
+                    logger.info(f"   💰 Cost: $0 (vs Vision ${analysis.estimated_cost_vision:.2f})")
+                    return result.content
+                else:
+                    # Return path for Vision processing by orchestrator
+                    logger.info(f"   🔍 Document requires Vision API (scanned/complex)")
+                    return str(file_path)
+
+            else:  # OCR strategy (explicitly set)
+                # Use PaddleOCR
+                logger.info(f"   🔤 Using PaddleOCR extraction")
+                result = await smart_extract(
+                    str(file_path),
+                    source_lang=source_lang or 'en',
+                    use_vision=False
+                )
+                logger.info(f"   ✅ OCR extracted {result.total_pages} pages")
+                logger.info(f"   📊 OCR confidence: {result.ocr_confidence:.1%}")
+                return result.content
 
         except ImportError as e:
             logger.warning(f"Smart extraction not available: {e}, using legacy")

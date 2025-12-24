@@ -93,8 +93,12 @@ async def publish_file(
         content_bytes = await file.read()
         file_path = await service.save_upload(file.filename, content_bytes)
 
-        # Read content (Vision mode for PDFs)
-        content = await service.read_upload(file_path, use_vision=use_vision)
+        # Read content (Vision mode for PDFs, with source language for OCR routing)
+        content = await service.read_upload(
+            file_path,
+            use_vision=use_vision,
+            source_lang=source_language
+        )
 
         if not content.strip():
             raise HTTPException(status_code=400, detail="Empty document")

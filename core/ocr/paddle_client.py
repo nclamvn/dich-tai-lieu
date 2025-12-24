@@ -368,3 +368,138 @@ class PaddleOcrClient(OcrClient):
         except Exception as e:
             logger.error(f"PaddleOCR health check failed: {str(e)}")
             return False
+
+
+# =============================================================================
+# LANGUAGE-AWARE OCR CLIENT FACTORY
+# =============================================================================
+
+# Mapping from ISO 639-1 language codes to PaddleOCR language codes
+LANGUAGE_TO_PADDLE_MAP = {
+    # Asian languages
+    'ja': 'japan',      # Japanese
+    'zh': 'ch',         # Chinese (Simplified)
+    'zh-Hans': 'ch',    # Chinese (Simplified)
+    'zh-Hant': 'chinese_cht',  # Chinese (Traditional)
+    'ko': 'korean',     # Korean
+
+    # European languages
+    'en': 'en',         # English
+    'fr': 'french',     # French
+    'de': 'german',     # German
+    'es': 'es',         # Spanish
+    'pt': 'pt',         # Portuguese
+    'it': 'it',         # Italian
+    'ru': 'ru',         # Russian
+
+    # Vietnamese uses Latin script - English model works
+    'vi': 'en',
+
+    # Default fallback
+    'auto': 'en',
+}
+
+
+def get_ocr_client_for_language(
+    detected_lang: str,
+    use_angle_cls: bool = True,
+    use_gpu: bool = False
+) -> PaddleOcrClient:
+    """
+    Factory function to create a PaddleOCR client optimized for the detected language.
+
+    This enables automatic language-aware OCR routing:
+    - Japanese documents use 'japan' model
+    - Chinese documents use 'ch' model
+    - Korean documents use 'korean' model
+    - Others default to English model
+
+    Args:
+        detected_lang: ISO 639-1 language code ('ja', 'zh', 'ko', 'en', etc.)
+        use_angle_cls: Enable text angle classification
+        use_gpu: Use GPU acceleration (if available)
+
+    Returns:
+        PaddleOcrClient configured for the specified language
+
+    Example:
+        >>> # For a Japanese scanned document
+        >>> client = get_ocr_client_for_language('ja')
+        >>> text = client.extract(image_bytes)
+
+        >>> # For auto-detected language
+        >>> client = get_ocr_client_for_language('auto')  # defaults to English
+
+    Supported languages:
+        - ja: Japanese (日本語)
+        - zh/zh-Hans: Chinese Simplified (简体中文)
+        - zh-Hant: Chinese Traditional (繁體中文)
+        - ko: Korean (한국어)
+        - en: English
+        - fr: French (Français)
+        - de: German (Deutsch)
+        - es: Spanish (Español)
+        - pt: Portuguese (Português)
+        - it: Italian (Italiano)
+        - ru: Russian (Русский)
+        - vi: Vietnamese (uses English model for Latin script)
+    """
+    # Get PaddleOCR language code
+    paddle_lang = LANGUAGE_TO_PADDLE_MAP.get(detected_lang, 'en')
+
+    logger.info(f"Creating OCR client: {detected_lang} -> PaddleOCR lang='{paddle_lang}'")
+
+    return PaddleOcrClient(
+        lang=paddle_lang,
+        use_angle_cls=use_angle_cls,
+        use_gpu=use_gpu
+    )
+
+
+def detect_language_from_text(text: str) -> str:
+    """
+    Detect language from text sample using character ranges.
+
+    This is a quick heuristic for routing to the correct OCR model
+    when processing a partially-extracted document.
+
+    Args:
+        text: Sample text to analyze
+
+    Returns:
+        ISO 639-1 language code ('ja', 'zh', 'ko', 'en', 'vi')
+
+    Note:
+        This is a simplified detector. For production use,
+        consider using langdetect or similar library.
+    """
+    if not text or len(text.strip()) < 10:
+        return 'en'  # Default for very short/empty text
+
+    # Count character types
+    hiragana = len(re.findall(r'[\u3040-\u309f]', text))
+    katakana = len(re.findall(r'[\u30a0-\u30ff]', text))
+    kanji = len(re.findall(r'[\u4e00-\u9fff]', text))
+    hangul = len(re.findall(r'[\uac00-\ud7af\u1100-\u11ff]', text))
+    vietnamese = len(re.findall(r'[àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]', text, re.IGNORECASE))
+
+    total = len(text)
+
+    # Japanese: has hiragana/katakana (unique to Japanese)
+    if hiragana + katakana > 0:
+        return 'ja'
+
+    # Korean: has Hangul
+    if hangul > total * 0.1:
+        return 'ko'
+
+    # Vietnamese: has diacritics
+    if vietnamese > total * 0.05:
+        return 'vi'
+
+    # Chinese: has kanji but no hiragana/katakana
+    if kanji > total * 0.1:
+        return 'zh'
+
+    # Default to English
+    return 'en'

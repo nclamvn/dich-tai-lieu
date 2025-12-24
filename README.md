@@ -1,15 +1,16 @@
 <p align="center">
-  <img src="https://img.shields.io/badge/version-2.7-blue.svg" alt="Version">
+  <img src="https://img.shields.io/badge/version-2.8-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/python-3.10+-green.svg" alt="Python">
   <img src="https://img.shields.io/badge/license-MIT-orange.svg" alt="License">
   <img src="https://img.shields.io/badge/status-production--ready-brightgreen.svg" alt="Status">
+  <img src="https://img.shields.io/badge/Japanese-OCR%20Support-red.svg" alt="Japanese OCR">
 </p>
 
 <h1 align="center">🚀 AI Publisher Pro</h1>
 <h3 align="center">Hệ thống dịch và xuất bản tài liệu thông minh</h3>
 
 <p align="center">
-  <strong>Dịch PDF/DOCX sang tiếng Việt với AI | Giữ nguyên layout | Xuất PDF/DOCX/Markdown</strong>
+  <strong>Dịch PDF/DOCX sang tiếng Việt với AI | Hỗ trợ tiếng Nhật | Giữ nguyên layout | Xuất PDF/DOCX/Markdown</strong>
 </p>
 
 ---
@@ -19,12 +20,37 @@
 | Tính năng | Mô tả |
 |-----------|-------|
 | 🧠 **Smart Extraction** | Tự động nhận diện loại tài liệu, chọn strategy tối ưu |
+| 🇯🇵 **Japanese OCR** | Xử lý tài liệu scan tiếng Nhật với PaddleOCR (FREE) |
 | 📚 **Đa dạng tài liệu** | Sách, tiểu thuyết, báo cáo kinh doanh, paper học thuật |
 | 🔢 **Công thức toán học** | Preserve LaTeX formulas trong academic papers |
 | 📊 **Bảng biểu** | Giữ nguyên cấu trúc tables |
 | 🌐 **Multi-provider AI** | OpenAI, Claude, DeepSeek |
 | 💰 **Tối ưu chi phí** | Text-only docs: FREE extraction (4000x faster) |
 | 📄 **Multi-format** | Xuất PDF, DOCX, Markdown |
+
+### 🇯🇵 Japanese Document Support (v2.8)
+
+```
+Japanese Scanned PDF + source_lang='ja'
+           │
+           ▼
+┌─────────────────────────┐
+│ Document Analyzer       │ ← Detect Japanese academic papers
+│ (論文, 研究, 定理...)   │
+└───────────┬─────────────┘
+            │
+            ▼
+┌─────────────────────────┐
+│ PaddleOCR lang='japan'  │ ← FREE, ~2-3s per page
+│ 85-95% accuracy         │   vs Vision API $0.02/page
+└───────────┬─────────────┘
+            │
+            ▼
+┌─────────────────────────┐
+│ JA → VI Translation     │ ← Specialized prompts
+│ + Glossary matching     │   (敬語, 擬音語, etc.)
+└─────────────────────────┘
+```
 
 ---
 
@@ -71,6 +97,12 @@ venv\Scripts\activate     # Windows
 
 ```bash
 pip install -r requirements.txt
+
+# Optional: Japanese OCR support (for scanned Japanese documents)
+pip install paddleocr paddlepaddle
+
+# Optional: Japanese word segmentation (for advanced features)
+pip install fugashi unidic-lite
 ```
 
 ### Bước 4: Cấu hình API keys
@@ -156,14 +188,15 @@ PDF Input
 ┌─────────────────────────────────────┐
 │  Document Analyzer                  │
 │  • Detect text/scanned/formulas     │
-│  • Detect academic keywords         │
+│  • Detect academic keywords (EN/JA) │
 │  • Analyze complexity               │
 └─────────────────────────────────────┘
     │
     ├── Text-only ──────► FAST_TEXT (FREE, 0.1s/page)
     ├── Academic ───────► FULL_VISION (preserve formulas)
     ├── Mixed ──────────► HYBRID (smart combination)
-    └── Scanned ────────► FULL_VISION (OCR)
+    ├── Scanned + JA ───► OCR (PaddleOCR, FREE)
+    └── Scanned other ──► FULL_VISION (Vision API)
 ```
 
 ---
@@ -177,10 +210,16 @@ dich-tai-lieu/
 │   └── aps_v2_service.py  # Translation service
 │
 ├── core/                   # Core logic
-│   ├── smart_extraction/  # Smart routing
+│   ├── smart_extraction/  # Smart routing (FAST_TEXT/HYBRID/OCR/VISION)
+│   ├── ocr/               # PaddleOCR client (Japanese, Chinese, Korean)
+│   ├── segmentation/      # Japanese word segmenter (fugashi)
 │   ├── layout_preserve/   # Layout preservation
 │   ├── pdf_renderer/      # PDF output
 │   └── export.py          # Export formats
+│
+├── glossary/              # Translation glossaries
+│   ├── ja_vi_academic.json  # Japanese academic terms
+│   └── ja_vi_novel.json     # Japanese novel terms
 │
 ├── ai_providers/          # LLM adapters
 │   └── unified_client.py  # OpenAI/Claude/DeepSeek
@@ -190,6 +229,7 @@ dich-tai-lieu/
 │   └── admin.html        # Admin panel
 │
 └── tests/                 # Test suite
+    └── stress/           # Stress tests for stability
 ```
 
 ---
@@ -255,6 +295,11 @@ pytest tests/unit/test_smart_extraction.py -v
 
 # Run with coverage
 pytest tests/ --cov=core --cov-report=html
+
+# Run stress tests (stability testing)
+python tests/stress/run_stress_tests.py --level low    # Quick test
+python tests/stress/run_stress_tests.py --level medium # Normal test
+python tests/stress/run_stress_tests.py --level high   # Full stress test
 ```
 
 ---
@@ -265,6 +310,9 @@ pytest tests/ --cov=core --cov-report=html
 - [x] Academic paper support
 - [x] Table rendering
 - [x] Multi-provider AI
+- [x] Japanese OCR support (v2.8)
+- [x] Japanese → Vietnamese translation
+- [x] Stress test suite
 - [ ] Real-time collaboration
 - [ ] Browser extension
 - [ ] Mobile app
@@ -301,6 +349,8 @@ MIT License - Xem [LICENSE](LICENSE) để biết thêm chi tiết.
 - [FastAPI](https://fastapi.tiangolo.com/) - Web framework
 - [ReportLab](https://www.reportlab.com/) - PDF generation
 - [python-docx](https://python-docx.readthedocs.io/) - DOCX generation
+- [PaddleOCR](https://github.com/PaddlePaddle/PaddleOCR) - Japanese/Chinese/Korean OCR
+- [fugashi](https://github.com/polm/fugashi) - Japanese morphological analyzer
 - [OpenAI](https://openai.com/) - GPT models
 - [Anthropic](https://anthropic.com/) - Claude models
 

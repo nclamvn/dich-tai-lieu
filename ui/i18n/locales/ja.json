@@ -1,0 +1,138 @@
+{
+  "app": {
+    "title": "出版スタジオ",
+    "fullTitle": "出版スタジオ - AI Publisher Pro",
+    "subtitle": "AIで文書を翻訳・出版"
+  },
+  "agents": {
+    "editor": {
+      "name": "編集者",
+      "task": "文書分析"
+    },
+    "translator": {
+      "name": "翻訳者",
+      "task": "コンテンツ翻訳"
+    },
+    "publisher": {
+      "name": "出版者",
+      "task": "出力生成"
+    },
+    "status": {
+      "idle": "待機中",
+      "working": "処理中",
+      "complete": "完了",
+      "error": "エラー"
+    }
+  },
+  "upload": {
+    "dragDrop": "ここにドキュメントをドラッグ",
+    "clickToSelect": "またはクリックしてファイルを選択",
+    "supportedFormats": "対応形式: PDF, DOCX, TXT, MD, TEX",
+    "singleFile": "単一ファイル",
+    "batchFiles": "一括処理",
+    "dragDropMultiple": "複数のファイルをここにドラッグ",
+    "maxFiles": "一度に最大10ファイルまで"
+  },
+  "settings": {
+    "publishingProfile": "出版プロファイル",
+    "aiEngine": "AIエンジン",
+    "language": "言語",
+    "from": "翻訳元",
+    "to": "翻訳先",
+    "outputFormat": "出力形式",
+    "autoDetect": "自動検出"
+  },
+  "profiles": {
+    "novel": {
+      "name": "小説・文学",
+      "desc": "対話のある文学作品"
+    },
+    "academic": {
+      "name": "学術・研究",
+      "desc": "学術論文、論文"
+    },
+    "business": {
+      "name": "ビジネス・レポート",
+      "desc": "レポート、プロフェッショナルな発表"
+    },
+    "technical": {
+      "name": "技術・マニュアル",
+      "desc": "技術文書、ガイド"
+    }
+  },
+  "providers": {
+    "claude": {
+      "name": "Claude Sonnet 4",
+      "company": "Anthropic",
+      "desc": "翻訳に最適化"
+    },
+    "openai": {
+      "name": "GPT-4o",
+      "company": "OpenAI",
+      "desc": "多機能、高速"
+    },
+    "gemini": {
+      "name": "Gemini 2.0 Flash",
+      "company": "Google",
+      "desc": "超高速"
+    },
+    "deepseek": {
+      "name": "DeepSeek V3",
+      "company": "DeepSeek",
+      "desc": "コスト効率"
+    }
+  },
+  "languages": {
+    "auto": "自動検出",
+    "vi": "ベトナム語",
+    "en": "英語",
+    "ja": "日本語",
+    "zh": "中国語",
+    "ko": "韓国語",
+    "fr": "フランス語",
+    "de": "ドイツ語",
+    "es": "スペイン語",
+    "ru": "ロシア語"
+  },
+  "actions": {
+    "translate": "翻訳開始",
+    "translating": "翻訳中...",
+    "cancel": "キャンセル",
+    "download": "ダウンロード",
+    "preview": "プレビュー",
+    "reset": "リセット",
+    "retry": "再試行"
+  },
+  "status": {
+    "ready": "準備完了",
+    "uploading": "アップロード中...",
+    "analyzing": "分析中...",
+    "translating": "翻訳中...",
+    "generating": "ファイル生成中...",
+    "complete": "完了！",
+    "error": "エラーが発生しました"
+  },
+  "results": {
+    "title": "結果",
+    "downloadAll": "すべてダウンロード",
+    "originalPages": "元のページ数",
+    "translatedChunks": "翻訳済みチャンク",
+    "processingTime": "処理時間",
+    "cost": "推定コスト"
+  },
+  "errors": {
+    "noFile": "ファイルを選択してください",
+    "fileTooLarge": "ファイルが大きすぎます（最大{{max}}MB）",
+    "unsupportedFormat": "サポートされていない形式",
+    "networkError": "ネットワークエラー",
+    "serverError": "サーバーエラー",
+    "translationFailed": "翻訳に失敗しました"
+  },
+  "nav": {
+    "home": "ホーム",
+    "app": "アプリ",
+    "admin": "管理",
+    "docs": "ドキュメント",
+    "language": "言語"
+  }
+}

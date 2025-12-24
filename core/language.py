@@ -182,6 +182,7 @@ class LanguagePair:
 
 # Predefined common language pairs
 COMMON_PAIRS = {
+    # English pairs
     "en-vi": LanguagePair("en", "vi"),
     "vi-en": LanguagePair("vi", "en"),
     "en-zh": LanguagePair("en", "zh"),
@@ -198,6 +199,16 @@ COMMON_PAIRS = {
     "es-en": LanguagePair("es", "en"),
     "en-de": LanguagePair("en", "de"),
     "de-en": LanguagePair("de", "en"),
+
+    # Japanese pairs (PRIMARY: JA→VI flow)
+    "ja-vi": LanguagePair("ja", "vi"),  # Primary translation flow
+    "vi-ja": LanguagePair("vi", "ja"),  # Reverse translation
+
+    # Other Asian language pairs
+    "zh-vi": LanguagePair("zh", "vi"),
+    "vi-zh": LanguagePair("vi", "zh"),
+    "ko-vi": LanguagePair("ko", "vi"),
+    "vi-ko": LanguagePair("vi", "ko"),
 }
 
 
@@ -346,6 +357,70 @@ class LanguageValidator:
         return max(0.0, score), warnings
 
     @staticmethod
+    def validate_japanese(text: str) -> Tuple[float, List[str]]:
+        """
+        Validate Japanese text quality.
+
+        Checks for:
+        - Presence of Japanese character types (hiragana, katakana, kanji)
+        - Proper mix of character types (pure kanji might be Chinese)
+        - Japanese particles and common words
+
+        Args:
+            text: Text to validate
+
+        Returns:
+            Tuple of (score 0.0-1.0, list of warnings)
+        """
+        import re
+        score = 1.0
+        warnings = []
+
+        # Count character types
+        hiragana = re.findall(r'[\u3040-\u309f]', text)  # ひらがな
+        katakana = re.findall(r'[\u30a0-\u30ff]', text)  # カタカナ
+        kanji = re.findall(r'[\u4e00-\u9fff]', text)     # 漢字
+
+        total_japanese = len(hiragana) + len(katakana) + len(kanji)
+
+        # No Japanese characters at all
+        if total_japanese == 0:
+            score -= 0.6
+            warnings.append("No Japanese characters found")
+            return max(0.0, score), warnings
+
+        # Pure kanji without hiragana/katakana - might be Chinese
+        if len(kanji) > 0 and len(hiragana) == 0 and len(katakana) == 0:
+            score -= 0.3
+            warnings.append("No hiragana/katakana found - text might be Chinese")
+
+        # Check for Japanese particles (unique to Japanese)
+        particles = ['は', 'が', 'を', 'に', 'で', 'から', 'まで', 'へ', 'より', 'と', 'も', 'の']
+        particles_found = sum(1 for p in particles if p in text)
+
+        if len(text) > 50 and particles_found == 0:
+            score -= 0.2
+            warnings.append("No Japanese particles detected")
+
+        # Check hiragana/katakana ratio (Japanese typically has significant hiragana)
+        if total_japanese > 0:
+            kana_ratio = (len(hiragana) + len(katakana)) / total_japanese
+            if kana_ratio < 0.1 and len(text) > 100:
+                score -= 0.1
+                warnings.append("Very low kana ratio")
+
+        # Check for common Japanese sentence endings
+        polite_endings = ['です', 'ます', 'ました', 'ません']
+        casual_endings = ['だ', 'である', 'だった']
+
+        has_endings = any(e in text for e in polite_endings + casual_endings)
+        if len(text) > 100 and not has_endings:
+            score -= 0.1
+            warnings.append("No common Japanese sentence endings found")
+
+        return max(0.0, score), warnings
+
+    @staticmethod
     def validate_language(text: str, lang_code: str) -> Tuple[float, List[str]]:
         """
         Validate text for specific language
@@ -363,6 +438,8 @@ class LanguageValidator:
             return LanguageValidator.validate_chinese(text)
         elif lang_code == "en":
             return LanguageValidator.validate_english(text)
+        elif lang_code == "ja":
+            return LanguageValidator.validate_japanese(text)
         else:
             # Generic validation - just check if text has appropriate characters
             lang_info = LANGUAGES.get(lang_code)

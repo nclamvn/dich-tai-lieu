@@ -26,6 +26,7 @@ class ExtractionStrategy(Enum):
     FAST_TEXT = "fast_text"      # PyMuPDF only - fastest, free
     HYBRID = "hybrid"            # PyMuPDF + Vision for complex pages
     FULL_VISION = "full_vision"  # Vision API for all pages
+    OCR = "ocr"                  # PaddleOCR for scanned docs - free, local
 
 
 @dataclass
@@ -122,6 +123,17 @@ class DocumentAnalyzer:
         'arXiv', 'arxiv', 'Abstract:', 'Keywords:', 'MSC',
         'convergence', 'divergence', 'summation', 'integral',
         'polynomial', 'function f(', 'let n be', 'for all n',
+    ]
+
+    # Japanese academic paper indicators
+    # These patterns indicate the document is a Japanese academic paper
+    ACADEMIC_KEYWORDS_JA = [
+        '論文', '研究', '結論', '参考文献', '要約', '抄録',  # Paper structure
+        '定理', '証明', '命題', '系', '補題',              # Math terms
+        '著者', '共著者',                                  # Authors
+        '序論', '緒言', '方法論', '考察',                  # Sections
+        '仮説', '実験', '結果',                            # Research
+        '学会', '紀要', '大学',                            # Academic institutions
     ]
 
     def __init__(self, sample_pages: int = 10):
@@ -325,6 +337,8 @@ class DocumentAnalyzer:
         Academic papers (especially arXiv) render formulas as images, so
         PyMuPDF can't extract the formula characters directly. This method
         detects academic papers by context clues.
+
+        Supports both English and Japanese academic papers.
         """
         text_lower = text.lower()
         filename_lower = filename.lower()
@@ -333,14 +347,20 @@ class DocumentAnalyzer:
         if 'arxiv' in filename_lower:
             return True
 
-        # Count academic keyword matches
+        # Count English academic keyword matches
         keyword_count = 0
         for keyword in self.ACADEMIC_KEYWORDS:
             if keyword.lower() in text_lower:
                 keyword_count += 1
 
-        # If 3+ academic keywords found, likely an academic paper
-        return keyword_count >= 3
+        # Count Japanese academic keyword matches
+        ja_keyword_count = 0
+        for keyword in self.ACADEMIC_KEYWORDS_JA:
+            if keyword in text:  # Japanese is case-insensitive by nature
+                ja_keyword_count += 1
+
+        # If 3+ keywords found (either language), likely an academic paper
+        return keyword_count >= 3 or ja_keyword_count >= 2
 
     def _aggregate_analysis(self, analysis: DocumentAnalysis):
         """Aggregate page-level analysis to document level"""

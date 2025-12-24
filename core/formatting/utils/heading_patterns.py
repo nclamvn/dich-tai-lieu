@@ -188,6 +188,93 @@ H4_PATTERNS = [
 
 
 # =============================================================================
+# H1 PATTERNS - CHAPTER LEVEL (Japanese)
+# =============================================================================
+
+H1_PATTERNS_JA = [
+    # 第N章 patterns (Chapter N)
+    r'^第[一二三四五六七八九十百千]+章(\s*[:：\-–—]\s*.*)?$',  # 第一章, 第二章
+    r'^第\d+章(\s*[:：\-–—]\s*.*)?$',                         # 第1章, 第2章
+
+    # 第N部 patterns (Part N)
+    r'^第[一二三四五六七八九十百千]+部(\s*[:：\-–—]\s*.*)?$',  # 第一部, 第二部
+    r'^第\d+部(\s*[:：\-–—]\s*.*)?$',                         # 第1部, 第2部
+
+    # 第N編 patterns (Volume/Book N)
+    r'^第[一二三四五六七八九十百千]+編(\s*[:：\-–—]\s*.*)?$',  # 第一編
+    r'^第\d+編(\s*[:：\-–—]\s*.*)?$',                         # 第1編
+
+    # 序章/終章 (Prologue/Epilogue)
+    r'^(序章|終章|序|終)(\s*[:：\-–—]\s*.*)?$',
+
+    # Katakana variations
+    r'^(プロローグ|エピローグ)(\s*[:：\-–—]\s*.*)?$',
+
+    # 前書き/後書き/あとがき (Preface/Afterword)
+    r'^(前書き|後書き|あとがき|まえがき)(\s*[:：\-–—]\s*.*)?$',
+
+    # 目次/索引/参考文献 (TOC/Index/References)
+    r'^(目次|索引|参考文献|文献)$',
+
+    # 要約/要旨/概要 (Abstract/Summary)
+    r'^(要約|要旨|概要|抄録)$',
+
+    # 謝辞/謝詞 (Acknowledgements)
+    r'^(謝辞|謝詞)$',
+
+    # Standalone kanji numbers as chapter markers
+    r'^([一二三四五六七八九十]+)$',
+]
+
+
+# =============================================================================
+# H2 PATTERNS - SECTION LEVEL (Japanese)
+# =============================================================================
+
+H2_PATTERNS_JA = [
+    # 第N節 patterns (Section N)
+    r'^第[一二三四五六七八九十百千]+節(\s*[:：\-–—]\s*.*)?$',  # 第一節
+    r'^第\d+節(\s*[:：\-–—]\s*.*)?$',                         # 第1節
+
+    # 第N款 patterns (Subsection - legal)
+    r'^第[一二三四五六七八九十百千]+款(\s*[:：\-–—]\s*.*)?$',
+    r'^第\d+款(\s*[:：\-–—]\s*.*)?$',
+
+    # Japanese numbered sections with kanji
+    r'^[一二三四五六七八九十]+[、．\.]\s*.+$',   # 一、Title or 一. Title
+
+    # N.N format with Japanese characters following
+    r'^(\d+\.\d+)\s+[\u3040-\u30ff\u4e00-\u9fff].+$',  # 1.1 日本語タイトル
+
+    # Numbered with kanji following
+    r'^(\d+)\.\s+[\u3040-\u30ff\u4e00-\u9fff].+$',  # 1. 日本語タイトル
+]
+
+
+# =============================================================================
+# H3 PATTERNS - SUBSECTION LEVEL (Japanese)
+# =============================================================================
+
+H3_PATTERNS_JA = [
+    # (一) (二) style numbering
+    r'^（[一二三四五六七八九十]+）\s*.+$',   # （一）Title
+    r'^（\d+）\s*.+$',                       # （1）Title
+
+    # イロハ ordering (traditional Japanese)
+    r'^[ア-ン][．\.]\s*.+$',                  # ア. Title, イ. Title
+
+    # Katakana parenthetical
+    r'^（[ア-ン]）\s*.+$',                   # （ア）Title
+
+    # Sub-numbered sections
+    r'^(\d+\.\d+\.\d+)\s+[\u3040-\u30ff\u4e00-\u9fff].+$',  # 1.1.1 日本語
+
+    # Bullet-style with Japanese
+    r'^[・●○]\s+[\u3040-\u30ff\u4e00-\u9fff].+$',  # ・Title
+]
+
+
+# =============================================================================
 # HELPER FUNCTIONS
 # =============================================================================
 
@@ -216,7 +303,7 @@ def get_heading_level(text: str, language: str = "auto") -> Optional[int]:
 
     Args:
         text: Line of text to analyze
-        language: "en", "vi", or "auto"
+        language: "en", "vi", "ja", or "auto"
 
     Returns:
         Heading level (1-4) or None if not a heading
@@ -228,18 +315,22 @@ def get_heading_level(text: str, language: str = "auto") -> Optional[int]:
 
     # Determine which pattern sets to use
     if language == "auto":
-        # Try both English and Vietnamese
-        h1_patterns = H1_PATTERNS_EN + H1_PATTERNS_VI
-        h2_patterns = H2_PATTERNS_EN + H2_PATTERNS_VI
-        h3_patterns = H3_PATTERNS_EN + H3_PATTERNS_VI
+        # Try all languages: English, Vietnamese, and Japanese
+        h1_patterns = H1_PATTERNS_EN + H1_PATTERNS_VI + H1_PATTERNS_JA
+        h2_patterns = H2_PATTERNS_EN + H2_PATTERNS_VI + H2_PATTERNS_JA
+        h3_patterns = H3_PATTERNS_EN + H3_PATTERNS_VI + H3_PATTERNS_JA
     elif language == "vi":
         h1_patterns = H1_PATTERNS_VI + H1_PATTERNS_EN  # VI first
         h2_patterns = H2_PATTERNS_VI + H2_PATTERNS_EN
         h3_patterns = H3_PATTERNS_VI + H3_PATTERNS_EN
+    elif language == "ja":
+        h1_patterns = H1_PATTERNS_JA + H1_PATTERNS_EN  # JA first
+        h2_patterns = H2_PATTERNS_JA + H2_PATTERNS_EN
+        h3_patterns = H3_PATTERNS_JA + H3_PATTERNS_EN
     else:  # "en"
-        h1_patterns = H1_PATTERNS_EN + H1_PATTERNS_VI
-        h2_patterns = H2_PATTERNS_EN + H2_PATTERNS_VI
-        h3_patterns = H3_PATTERNS_EN + H3_PATTERNS_VI
+        h1_patterns = H1_PATTERNS_EN + H1_PATTERNS_VI + H1_PATTERNS_JA
+        h2_patterns = H2_PATTERNS_EN + H2_PATTERNS_VI + H2_PATTERNS_JA
+        h3_patterns = H3_PATTERNS_EN + H3_PATTERNS_VI + H3_PATTERNS_JA
 
     # Check H1 first (most specific)
     if match_heading_pattern(text, h1_patterns):
@@ -328,21 +419,33 @@ def is_likely_heading_heuristic(
 
 def detect_language(text: str) -> str:
     """
-    Detect if text is primarily Vietnamese or English.
+    Detect if text is primarily Vietnamese, Japanese, or English.
 
     Args:
         text: Text to analyze
 
     Returns:
-        "vi" for Vietnamese, "en" for English
+        "vi" for Vietnamese, "ja" for Japanese, "en" for English
     """
+    if not text or len(text) == 0:
+        return "en"
+
+    # Japanese character detection (hiragana, katakana)
+    # Note: Kanji overlaps with Chinese, so we check for hiragana/katakana specifically
+    hiragana_count = len(re.findall(r'[\u3040-\u309f]', text))
+    katakana_count = len(re.findall(r'[\u30a0-\u30ff]', text))
+    kanji_count = len(re.findall(r'[\u4e00-\u9fff]', text))
+
+    # If has hiragana or katakana, it's Japanese (unique to Japanese)
+    if hiragana_count + katakana_count > 0:
+        return "ja"
+
     # Vietnamese-specific characters (lowercase)
     vi_lower = 'àáảãạăằắẳẵặâầấẩẫậđèéẻẽẹêềếểễệìíỉĩịòóỏõọôồốổỗộơờớởỡợùúủũụưừứửữựỳýỷỹỵ'
     # Vietnamese-specific characters (uppercase)
     vi_upper = 'ÀÁẢÃẠĂẰẮẲẴẶÂẦẤẨẪẬĐÈÉẺẼẸÊỀẾỂỄỆÌÍỈĨỊÒÓỎÕỌÔỒỐỔỖỘƠỜỚỞỠỢÙÚỦŨỤƯỪỨỬỮỰỲÝỶỸỴ'
     vi_chars = set(vi_lower + vi_upper)
 
-    text_lower = text.lower()
     vi_count = sum(1 for c in text if c in vi_chars)
 
     # If more than 1% Vietnamese characters, it's Vietnamese
@@ -351,6 +454,7 @@ def detect_language(text: str) -> str:
 
     # Check for Vietnamese keywords
     vi_keywords = ['chương', 'phần', 'mục', 'điều', 'và', 'của', 'trong', 'là', 'được']
+    text_lower = text.lower()
     for kw in vi_keywords:
         if kw in text_lower:
             return "vi"

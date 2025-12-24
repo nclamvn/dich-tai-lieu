@@ -1,0 +1,138 @@
+{
+  "app": {
+    "title": "Publishing Studio",
+    "fullTitle": "Publishing Studio - AI Publisher Pro",
+    "subtitle": "Translate & Publish Documents with AI"
+  },
+  "agents": {
+    "editor": {
+      "name": "Editor",
+      "task": "Document Analysis"
+    },
+    "translator": {
+      "name": "Translator",
+      "task": "Content Translation"
+    },
+    "publisher": {
+      "name": "Publisher",
+      "task": "Output Generation"
+    },
+    "status": {
+      "idle": "Idle",
+      "working": "Working",
+      "complete": "Complete",
+      "error": "Error"
+    }
+  },
+  "upload": {
+    "dragDrop": "Drag and drop your document here",
+    "clickToSelect": "or click to select file",
+    "supportedFormats": "Supported: PDF, DOCX, TXT, MD, TEX",
+    "singleFile": "Single File",
+    "batchFiles": "Batch",
+    "dragDropMultiple": "Drag and drop multiple files here",
+    "maxFiles": "Maximum 10 files per batch"
+  },
+  "settings": {
+    "publishingProfile": "Publishing Profile",
+    "aiEngine": "AI Engine",
+    "language": "Language",
+    "from": "From",
+    "to": "To",
+    "outputFormat": "Output Format",
+    "autoDetect": "Auto-detect"
+  },
+  "profiles": {
+    "novel": {
+      "name": "Novel / Literature",
+      "desc": "Literary works with dialogue"
+    },
+    "academic": {
+      "name": "Academic / Research",
+      "desc": "Scientific papers, thesis"
+    },
+    "business": {
+      "name": "Business / Reports",
+      "desc": "Reports, professional presentations"
+    },
+    "technical": {
+      "name": "Technical / Manual",
+      "desc": "Technical documentation, guides"
+    }
+  },
+  "providers": {
+    "claude": {
+      "name": "Claude Sonnet 4",
+      "company": "Anthropic",
+      "desc": "Optimized for translation"
+    },
+    "openai": {
+      "name": "GPT-4o",
+      "company": "OpenAI",
+      "desc": "Versatile, fast"
+    },
+    "gemini": {
+      "name": "Gemini 2.0 Flash",
+      "company": "Google",
+      "desc": "Ultra fast"
+    },
+    "deepseek": {
+      "name": "DeepSeek V3",
+      "company": "DeepSeek",
+      "desc": "Cost effective"
+    }
+  },
+  "languages": {
+    "auto": "Auto-detect",
+    "vi": "Vietnamese",
+    "en": "English",
+    "ja": "Japanese",
+    "zh": "Chinese",
+    "ko": "Korean",
+    "fr": "French",
+    "de": "German",
+    "es": "Spanish",
+    "ru": "Russian"
+  },
+  "actions": {
+    "translate": "Translate Now",
+    "translating": "Translating...",
+    "cancel": "Cancel",
+    "download": "Download",
+    "preview": "Preview",
+    "reset": "Reset",
+    "retry": "Retry"
+  },
+  "status": {
+    "ready": "Ready",
+    "uploading": "Uploading...",
+    "analyzing": "Analyzing...",
+    "translating": "Translating...",
+    "generating": "Generating file...",
+    "complete": "Complete!",
+    "error": "An error occurred"
+  },
+  "results": {
+    "title": "Results",
+    "downloadAll": "Download All",
+    "originalPages": "Original pages",
+    "translatedChunks": "Translated chunks",
+    "processingTime": "Processing time",
+    "cost": "Estimated cost"
+  },
+  "errors": {
+    "noFile": "Please select a file",
+    "fileTooLarge": "File too large (max {{max}}MB)",
+    "unsupportedFormat": "Unsupported format",
+    "networkError": "Network error",
+    "serverError": "Server error",
+    "translationFailed": "Translation failed"
+  },
+  "nav": {
+    "home": "Home",
+    "app": "App",
+    "admin": "Admin",
+    "docs": "Docs",
+    "language": "Language"
+  }
+}
