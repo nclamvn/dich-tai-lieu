@@ -59,7 +59,7 @@ ai_providers/
 - Health: http://localhost:3001/health
 
 ## Handover Document
-**QUAN TRỌNG:** Để tiếp tục dự án sau khi nghỉ → đọc `docs/HANDOVER_v2.7.md`
+**QUAN TRỌNG:** Để tiếp tục dự án sau khi nghỉ → đọc `docs/HANDOVER_v2.8.md`
 
 ## Features
 - **Smart Extraction**: PyMuPDF for text-only, Vision for scanned/formulas
