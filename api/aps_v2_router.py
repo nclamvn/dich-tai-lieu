@@ -47,6 +47,7 @@ async def publish_file(
     profile_id: str = Form(default="novel"),
     output_formats: str = Form(default="docx"),  # Comma-separated
     use_vision: bool = Form(default=True, description="Use Claude Vision for PDF reading (recommended)"),
+    api_key: str = Form(default="", description="User API key (optional, overrides server config)"),
 ):
     """
     Upload a document and start the publishing pipeline.
@@ -75,19 +76,23 @@ async def publish_file(
 
     try:
         # ===== PRE-VALIDATION: Check AI providers before starting =====
-        success, message, status = await validate_providers_before_job()
-        if not success:
-            logger.error(f"Provider validation failed: {message}")
-            raise HTTPException(
-                status_code=503,
-                detail={
-                    "error": "No AI providers available",
-                    "message": message,
-                    "providers": status.get("statuses", {}),
-                    "action": "Please check your API keys and billing status"
-                }
-            )
-        logger.info(f"Provider validated: {message}")
+        # If user provided api_key, skip validation (trust user key)
+        if not api_key:
+            success, message, status = await validate_providers_before_job()
+            if not success:
+                logger.error(f"Provider validation failed: {message}")
+                raise HTTPException(
+                    status_code=503,
+                    detail={
+                        "error": "No AI providers available",
+                        "message": message,
+                        "providers": status.get("statuses", {}),
+                        "action": "Please check your API keys and billing status"
+                    }
+                )
+            logger.info(f"Provider validated: {message}")
+        else:
+            logger.info("Using user-provided API key, skipping server validation")
 
         # Save uploaded file
         content_bytes = await file.read()
@@ -117,6 +122,7 @@ async def publish_file(
             profile_id=profile_id,
             output_formats=formats,
             use_vision=use_vision,
+            api_key=api_key if api_key else None,
         )
 
         return service.get_job_response(job)

@@ -100,6 +100,9 @@ const PublisherApp = {
     // Refresh Lucide icons
     this.refreshIcons();
 
+    // Load API keys from localStorage
+    this.loadApiKeys();
+
     // Check for running job and auto-reconnect
     await this.checkRunningJob();
 
@@ -908,6 +911,12 @@ const PublisherApp = {
     formData.append('profile_id', this.state.profile);
     formData.append('output_formats', this.state.outputFormats.join(','));
     formData.append('use_vision', this.state.useVision.toString());
+
+    // Add API key for current provider
+    const apiKey = this.getApiKeyForProvider(this.state.aiProvider);
+    if (apiKey) {
+      formData.append('api_key', apiKey);
+    }
     
     try {
       // Submit job
@@ -1264,9 +1273,8 @@ const PublisherApp = {
     ];
 
     grid.innerHTML = downloadFormats.map(({ fmt, name, ext, icon, color }) => {
-      const downloadUrl = `${this.API_BASE}/jobs/${job.job_id}/download/${fmt}`;
       return `
-        <a href="${downloadUrl}" class="download-card" download style="--accent-color: ${color}">
+        <div class="download-card" onclick="PublisherApp.downloadFile('${job.job_id}', '${fmt}', '${ext}')" style="--accent-color: ${color}; cursor: pointer;">
           <span class="download-icon" style="background: ${color}20; color: ${color};">
             <i data-lucide="${icon}"></i>
           </span>
@@ -1274,11 +1282,40 @@ const PublisherApp = {
             <h4>${name}</h4>
             <p>Click to download ${ext}</p>
           </div>
-        </a>
+        </div>
       `;
     }).join('');
 
     this.refreshIcons();
+  },
+
+  // Download file using fetch API
+  async downloadFile(jobId, format, ext) {
+    const downloadUrl = `${this.API_BASE}/jobs/${jobId}/download/${format}`;
+
+    try {
+      this.showToast(`Đang tải ${ext}...`, 'info');
+
+      const response = await fetch(downloadUrl);
+      if (!response.ok) {
+        throw new Error(`Download failed: ${response.status}`);
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${jobId}_translated.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      this.showToast(`Tải ${ext} thành công!`, 'success');
+    } catch (e) {
+      console.error('Download error:', e);
+      this.showToast(`Lỗi tải ${ext}: ${e.message}`, 'error');
+    }
   },
   
   // Show DNA
@@ -1361,8 +1398,87 @@ const PublisherApp = {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
     return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+  },
+
+  // ==================== API Keys Management ====================
+
+  // Load API keys from localStorage
+  loadApiKeys() {
+    const keys = JSON.parse(localStorage.getItem('apiKeys') || '{}');
+
+    // Populate input fields
+    const openaiInput = document.getElementById('openai-api-key');
+    const anthropicInput = document.getElementById('anthropic-api-key');
+    const deepseekInput = document.getElementById('deepseek-api-key');
+
+    if (openaiInput && keys.openai) openaiInput.value = keys.openai;
+    if (anthropicInput && keys.anthropic) anthropicInput.value = keys.anthropic;
+    if (deepseekInput && keys.deepseek) deepseekInput.value = keys.deepseek;
+
+    // Update status
+    const hasKeys = keys.openai || keys.anthropic || keys.deepseek;
+    const statusEl = document.getElementById('api-keys-status');
+    if (statusEl && hasKeys) {
+      statusEl.textContent = 'Keys đã lưu';
+      statusEl.className = 'text-xs text-green-400';
+    }
+
+    console.log('🔑 API keys loaded from localStorage');
+  },
+
+  // Save API keys to localStorage
+  saveApiKeys() {
+    const openaiKey = document.getElementById('openai-api-key')?.value?.trim() || '';
+    const anthropicKey = document.getElementById('anthropic-api-key')?.value?.trim() || '';
+    const deepseekKey = document.getElementById('deepseek-api-key')?.value?.trim() || '';
+
+    const keys = {
+      openai: openaiKey,
+      anthropic: anthropicKey,
+      deepseek: deepseekKey,
+    };
+
+    localStorage.setItem('apiKeys', JSON.stringify(keys));
+
+    // Update status
+    const statusEl = document.getElementById('api-keys-status');
+    if (statusEl) {
+      statusEl.textContent = 'Đã lưu!';
+      statusEl.className = 'text-xs text-green-400';
+      setTimeout(() => {
+        statusEl.textContent = 'Keys đã lưu';
+      }, 2000);
+    }
+
+    this.showToast('API Keys đã được lưu', 'success');
+    console.log('🔑 API keys saved to localStorage');
+  },
+
+  // Get API key for current provider
+  getApiKeyForProvider(provider) {
+    const keys = JSON.parse(localStorage.getItem('apiKeys') || '{}');
+    const providerMap = {
+      'claude': 'anthropic',
+      'openai': 'openai',
+      'gemini': 'openai', // Gemini uses same key format
+      'deepseek': 'deepseek',
+    };
+    const keyName = providerMap[provider] || provider;
+    return keys[keyName] || '';
   }
 };
 
 // Export
 window.PublisherApp = PublisherApp;
+
+// Global function for toggling API key visibility
+function toggleKeyVisibility(inputId) {
+  const input = document.getElementById(inputId);
+  if (!input) return;
+
+  if (input.type === 'password') {
+    input.type = 'text';
+  } else {
+    input.type = 'password';
+  }
+}

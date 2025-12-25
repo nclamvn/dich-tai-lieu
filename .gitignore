@@ -29,9 +29,13 @@ uploads/*
 !uploads/.gitkeep
 output/*
 !output/.gitkeep
+outputs/v2/*
+!outputs/v2/.gitkeep
 data/cache/*
 data/checkpoints/*
 data/temp/*
+data/*.db
+data/**/*.db
 *.pyc
 
 # Environment

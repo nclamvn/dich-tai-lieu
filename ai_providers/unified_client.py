@@ -195,14 +195,16 @@ class UnifiedLLMClient:
         },
     }
 
-    def __init__(self, preferred_provider: Optional[str] = None):
+    def __init__(self, preferred_provider: Optional[str] = None, api_key: Optional[str] = None):
         """
         Initialize the unified client.
 
         Args:
             preferred_provider: Preferred provider to try first (optional)
+            api_key: User-provided API key (overrides environment variable)
         """
         self.preferred_provider = preferred_provider
+        self._user_api_key = api_key  # User-provided key
         self._clients: Dict[str, Any] = {}
         self._provider_status: Dict[str, ProviderHealth] = {}
         self._current_provider: Optional[str] = None
@@ -213,7 +215,12 @@ class UnifiedLLMClient:
         self._job_start_time: Optional[float] = None
 
     def _get_api_key(self, provider: str) -> Optional[str]:
-        """Get API key for a provider from environment."""
+        """Get API key for a provider. User-provided key takes priority."""
+        # If user provided an API key, use it for the preferred provider
+        if self._user_api_key and provider == self.preferred_provider:
+            return self._user_api_key
+
+        # Otherwise, fall back to environment variable
         config = self.PROVIDER_CONFIG.get(provider)
         if not config:
             return None

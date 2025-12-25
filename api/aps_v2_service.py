@@ -54,8 +54,8 @@ class LLMClientAdapter:
     fallback logic from ai_providers.unified_client.
     """
 
-    def __init__(self, provider: str = "openai"):
-        self._unified_client = UnifiedLLMClient(preferred_provider=provider)
+    def __init__(self, provider: str = "openai", api_key: Optional[str] = None):
+        self._unified_client = UnifiedLLMClient(preferred_provider=provider, api_key=api_key)
 
     async def chat(self, messages: List[Dict], response_format: Optional[Dict] = None, max_tokens: int = 8192) -> Any:
         """
@@ -188,6 +188,7 @@ class APSV2Service:
         profile_id: str,
         output_formats: List[str],
         use_vision: bool = True,  # NEW: Use Claude Vision for PDF reading
+        api_key: Optional[str] = None,  # User-provided API key
     ) -> Dict:
         """Create and start a new publishing job."""
 
@@ -232,6 +233,7 @@ class APSV2Service:
                 "calls_by_provider": {},
             },
             "job_start_time": time.time(),
+            "api_key": api_key,  # User-provided API key (not persisted to DB)
         }
 
         # Save to database FIRST
@@ -239,22 +241,34 @@ class APSV2Service:
         self._jobs[job_id] = job_record
 
         # Start processing in background with Vision mode
-        task = asyncio.create_task(self._process_job(job_id, content, use_vision=use_vision))
+        task = asyncio.create_task(self._process_job(job_id, content, use_vision=use_vision, api_key=api_key))
         self._job_tasks[job_id] = task
 
         logger.info(f"[{job_id}] Job created and saved to DB: {source_file} ({profile_id}) vision={use_vision}")
 
         return job_record
 
-    async def _process_job(self, job_id: str, content: str, use_vision: bool = True):
+    async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None):
         """Process job in background."""
         job = self._jobs.get(job_id)
         if not job:
             return
 
+        # If user provided API key, create a temporary client/publisher for this job
+        publisher = self._publisher
+        llm_client = self._llm_client
+        if api_key:
+            logger.info(f"[{job_id}] Using user-provided API key")
+            llm_client = LLMClientAdapter(self.provider, api_key=api_key)
+            publisher = UniversalPublisher(
+                llm_client=llm_client,
+                output_dir=self.output_dir,
+                concurrency=5,
+            )
+
         # Reset usage stats at job start
-        if self._llm_client:
-            self._llm_client.reset_usage_stats()
+        if llm_client:
+            llm_client.reset_usage_stats()
 
         try:
             def progress_callback(progress: float, stage: str):
@@ -264,8 +278,8 @@ class APSV2Service:
                 logger.debug(f"[{job_id}] {progress*100:.1f}% - {stage}")
 
                 # Sync usage stats from LLM client
-                if self._llm_client:
-                    job["usage_stats"] = self._llm_client.get_usage_stats()
+                if llm_client:
+                    job["usage_stats"] = llm_client.get_usage_stats()
 
                 # Throttled DB update (every 2 seconds max)
                 now = time.time()
@@ -276,7 +290,7 @@ class APSV2Service:
 
             # Run the publisher pipeline (first format for main processing)
             first_format = job["output_formats"][0] if job["output_formats"] else "docx"
-            result = await self._publisher.publish(
+            result = await publisher.publish(
                 source_text=content,
                 source_lang=job["source_language"],
                 target_lang=job["target_language"],
@@ -293,8 +307,8 @@ class APSV2Service:
             job["completed_at"] = datetime.now()
 
             # Final sync of usage stats
-            if self._llm_client:
-                job["usage_stats"] = self._llm_client.get_usage_stats()
+            if llm_client:
+                job["usage_stats"] = llm_client.get_usage_stats()
 
             if result.dna:
                 job["dna"] = result.dna
