@@ -522,15 +522,7 @@ const PublisherApp = {
 
   // Detect language from file
   async detectLanguage(file) {
-    const langDisplay = document.getElementById('source-lang-display');
-    const langText = document.getElementById('detected-lang-text');
-    const langBadge = document.getElementById('detected-badge');
     const langSelect = document.getElementById('source-lang');
-
-    // Show detecting state
-    if (langDisplay) langDisplay.classList.add('detecting');
-    if (langText) langText.textContent = 'Đang phát hiện...';
-    if (langBadge) langBadge.classList.add('hidden');
 
     try {
       // For text files, read directly
@@ -575,10 +567,27 @@ const PublisherApp = {
   detectLanguageFromText(text) {
     const sample = text.slice(0, 3000);
 
-    // Character pattern detection
+    // Japanese-specific characters (unique to Japanese)
+    const hiragana = /[\u3040-\u309f]/g;  // Hiragana only
+    const katakana = /[\u30a0-\u30ff]/g;  // Katakana only
+    const kanji = /[\u4e00-\u9fff]/g;     // CJK characters (shared with Chinese)
+
+    const hiraganaCount = (sample.match(hiragana) || []).length;
+    const katakanaCount = (sample.match(katakana) || []).length;
+    const kanjiCount = (sample.match(kanji) || []).length;
+
+    // Japanese detection: Hiragana/Katakana are UNIQUE to Japanese
+    // If we find ANY Hiragana or Katakana, it's very likely Japanese
+    const japaneseScore = hiraganaCount + katakanaCount;
+    if (japaneseScore > 5) {
+      // Japanese text: has Hiragana/Katakana (unique identifiers)
+      const totalJapanese = japaneseScore + kanjiCount;
+      return { language: 'ja', confidence: Math.min(0.98, totalJapanese / 100) };
+    }
+
+    // Character pattern detection for other languages
     const patterns = {
-      zh: /[\u4e00-\u9fff]/g,  // Chinese characters
-      ja: /[\u3040-\u309f\u30a0-\u30ff]/g,  // Hiragana + Katakana
+      zh: /[\u4e00-\u9fff]/g,  // Chinese characters (no Hiragana/Katakana = Chinese)
       ko: /[\uac00-\ud7af\u1100-\u11ff]/g,  // Korean Hangul
       ru: /[\u0400-\u04ff]/g,  // Cyrillic
       vi: /[àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệìíỉĩịòóỏõọôốồổỗộơớờởỡợùúủũụưứừửữựỳýỷỹỵđ]/gi,
@@ -594,8 +603,9 @@ const PublisherApp = {
     // Find dominant language
     const maxLang = Object.entries(counts).reduce((a, b) => b[1] > a[1] ? b : a, ['', 0]);
 
-    if (maxLang[1] > 50) {
-      return { language: maxLang[0], confidence: Math.min(0.95, maxLang[1] / 200) };
+    // Lower threshold from 50 to 10 for better detection
+    if (maxLang[1] > 10) {
+      return { language: maxLang[0], confidence: Math.min(0.95, maxLang[1] / 100) };
     }
 
     // Check for common European languages by word patterns
