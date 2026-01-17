@@ -32,7 +32,7 @@ class TestFormulaDetector:
         assert matches[0].content == "$E = mc^2$"
 
     def test_inline_paren(self, detector):
-        """Test inline math with \(...\)"""
+        r"""Test inline math with \(...\)"""
         text = r"The equation \(E = mc^2\) is famous."
         matches = detector.detect_formulas(text)
 
@@ -51,7 +51,7 @@ class TestFormulaDetector:
         assert matches[0].content == "$$E = mc^2$$"
 
     def test_display_bracket(self, detector):
-        """Test display math with \[...\]"""
+        r"""Test display math with \[...\]"""
         text = r"The equation \[E = mc^2\] is famous."
         matches = detector.detect_formulas(text)
 
@@ -211,7 +211,7 @@ class TestFormulaDetector:
     # Real-world examples
     def test_scientific_paper_excerpt(self, detector):
         """Test realistic scientific paper text"""
-        text = """
+        text = r"""
         The Schrödinger equation $i\hbar\frac{\partial}{\partial t}\Psi = \hat{H}\Psi$
         is fundamental in quantum mechanics. For a hydrogen atom with formula H2,
         we can solve this equation analytically.

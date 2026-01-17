@@ -44,7 +44,7 @@ import httpx
 
 from .chunker import TranslationChunk
 from .validator import TranslationResult, QualityValidator
-from .glossary import GlossaryManager
+from .glossary_legacy import GlossaryManager
 from .cache import TranslationCache
 from .parallel import ParallelProcessor, BatchProcessor, ProcessingStats
 from .translation_memory import TranslationMemory, TMSegment
@@ -603,7 +603,7 @@ class TranslatorEngine:
             try:
                 error_body = e.response.json()
                 error_detail += f": {error_body.get('error', {}).get('message', str(error_body))}"
-            except:
+            except (ValueError, KeyError):
                 error_detail += f": {e.response.text[:200]}"
             logger.error(f" OpenAI API error: {error_detail}")
             raise
@@ -674,7 +674,7 @@ class TranslatorEngine:
             try:
                 error_body = e.response.json()
                 error_detail += f": {error_body.get('error', {}).get('message', str(error_body))}"
-            except:
+            except (ValueError, KeyError):
                 error_detail += f": {e.response.text[:200]}"
             logger.error(f" Anthropic API error: {error_detail}")
             raise

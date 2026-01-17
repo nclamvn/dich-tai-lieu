@@ -481,7 +481,8 @@ async def generate_output(
             try:
                 pdfmetrics.registerFont(TTFont('SimSun', 'simsun.ttc'))
                 font_name = 'SimSun'
-            except:
+            except Exception:
+                # Fallback to Helvetica if font not available
                 font_name = 'Helvetica'
 
             for i, text in enumerate(translations):

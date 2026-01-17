@@ -56,7 +56,7 @@ from .cache import TranslationCache  # Legacy cache (keep for compatibility)
 from .cache.chunk_cache import ChunkCache  # Phase 5.1: New chunk-level cache
 from .cache import CheckpointManager, serialize_translation_result, deserialize_translation_result  # Phase 5.2: Checkpoints
 from .validator import QualityValidator
-from .glossary import GlossaryManager
+from .glossary_legacy import GlossaryManager
 from .translator import TranslatorEngine
 from .merger import SmartMerger
 from .translation_memory import TranslationMemory
@@ -557,6 +557,83 @@ class BatchProcessor:
             domain=domain
         )
 
+    async def _preprocess_smart_tables(
+        self,
+        input_path: Path,
+        job: TranslationJob,
+    ) -> Tuple[str, Dict[str, str]]:
+        """
+        Detect and reconstruct tables using Vision AI.
+        Returns modified text with placeholders and a map of {placeholder: html}.
+        """
+        from .table_reconstructor import get_table_reconstructor
+        from .smart_extraction.document_analyzer import DocumentAnalyzer
+        import fitz
+
+        logger.info("🕵️‍♂️ Starting Smart Table Analysis...")
+        reconstructor = get_table_reconstructor()
+        table_map = {}
+        
+        # Open PDF
+        try:
+            doc = fitz.open(input_path)
+            analyzer = DocumentAnalyzer() # Reuse existing analyzer logic if possible
+            
+            # Simplified Logic for "Commercial Grade" MVP
+            # 1. Iterate pages
+            # 2. Heuristic check for tables (or use Analyzer)
+            # 3. If found, crop -> reconstruct -> replace text
+            
+            # NOTE: For this implementation, we will append the reconstructed tables 
+            # at the end of the text for demonstration, or replace if we can map locations.
+            # Mapping text location to PDF bbox is hard without complex logic.
+            # STRATEGY: We will reconstruct tables and append them as an Appendix or 
+            # try to insert them if we can match text.
+            
+            # Aggressive Strategy: Reconstruct WHOLE pages that look like heavy tables.
+            modified_pages = []
+            
+            for page_num, page in enumerate(doc):
+                # Check for tables
+                has_tables = analyzer._detect_tables(page, page.get_text())
+                
+                if has_tables:
+                    logger.info(f"   Found table on page {page_num+1}. Reconstructing...")
+                    
+                    # Render page to image
+                    pix = page.get_pixmap(dpi=150)
+                    img_bytes = pix.tobytes("png")
+                    
+                    # Reconstruct
+                    html_table = await reconstructor.reconstruct_table(
+                        img_bytes, 
+                        job.source_lang, 
+                        job.target_lang
+                    )
+                    
+                    # Create placeholder
+                    placeholder = f"[[SMART_TABLE_{page_num}]]"
+                    table_map[placeholder] = html_table
+                    
+                    # We keep the original text but prepend/append the table?
+                    # Or we rely on the placeholder being PRESENT in the text passed to translation.
+                    # Since we can't easily locate the table in the *extracted text string* (which is just a blob),
+                    # we will APPEND the table placeholder to the page text.
+                    # This means the output will have: [Original Text] + [Reconstructed Table]
+                    # This is safer than deleting text.
+                    
+                    page_text = page.get_text()
+                    modified_pages.append(page_text + f"\n\n{placeholder}\n\n")
+                    
+                else:
+                    modified_pages.append(page.get_text())
+            
+            return "\n\n".join(modified_pages), table_map
+
+        except Exception as e:
+            logger.error(f"Smart Table processing failed: {e}")
+            return read_document(input_path), {}
+
     def _preprocess_stem(
         self,
         input_text: str,
@@ -963,6 +1040,18 @@ class BatchProcessor:
         # Read document normally if OCR not used
         if input_text is None:
             input_text = read_document(input_path)
+        
+        # Phase 8: Smart Tables (Premium)
+        if job.metadata.get('use_smart_tables', False) and input_path.suffix.lower() == '.pdf':
+            logger.info("🚀 Smart Tables Enabled: Running Vision Reconstruction Pipeline...")
+            try:
+                # Update input_text with table placeholders
+                input_text, table_map = await self._preprocess_smart_tables(input_path, job)
+                job.metadata['smart_tables'] = table_map
+                logger.info(f"✅ Reconstructed {len(table_map)} tables")
+            except Exception as e:
+                logger.warning(f"Smart Tables failed: {e}")
+
         logger.info(f" Loaded input: {len(input_text)} characters ({input_path.suffix})")
 
         # Check if STEM mode is enabled
@@ -1531,6 +1620,17 @@ class BatchProcessor:
                         logger.info(f"• Extracting semantic structure from {len(paragraphs)} paragraphs...")
                         nodes = extract_semantic_structure(paragraphs)
                         logger.info(f"• Detected {len(nodes)} semantic nodes")
+
+                        # Phase 8: Inject Smart Table HTML content
+                        if job.metadata.get('smart_tables'):
+                             table_map = job.metadata['smart_tables']
+                             for node in nodes:
+                                 if node.node_type.value == 'table': # DocNodeType.TABLE
+                                     # Text is "[[SMART_TABLE_X]]"
+                                     placeholder = node.text.strip()
+                                     if placeholder in table_map:
+                                         node.metadata['html_content'] = table_map[placeholder]
+                                         logger.info(f"• Injected HTML for {placeholder}")
 
                         # Phase 2.1.0: Enrich equation nodes with LaTeX source from arXiv .tar.gz
                         import sys

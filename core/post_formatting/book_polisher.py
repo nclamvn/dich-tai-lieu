@@ -224,15 +224,26 @@ class BookPolisher:
         Returns:
             Text with curly quotes
         """
-        # Opening double quote: " after whitespace or at start
-        text = re.sub(r'(^|\s)"', r'\1"', text)
-        # Closing double quote: " before whitespace, punctuation, or at end
-        text = re.sub(r'"(\s|[.,!?;:]|$)', r'"\1', text)
+        # Unicode curly quotes
+        OPEN_DOUBLE = '\u201c'  # "
+        CLOSE_DOUBLE = '\u201d'  # "
+        OPEN_SINGLE = '\u2018'  # '
+        CLOSE_SINGLE = '\u2019'  # ' (also used for apostrophes in contractions)
 
-        # Opening single quote: ' after whitespace or at start
-        text = re.sub(r"(^|\s)'", "\\1'", text)
-        # Closing single quote (apostrophe): ' before letters or at end
-        text = re.sub(r"'(\s|[.,!?;:]|$)", "'\\1", text)
+        # Strategy: First replace closing quotes, then opening quotes
+        # This prevents opening pattern from matching quotes that should be closing
+
+        # Closing double quote: " followed by space, punctuation, or end of string
+        text = re.sub(r'"([\s.,!?;:\)\]\}]|$)', CLOSE_DOUBLE + r'\1', text)
+        # Opening double quote: remaining " (after whitespace, punctuation, or at start)
+        text = re.sub(r'(^|[\s,;:\(\[\{])"', r'\1' + OPEN_DOUBLE, text)
+
+        # Apostrophe in contractions: letter + ' + letter (e.g., it's, don't, we're)
+        text = re.sub(r"(\w)'(\w)", r'\1' + CLOSE_SINGLE + r'\2', text)
+        # Closing single quote: ' followed by space, punctuation, or end
+        text = re.sub(r"'([\s.,!?;:\)\]\}]|$)", CLOSE_SINGLE + r'\1', text)
+        # Opening single quote: remaining ' (after whitespace, punctuation, or at start)
+        text = re.sub(r"(^|[\s,;:\(\[\{])'", r'\1' + OPEN_SINGLE, text)
 
         return text
 
@@ -387,7 +398,15 @@ class BookPolisher:
             - 0.5" left indent (optional, configurable)
             - Maintain spacing
         """
-        dialogue_markers = ('"', "'", '"', '"', '«', '»', '「', '」', '—', '–')
+        # Include both straight and curly quotes (after _normalize_typography, quotes are curly)
+        dialogue_markers = (
+            '"', "'",           # Straight quotes
+            '\u201c', '\u201d', # Curly double quotes " "
+            '\u2018', '\u2019', # Curly single quotes ' '
+            '«', '»',           # French quotes
+            '「', '」',          # Japanese quotes
+            '—', '–'            # Dashes
+        )
 
         for paragraph in document.paragraphs:
             text = paragraph.text.lstrip()

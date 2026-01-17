@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Error Dashboard - AI Publisher Pro</title>
+
+  <!-- Design System -->
+  <link rel="stylesheet" href="/ui/design-system/tokens.css">
+  <link rel="stylesheet" href="/ui/design-system/components.css">
+  <link rel="stylesheet" href="/ui/design-system/animations.css">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    body {
+      background: var(--color-bg-gray-50);
+      color: var(--color-text-primary);
+      font-family: var(--font-sans);
+    }
+
+    .card {
+      background: var(--color-bg-white);
+      border: 1px solid var(--color-border-default);
+      border-radius: var(--radius-xl);
+    }
+
+    .stat-card {
+      background: var(--color-bg-white);
+      border: 1px solid var(--color-border-default);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      transition: var(--transition-shadow);
+    }
+
+    .stat-card:hover {
+      box-shadow: var(--shadow-md);
+    }
+
+    .severity-critical {
+      color: var(--color-error);
+      background: var(--color-error-light);
+    }
+    .severity-high {
+      color: #EA580C;
+      background: #FFF7ED;
+    }
+    .severity-medium {
+      color: var(--color-warning-dark);
+      background: var(--color-warning-light);
+    }
+    .severity-low {
+      color: var(--color-success-dark);
+      background: var(--color-success-light);
+    }
+
+    .error-row {
+      border-bottom: 1px solid var(--color-border-light);
+      transition: var(--transition-colors);
+    }
+    .error-row:hover {
+      background: var(--color-bg-gray-50);
+    }
+
+    .badge {
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-weight: 500;
+      transition: var(--transition-all);
+      cursor: pointer;
+      border: 1px solid var(--color-border-default);
+    }
+    .btn-primary {
+      background: var(--gradient-primary);
+      color: var(--color-text-inverse);
+      border: none;
+      box-shadow: var(--shadow-primary-sm);
+    }
+    .btn-primary:hover {
+      box-shadow: var(--shadow-primary);
+      transform: translateY(-1px);
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--color-border-default);
+      color: var(--color-text-secondary);
+    }
+    .btn-ghost:hover {
+      background: var(--color-bg-gray-100);
+      color: var(--color-text-primary);
+    }
+
+    .tab {
+      padding: 10px 18px;
+      border-bottom: 2px solid transparent;
+      color: var(--color-text-secondary);
+      cursor: pointer;
+      transition: var(--transition-colors);
+      font-weight: 500;
+    }
+    .tab.active {
+      border-bottom-color: var(--color-accent-primary);
+      color: var(--color-accent-primary);
+    }
+    .tab:hover:not(.active) {
+      color: var(--color-text-primary);
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(4px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: var(--z-modal);
+    }
+    .modal-content {
+      background: var(--color-bg-white);
+      border: 1px solid var(--color-border-default);
+      border-radius: var(--radius-xl);
+      max-width: 800px;
+      width: 90%;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: var(--shadow-2xl);
+    }
+
+    /* Custom select styling */
+    select {
+      background: var(--color-bg-white);
+      border: 1px solid var(--color-border-default);
+      border-radius: var(--radius-md);
+      color: var(--color-text-primary);
+      padding: 8px 14px;
+      font-size: 14px;
+      transition: var(--transition-all);
+    }
+    select:focus {
+      outline: none;
+      border-color: var(--color-accent-primary);
+      box-shadow: 0 0 0 3px var(--color-accent-light);
+    }
+
+    /* Table header */
+    thead {
+      background: var(--color-bg-gray-50);
+    }
+    th {
+      color: var(--color-text-muted);
+      font-weight: 600;
+      text-transform: uppercase;
+      font-size: 11px;
+      letter-spacing: 0.5px;
+    }
+
+    /* Pre/code blocks */
+    pre {
+      background: var(--color-bg-gray-100);
+      border-radius: var(--radius-md);
+      font-family: var(--font-mono);
+    }
+  </style>
+</head>
+<body class="min-h-screen">
+  <!-- Header -->
+  <header class="border-b px-6 py-4" style="border-color: var(--color-border-default); background: var(--color-bg-white);">
+    <div class="flex items-center justify-between max-w-7xl mx-auto">
+      <div class="flex items-center gap-4">
+        <a href="/ui" style="color: var(--color-text-muted);" class="hover:opacity-80 transition-opacity">
+          <i data-lucide="arrow-left" class="w-5 h-5"></i>
+        </a>
+        <h1 class="text-xl font-semibold flex items-center gap-2" style="color: var(--color-text-primary);">
+          <i data-lucide="alert-triangle" class="w-6 h-6" style="color: var(--color-warning);"></i>
+          Error Dashboard
+        </h1>
+      </div>
+      <div class="flex items-center gap-3">
+        <select id="time-range">
+          <option value="1">Last 1 hour</option>
+          <option value="6">Last 6 hours</option>
+          <option value="24" selected>Last 24 hours</option>
+          <option value="168">Last 7 days</option>
+          <option value="720">Last 30 days</option>
+        </select>
+        <button onclick="refreshData()" class="btn btn-ghost flex items-center gap-2">
+          <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="p-6 max-w-7xl mx-auto">
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div class="stat-card">
+        <div class="text-sm mb-1" style="color: var(--color-text-muted);">Total Errors</div>
+        <div id="stat-total" class="text-2xl font-bold" style="color: var(--color-text-primary);">--</div>
+        <div id="stat-occurrences" class="text-sm" style="color: var(--color-text-muted);">-- occurrences</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-sm mb-1" style="color: var(--color-warning-dark);">Unresolved</div>
+        <div id="stat-unresolved" class="text-2xl font-bold" style="color: var(--color-warning);">--</div>
+        <div class="text-sm" style="color: var(--color-text-muted);">need attention</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-sm mb-1" style="color: var(--color-error);">Critical</div>
+        <div id="stat-critical" class="text-2xl font-bold" style="color: var(--color-error);">--</div>
+        <div class="text-sm" style="color: var(--color-text-muted);">critical errors</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-sm mb-1" style="color: #EA580C;">High</div>
+        <div id="stat-high" class="text-2xl font-bold" style="color: #EA580C;">--</div>
+        <div class="text-sm" style="color: var(--color-text-muted);">high severity</div>
+      </div>
+      <div class="stat-card">
+        <div class="text-sm mb-1" style="color: var(--color-success);">Resolved Today</div>
+        <div id="stat-resolved" class="text-2xl font-bold" style="color: var(--color-success);">--</div>
+        <div class="text-sm" style="color: var(--color-text-muted);">fixed</div>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="flex gap-2 border-b mb-4" style="border-color: var(--color-border-light);">
+      <div class="tab active" data-tab="recent" onclick="switchTab('recent')">
+        Recent Errors
+      </div>
+      <div class="tab" data-tab="unresolved" onclick="switchTab('unresolved')">
+        Unresolved
+      </div>
+      <div class="tab" data-tab="by-category" onclick="switchTab('by-category')">
+        By Category
+      </div>
+      <div class="tab" data-tab="by-severity" onclick="switchTab('by-severity')">
+        By Severity
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="flex gap-3 mb-4">
+      <select id="filter-severity">
+        <option value="">All Severities</option>
+        <option value="critical">Critical</option>
+        <option value="high">High</option>
+        <option value="medium">Medium</option>
+        <option value="low">Low</option>
+      </select>
+      <select id="filter-category">
+        <option value="">All Categories</option>
+        <option value="api_error">API Error</option>
+        <option value="translation_error">Translation Error</option>
+        <option value="validation_error">Validation Error</option>
+        <option value="database_error">Database Error</option>
+        <option value="network_error">Network Error</option>
+        <option value="timeout_error">Timeout Error</option>
+        <option value="filesystem_error">Filesystem Error</option>
+        <option value="ocr_error">OCR Error</option>
+        <option value="config_error">Config Error</option>
+      </select>
+      <button onclick="applyFilters()" class="btn btn-primary">Apply Filters</button>
+    </div>
+
+    <!-- Error List -->
+    <div class="card overflow-hidden">
+      <table class="w-full">
+        <thead>
+          <tr>
+            <th class="text-left px-4 py-3">Severity</th>
+            <th class="text-left px-4 py-3">Error</th>
+            <th class="text-left px-4 py-3">Category</th>
+            <th class="text-left px-4 py-3">Count</th>
+            <th class="text-left px-4 py-3">Last Seen</th>
+            <th class="text-left px-4 py-3">Status</th>
+            <th class="text-left px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="error-list">
+          <tr>
+            <td colspan="7" class="px-4 py-8 text-center" style="color: var(--color-text-muted);">
+              Loading errors...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Error Detail Modal -->
+  <div id="error-modal" class="modal hidden">
+    <div class="modal-content p-6">
+      <div class="flex justify-between items-start mb-4">
+        <h2 id="modal-title" class="text-lg font-semibold" style="color: var(--color-text-primary);">Error Details</h2>
+        <button onclick="closeModal()" style="color: var(--color-text-muted);" class="hover:opacity-70 transition-opacity">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </div>
+      <div id="modal-content">
+        <!-- Filled dynamically -->
+      </div>
+      <div class="flex justify-end gap-3 mt-6 pt-4 border-t" style="border-color: var(--color-border-light);">
+        <button onclick="closeModal()" class="btn btn-ghost">Close</button>
+        <button id="modal-resolve-btn" onclick="resolveFromModal()" class="btn btn-primary">
+          Mark as Resolved
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ========================================================================
+    // State
+    // ========================================================================
+    let currentTab = 'recent';
+    let currentErrors = [];
+    let selectedErrorId = null;
+
+    // ========================================================================
+    // API Calls
+    // ========================================================================
+    async function fetchSummary(hours = 24) {
+      try {
+        const res = await fetch(`/api/errors/summary?hours=${hours}`);
+        if (!res.ok) throw new Error('Failed to fetch summary');
+        return await res.json();
+      } catch (e) {
+        console.error('Error fetching summary:', e);
+        return null;
+      }
+    }
+
+    async function fetchRecentErrors(limit = 50, severity = null) {
+      try {
+        let url = `/api/errors/recent?limit=${limit}`;
+        if (severity) url += `&severity=${severity}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to fetch errors');
+        return await res.json();
+      } catch (e) {
+        console.error('Error fetching recent errors:', e);
+        return [];
+      }
+    }
+
+    async function fetchUnresolvedErrors(category = null) {
+      try {
+        let url = '/api/errors/unresolved';
+        if (category) url += `?category=${category}`;
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('Failed to fetch errors');
+        return await res.json();
+      } catch (e) {
+        console.error('Error fetching unresolved errors:', e);
+        return [];
+      }
+    }
+
+    async function fetchErrorDetail(errorId) {
+      try {
+        const res = await fetch(`/api/errors/${errorId}`);
+        if (!res.ok) throw new Error('Failed to fetch error');
+        return await res.json();
+      } catch (e) {
+        console.error('Error fetching error detail:', e);
+        return null;
+      }
+    }
+
+    async function resolveError(errorId, notes = '') {
+      try {
+        const res = await fetch(`/api/errors/${errorId}/resolve`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ notes })
+        });
+        if (!res.ok) throw new Error('Failed to resolve error');
+        return await res.json();
+      } catch (e) {
+        console.error('Error resolving:', e);
+        return null;
+      }
+    }
+
+    // ========================================================================
+    // UI Updates
+    // ========================================================================
+    function updateStats(summary) {
+      if (!summary) return;
+
+      document.getElementById('stat-total').textContent = summary.stats.total_unique_errors;
+      document.getElementById('stat-occurrences').textContent = `${summary.stats.total_occurrences} occurrences`;
+      document.getElementById('stat-unresolved').textContent = summary.unresolved_count;
+      document.getElementById('stat-critical').textContent = summary.critical_count;
+      document.getElementById('stat-high').textContent = summary.high_count;
+
+      // Calculate resolved (total - unresolved)
+      const resolved = summary.stats.total_unique_errors - summary.unresolved_count;
+      document.getElementById('stat-resolved').textContent = Math.max(0, resolved);
+    }
+
+    function renderErrorList(errors) {
+      currentErrors = errors;
+      const tbody = document.getElementById('error-list');
+
+      if (!errors || errors.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="7" class="px-4 py-8 text-center" style="color: var(--color-text-muted);">
+              No errors found
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = errors.map(err => `
+        <tr class="error-row cursor-pointer" onclick="showErrorDetail(${err.id})">
+          <td class="px-4 py-3">
+            <span class="badge severity-${err.severity}">${err.severity.toUpperCase()}</span>
+          </td>
+          <td class="px-4 py-3">
+            <div class="font-medium" style="color: var(--color-text-primary);">${escapeHtml(err.error_type)}</div>
+            <div class="text-sm truncate max-w-md" style="color: var(--color-text-muted);">${escapeHtml(err.error_message.substring(0, 100))}</div>
+          </td>
+          <td class="px-4 py-3 text-sm" style="color: var(--color-text-secondary);">${err.category}</td>
+          <td class="px-4 py-3 text-sm" style="color: var(--color-text-primary);">${err.occurrence_count}</td>
+          <td class="px-4 py-3 text-sm" style="color: var(--color-text-muted);">${formatDate(err.last_seen)}</td>
+          <td class="px-4 py-3">
+            ${err.resolved
+              ? '<span class="badge" style="background: var(--color-success-light); color: var(--color-success-dark);">Resolved</span>'
+              : '<span class="badge" style="background: var(--color-warning-light); color: var(--color-warning-dark);">Open</span>'
+            }
+          </td>
+          <td class="px-4 py-3">
+            <button onclick="event.stopPropagation(); quickResolve(${err.id})"
+                    class="text-sm hover:opacity-70 transition-opacity"
+                    style="color: var(--color-accent-primary);"
+                    ${err.resolved ? 'disabled style="opacity:0.5; color: var(--color-text-muted);"' : ''}>
+              ${err.resolved ? 'Resolved' : 'Resolve'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function showErrorDetail(errorId) {
+      selectedErrorId = errorId;
+      const error = await fetchErrorDetail(errorId);
+      if (!error) return;
+
+      const modalContent = document.getElementById('modal-content');
+      modalContent.innerHTML = `
+        <div class="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <div class="text-sm" style="color: var(--color-text-muted);">Error Type</div>
+            <div class="font-medium" style="color: var(--color-text-primary);">${escapeHtml(error.error_type)}</div>
+          </div>
+          <div>
+            <div class="text-sm" style="color: var(--color-text-muted);">Severity</div>
+            <span class="badge severity-${error.severity}">${error.severity.toUpperCase()}</span>
+          </div>
+          <div>
+            <div class="text-sm" style="color: var(--color-text-muted);">Category</div>
+            <div style="color: var(--color-text-primary);">${error.category}</div>
+          </div>
+          <div>
+            <div class="text-sm" style="color: var(--color-text-muted);">Occurrences</div>
+            <div style="color: var(--color-text-primary);">${error.occurrence_count}</div>
+          </div>
+          <div>
+            <div class="text-sm" style="color: var(--color-text-muted);">First Seen</div>
+            <div style="color: var(--color-text-primary);">${formatDate(error.first_seen)}</div>
+          </div>
+          <div>
+            <div class="text-sm" style="color: var(--color-text-muted);">Last Seen</div>
+            <div style="color: var(--color-text-primary);">${formatDate(error.last_seen)}</div>
+          </div>
+          ${error.module ? `
+          <div>
+            <div class="text-sm" style="color: var(--color-text-muted);">Module</div>
+            <div style="color: var(--color-text-primary);">${escapeHtml(error.module)}</div>
+          </div>
+          ` : ''}
+          ${error.function ? `
+          <div>
+            <div class="text-sm" style="color: var(--color-text-muted);">Function</div>
+            <div style="color: var(--color-text-primary);">${escapeHtml(error.function)}</div>
+          </div>
+          ` : ''}
+          ${error.job_id ? `
+          <div>
+            <div class="text-sm" style="color: var(--color-text-muted);">Job ID</div>
+            <div class="font-mono text-sm" style="color: var(--color-accent-primary);">${escapeHtml(error.job_id)}</div>
+          </div>
+          ` : ''}
+        </div>
+
+        <div class="mb-4">
+          <div class="text-sm mb-1" style="color: var(--color-text-muted);">Error Message</div>
+          <div class="rounded p-3 text-sm" style="background: var(--color-bg-gray-100); color: var(--color-text-primary);">${escapeHtml(error.error_message)}</div>
+        </div>
+
+        ${error.stack_trace ? `
+        <div>
+          <div class="text-sm mb-1" style="color: var(--color-text-muted);">Stack Trace</div>
+          <pre class="p-3 text-xs overflow-x-auto max-h-64" style="color: var(--color-text-primary);">${escapeHtml(error.stack_trace)}</pre>
+        </div>
+        ` : ''}
+
+        ${error.resolved ? `
+        <div class="mt-4 p-3 rounded border" style="background: var(--color-success-light); border-color: var(--color-success);">
+          <div class="text-sm mb-1" style="color: var(--color-success-dark);">Resolved at ${formatDate(error.resolved_at)}</div>
+          ${error.resolution_notes ? `<div class="text-sm" style="color: var(--color-text-primary);">${escapeHtml(error.resolution_notes)}</div>` : ''}
+        </div>
+        ` : ''}
+      `;
+
+      // Update resolve button
+      const resolveBtn = document.getElementById('modal-resolve-btn');
+      if (error.resolved) {
+        resolveBtn.textContent = 'Reopen';
+        resolveBtn.onclick = () => unresolveFromModal();
+      } else {
+        resolveBtn.textContent = 'Mark as Resolved';
+        resolveBtn.onclick = () => resolveFromModal();
+      }
+
+      document.getElementById('error-modal').classList.remove('hidden');
+      lucide.createIcons();
+    }
+
+    function closeModal() {
+      document.getElementById('error-modal').classList.add('hidden');
+      selectedErrorId = null;
+    }
+
+    async function resolveFromModal() {
+      if (!selectedErrorId) return;
+      const notes = prompt('Resolution notes (optional):') || '';
+      await resolveError(selectedErrorId, notes);
+      closeModal();
+      refreshData();
+    }
+
+    async function unresolveFromModal() {
+      if (!selectedErrorId) return;
+      try {
+        await fetch(`/api/errors/${selectedErrorId}/unresolve`, { method: 'POST' });
+        closeModal();
+        refreshData();
+      } catch (e) {
+        console.error('Error reopening:', e);
+      }
+    }
+
+    async function quickResolve(errorId) {
+      await resolveError(errorId, 'Quick resolved from dashboard');
+      refreshData();
+    }
+
+    // ========================================================================
+    // Tab & Filter Management
+    // ========================================================================
+    function switchTab(tab) {
+      currentTab = tab;
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+      loadTabData();
+    }
+
+    async function loadTabData() {
+      const severity = document.getElementById('filter-severity').value;
+      const category = document.getElementById('filter-category').value;
+
+      let errors = [];
+
+      switch (currentTab) {
+        case 'recent':
+          errors = await fetchRecentErrors(50, severity || null);
+          break;
+        case 'unresolved':
+          errors = await fetchUnresolvedErrors(category || null);
+          break;
+        case 'by-category':
+        case 'by-severity':
+          errors = await fetchRecentErrors(100, severity || null);
+          break;
+      }
+
+      // Apply local category filter if needed
+      if (category && currentTab !== 'unresolved') {
+        errors = errors.filter(e => e.category === category);
+      }
+
+      renderErrorList(errors);
+    }
+
+    function applyFilters() {
+      loadTabData();
+    }
+
+    // ========================================================================
+    // Main Refresh
+    // ========================================================================
+    async function refreshData() {
+      const hours = parseInt(document.getElementById('time-range').value);
+
+      // Fetch and update summary
+      const summary = await fetchSummary(hours);
+      updateStats(summary);
+
+      // Reload current tab data
+      await loadTabData();
+    }
+
+    // ========================================================================
+    // Utilities
+    // ========================================================================
+    function formatDate(timestamp) {
+      if (!timestamp) return '--';
+      const date = new Date(timestamp);
+      return date.toLocaleString();
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    // ========================================================================
+    // Initialize
+    // ========================================================================
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      refreshData();
+
+      // Auto-refresh every 30 seconds
+      setInterval(refreshData, 30000);
+
+      // Time range change handler
+      document.getElementById('time-range').addEventListener('change', refreshData);
+    });
+  </script>
+</body>
+</html>

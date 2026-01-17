@@ -1,0 +1,48 @@
+# =============================================================================
+# AI Publisher Pro - Development Dockerfile
+# Optimized for fast rebuilds and hot reloading
+# =============================================================================
+
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app \
+    PORT=3001
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    # Build tools
+    build-essential \
+    gcc \
+    # PDF processing
+    poppler-utils \
+    # Fonts
+    fonts-noto-cjk \
+    # Pandoc
+    pandoc \
+    # Development tools
+    curl \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set work directory
+WORKDIR /app
+
+# Copy requirements first for caching
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt && \
+    pip install --no-cache-dir watchfiles
+
+# Create directories
+RUN mkdir -p /app/data /app/outputs /app/logs
+
+# Expose port
+EXPOSE 3001
+
+# Default command with hot reload
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "3001", "--reload"]

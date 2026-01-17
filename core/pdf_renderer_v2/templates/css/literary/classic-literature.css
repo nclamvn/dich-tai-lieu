@@ -1,0 +1,41 @@
+/* Classic Literature - Premium Serif Style */
+
+:root {
+    --font-body: 'Crimson Pro', serif;
+    --font-heading: 'Playfair Display', serif;
+
+    --line-height-body: 1.5;
+    --font-size-body: 11.5pt;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body);
+}
+
+h1 {
+    font-family: var(--font-heading);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    border-bottom: none;
+    /* Clean look */
+}
+
+/* Fancy First Letter */
+h1+p::first-letter {
+    font-family: var(--font-heading);
+    font-size: 3.5em;
+    float: left;
+    line-height: 0.8;
+    margin-right: 0.1em;
+    color: var(--color-accent);
+}
+
+/* Decoration */
+hr {
+    border: none;
+    height: 1px;
+    background-image: linear-gradient(to right, transparent, var(--color-border), transparent);
+    margin: 2em 0;
+}

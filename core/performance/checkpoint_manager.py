@@ -450,7 +450,8 @@ class CheckpointManager:
                     checkpoint = Checkpoint.from_dict(data)
                     jobs.add(checkpoint.job_id)
                     checkpoint_types[checkpoint.checkpoint_type] += 1
-            except:
+            except (json.JSONDecodeError, KeyError, OSError):
+                # Skip corrupted or unreadable checkpoint files
                 continue
 
         # Calculate total size

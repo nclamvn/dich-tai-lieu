@@ -47,10 +47,10 @@ def test_academic_config_defaults():
     # Default must be "latex_text" for backward compatibility
     assert config.equation_rendering_mode == "latex_text"
 
-    # Phase 2.0.5: Updated defaults for better academic appearance
-    assert config.font_name == "Cambria"  # Changed from "Times New Roman" for better math rendering
-    assert config.font_size == 11  # Changed from 12 to 11pt (academic standard)
-    assert config.line_spacing == 1.15  # Changed from 1.5 to 1.15 (modern academic standard)
+    # Phase 9: Config uses themes, legacy fields default to None
+    assert config.theme == "academic"
+    assert config.font_name is None  # Theme-based, not hardcoded
+    assert config.font_size is None  # Theme-based, not hardcoded
 
 
 # ============================================================================

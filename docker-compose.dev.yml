@@ -1,0 +1,54 @@
+# =============================================================================
+# AI Publisher Pro - Development Docker Compose
+# Lightweight setup for local development
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # Development Application
+  # ==========================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ai-publisher-dev
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - HOST=0.0.0.0
+      - PYTHONPATH=/app
+      - DEBUG=true
+      # API Keys from .env
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      # Development JWT secret
+      - JWT_SECRET_KEY=dev-secret-key-not-for-production
+    volumes:
+      # Mount source code for hot reload
+      - .:/app
+      # Exclude node_modules and cache
+      - /app/ui/node_modules
+      - /app/__pycache__
+    command: uvicorn api.main:app --host 0.0.0.0 --port 3001 --reload
+    networks:
+      - dev-network
+
+  # ==========================================================================
+  # Redis for development
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ai-publisher-redis-dev
+    ports:
+      - "6379:6379"
+    networks:
+      - dev-network
+
+networks:
+  dev-network:
+    driver: bridge

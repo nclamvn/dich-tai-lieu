@@ -16,58 +16,29 @@ Phase 2.0.5: Professional aesthetic improvements
 """
 
 from dataclasses import dataclass
-from typing import List, Optional, Literal
+from typing import List, Optional, Literal, Dict, Any
 from pathlib import Path
 from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from core.structure.semantic_model import DocNode, DocNodeType, DocNodeList
 from core.rendering import omml_converter
-from core.export.docx_styles import AcademicStyles, StyleApplicator, THEOREM_TYPES
+from core.export.docx_styles import StyleManager, THEME_ACADEMIC
+from core.export.docx_page_layout import _setup_page_layout
+from core.export.docx_front_matter import FrontMatterGenerator
+from core.export.config import AcademicLayoutConfig
 from config.logging_config import get_logger
 
 logger = get_logger(__name__)
 
 
-@dataclass
-class AcademicLayoutConfig:
-    """
-    Configuration for academic DOCX layout.
-
-    Phase 2.0.2: Basic configuration implemented.
-    Phase 2.0.3b: OMML equation rendering added.
-    Phase 2.0.5: Professional styling options added.
-
-    Attributes:
-        font_name: Font family for body text
-        font_size: Font size in points
-        line_spacing: Line spacing multiplier (1.0 = single, 1.5 = 1.5x, 2.0 = double)
-        paragraph_spacing_before: Points before paragraph
-        paragraph_spacing_after: Points after paragraph
-        equation_rendering_mode: Equation rendering mode
-            - "latex_text": Render equations as centered LaTeX text (default, backward compatible)
-            - "omml": Convert LaTeX to OMML for native Word math rendering (requires pandoc)
-        enable_theorem_boxes: Enable bordered boxes around theorems/lemmas/etc (Phase 2.0.5)
-        enable_proof_indent: Enable proof block indentation with QED symbols (Phase 2.0.5)
-        enable_advanced_equation_layout: Enable enhanced equation spacing and alignment (Phase 2.0.5)
-    """
-    font_name: str = "Times New Roman"  # Phase 2.0.5: Changed to Times New Roman for Vietnamese compatibility
-    font_size: int = 11  # Phase 2.0.5: Changed to 11pt (academic standard)
-    line_spacing: float = 1.15  # Phase 2.0.5: Changed to 1.15 (modern academic standard)
-    paragraph_spacing_before: int = 6
-    paragraph_spacing_after: int = 6
-    equation_rendering_mode: Literal["latex_text", "omml"] = "latex_text"  # Phase 2.0.4: Default to backward-compatible LaTeX text
-
-    # Phase 2.0.5: Professional styling features
-    enable_theorem_boxes: bool = True  # Bordered boxes around theorems
-    enable_proof_indent: bool = True  # Indented proofs with QED
-    enable_advanced_equation_layout: bool = True  # Enhanced equation spacing
 
 
 def build_academic_docx(
     nodes: DocNodeList,
     output_path: str,
     config: Optional[AcademicLayoutConfig] = None,
+    metadata: Optional[Dict[str, str]] = None,
 ) -> str:
     """
     Build academic DOCX from semantic node list.
@@ -108,27 +79,43 @@ def build_academic_docx(
 
     doc = Document()
 
-    # Apply global formatting first
-    _apply_global_formatting(doc, config)
+    # Initialize StyleManager
+    style_manager = StyleManager(theme_name=config.theme)
+    logger.info(f"Initialized StyleManager with theme: {config.theme}")
 
-    # Process each node
+    # Phase 9.2: Setup Page Architecture (Margins, Headers, Footers)
+    _setup_page_layout(doc, config, style_manager)
+
+    # Phase 9.4: Front Matter
+    if metadata:
+        fm_generator = FrontMatterGenerator(doc, style_manager)
+        fm_generator.generate_title_page(metadata)
+        
+        # Optionally generate TOC (configurable)
+        # For now, always include if metadata provided for premium feel
+        fm_generator.generate_toc()
+
+    # Process each nodes
+
     for node in nodes:
         if node.is_heading():
             # Add heading with appropriate level
             level = node.level or 1
-            doc.add_heading(node.text, level=level)
+            para = doc.add_heading(node.text, level=level)
+            style_manager.apply_heading_style(para, level)
 
         elif node.is_theorem_like():
-            # Add theorem block with bold label (Phase 2.0.5: optional box styling)
-            _format_theorem_block(doc, node, config)
+            # Add theorem block
+            _format_theorem_block(doc, node, config, style_manager)
 
         elif node.is_proof():
-            # Add proof block with italic header (Phase 2.0.5: optional indent + QED)
-            _format_proof_block(doc, node, config)
+            # Add proof block
+            _format_proof_block(doc, node, config, style_manager)
+
 
         elif node.is_equation():
             # Add equation block (centered, LaTeX or OMML)
-            _format_equation_block(doc, node, config)
+            _format_equation_block(doc, node, config, style_manager)
 
         elif node.node_type == DocNodeType.REFERENCES_SECTION:
             # Add references heading
@@ -140,9 +127,23 @@ def build_academic_docx(
             para.paragraph_format.left_indent = Inches(0.5)
             para.paragraph_format.first_line_indent = Inches(-0.5)
 
+        elif node.node_type.value == 'table': # DocNodeType.TABLE
+            # Phase 8: Render Smart Table
+            html_content = node.metadata.get('html_content')
+            if html_content:
+                logger.info("  Rendering Smart Table...")
+                try:
+                    _render_html_table_naive(doc, html_content)
+                except Exception as e:
+                    logger.error(f"Failed to render table: {e}")
+                    doc.add_paragraph(f"[Table: {node.text}]")
+            else:
+                 doc.add_paragraph(f"[Table: {node.text}] - Content Missing")
+
         else:  # PARAGRAPH or UNKNOWN
             # Add normal paragraph
-            doc.add_paragraph(node.text)
+            para = doc.add_paragraph(node.text)
+            style_manager.apply_body_style(para)
 
     # Save
     doc.save(output_path)
@@ -152,51 +153,64 @@ def build_academic_docx(
     return os.path.abspath(output_path)
 
 
-def _apply_global_formatting(doc: Document, config: AcademicLayoutConfig):
+def _render_html_table_naive(doc: Document, html: str):
     """
-    Apply global formatting to document.
-
-    Sets default font, size, line spacing, and paragraph spacing for Normal style.
-
-    Args:
-        doc: python-docx Document object
-        config: Layout configuration
+    Naive HTML Table renderer for python-docx.
+    Parses simple <table><tr><td> structure.
     """
-    # Get Normal style (base for all paragraphs)
-    style = doc.styles['Normal']
+    from html.parser import HTMLParser
 
-    # Set font
-    font = style.font
-    font.name = config.font_name
-    font.size = Pt(config.font_size)
+    class TableParser(HTMLParser):
+        def __init__(self):
+            super().__init__()
+            self.rows = []
+            self.current_row = []
+            self.in_td = False
+            self.current_data = []
 
-    # Set paragraph formatting
-    paragraph_format = style.paragraph_format
-    paragraph_format.line_spacing = config.line_spacing
-    paragraph_format.space_before = Pt(config.paragraph_spacing_before)
-    paragraph_format.space_after = Pt(config.paragraph_spacing_after)
+        def handle_starttag(self, tag, attrs):
+            if tag == 'tr':
+                self.current_row = []
+            elif tag == 'td' or tag == 'th':
+                self.in_td = True
+                self.current_data = []
+
+        def handle_endtag(self, tag):
+            if tag == 'tr':
+                self.rows.append(self.current_row)
+            elif tag == 'td' or tag == 'th':
+                self.in_td = False
+                self.current_row.append("".join(self.current_data).strip())
+
+        def handle_data(self, data):
+            if self.in_td:
+                self.current_data.append(data)
+
+    parser = TableParser()
+    parser.feed(html)
+    
+    if not parser.rows:
+        return
+
+    # Create table in docx
+    table = doc.add_table(rows=len(parser.rows), cols=len(parser.rows[0]))
+    table.style = 'Table Grid'
+    
+    for r_idx, row_data in enumerate(parser.rows):
+        row = table.rows[r_idx]
+        for c_idx, cell_text in enumerate(row_data):
+            if c_idx < len(row.cells):
+                row.cells[c_idx].text = cell_text
 
 
-def _format_theorem_block(doc: Document, node: DocNode, config: Optional[AcademicLayoutConfig] = None):
-    """
-    Format a theorem-like block with bold label and optional box styling.
 
-    Phase 2.0.2: Bold label + normal text
-    Phase 2.0.5: Optional bordered box with background color
 
-    Creates paragraph with:
-    - Bold label (e.g., "Theorem 1.1. ")
-    - Normal text for content
-    - Optional: Border and background color (if config.enable_theorem_boxes)
 
-    Args:
-        doc: python-docx Document object
-        node: DocNode with theorem-like type
-        config: Optional layout configuration
-    """
-    if config is None:
-        config = AcademicLayoutConfig()
 
+
+
+def _format_theorem_block(doc: Document, node: DocNode, config: AcademicLayoutConfig, style_manager: StyleManager):
+    """Format theorem with dynamic styling."""
     para = doc.add_paragraph()
 
     # Add bold label if present
@@ -204,109 +218,59 @@ def _format_theorem_block(doc: Document, node: DocNode, config: Optional[Academi
         label_run = para.add_run(f"{node.title}. ")
         label_run.bold = True
 
-    # Add theorem text
-    # If text starts with the label, strip it to avoid duplication
+    # Strip label from text overlap
     text = node.text
     if node.title and text.startswith(node.title):
-        # Strip "Theorem 1.1. " from "Theorem 1.1. Content"
         text = text[len(node.title):].lstrip('. ')
 
     para.add_run(text)
 
-    # Phase 2.0.5: Apply theorem box styling if enabled
+    # Apply premium box styling
     if config.enable_theorem_boxes:
-        # Determine theorem type from node type
-        box_type = _map_node_type_to_box_type(node.node_type)
         try:
-            StyleApplicator.apply_theorem_box(para, box_type)
+            # Detect box type
+            box_type = 'theorem'
+            if node.node_type == DocNodeType.LEMMA: box_type = 'lemma'
+            elif node.node_type == DocNodeType.COROLLARY: box_type = 'corollary'
+            elif node.node_type == DocNodeType.DEFINITION: box_type = 'definition'
+            
+            style_manager.apply_theorem_box(para, box_type)
         except Exception as e:
-            logger.warning(f"Failed to apply theorem box styling: {e}")
-            # Continue without styling - don't break document generation
-
-
-def _map_node_type_to_box_type(node_type: DocNodeType) -> str:
-    """
-    Map DocNodeType to theorem box type for styling.
-
-    Args:
-        node_type: DocNodeType enum
-
-    Returns:
-        str: Box type ('theorem', 'lemma', 'corollary', etc.)
-    """
-    mapping = {
-        DocNodeType.THEOREM: 'theorem',
-        DocNodeType.LEMMA: 'lemma',
-        DocNodeType.COROLLARY: 'corollary',
-        DocNodeType.PROPOSITION: 'proposition',
-        DocNodeType.DEFINITION: 'definition',
-        DocNodeType.EXAMPLE: 'example',
-    }
-    return mapping.get(node_type, 'theorem')  # Default to 'theorem'
-
-
-def _format_proof_block(doc: Document, node: DocNode, config: Optional[AcademicLayoutConfig] = None):
-    """
-    Format a proof block with italic header and optional indentation.
-
-    Phase 2.0.2: Italic header + normal text
-    Phase 2.0.5: Optional indentation + QED symbol
-
-    Creates paragraph with:
-    - Italic "Proof." or "Chứng minh." header
-    - Normal text for content
-    - Optional: Left indentation (if config.enable_proof_indent)
-    - Optional: QED symbol at end (□)
-
-    Args:
-        doc: python-docx Document object
-        node: DocNode with PROOF type
-        config: Optional layout configuration
-    """
-    if config is None:
-        config = AcademicLayoutConfig()
-
-    para = doc.add_paragraph()
-
-    # Determine proof header from node title or detect from text
-    if node.title:
-        proof_header = node.title
-    elif "Chứng minh" in node.text[:20]:
-        proof_header = "Chứng minh"
+            logger.warning(f"Failed to apply theorem styling: {e}")
     else:
-        proof_header = "Proof"
+        # Fallback to simple body styling
+        style_manager.apply_body_style(para)
 
-    # Add italic header
+
+def _format_proof_block(doc: Document, node: DocNode, config: AcademicLayoutConfig, style_manager: StyleManager):
+    """Format proof with dynamic styling."""
+    para = doc.add_paragraph()
+    
+    # Header resolution logic...
+    proof_header = node.title if node.title else ("Chứng minh" if "Chứng minh" in node.text[:20] else "Proof")
+
     header_run = para.add_run(f"{proof_header}. ")
     header_run.italic = True
 
-    # Add proof text
-    # If text starts with proof header, strip it to avoid duplication
+    # Strip text logic...
     text = node.text
     if text.startswith(proof_header):
-        text = text[len(proof_header):].lstrip('. :')
-    elif text.startswith("Proof.") or text.startswith("Proof:"):
-        text = text[6:].lstrip('. :')
-
-    # Check if text already has QED marker
+         text = text[len(proof_header):].lstrip('. :')
+    
+    # QED logic
     has_qed = any(marker in text for marker in ['□', '■', '∎', 'Q.E.D', 'Đpcm'])
-
-    # Add QED marker if enabled and not present
     if config.enable_proof_indent and not has_qed:
-        text = text.rstrip() + "  □"  # Add QED square at end
+        text = text.rstrip() + "  □"
 
     para.add_run(text)
 
-    # Phase 2.0.5: Apply proof indentation if enabled
-    if config.enable_proof_indent:
-        try:
-            StyleApplicator.apply_proof_style(para)
-        except Exception as e:
-            logger.warning(f"Failed to apply proof styling: {e}")
-            # Continue without styling - don't break document generation
+    # Styling
+    style_manager.apply_body_style(para)
+    para.paragraph_format.left_indent = Pt(20) # Slight indent for proofs
 
 
-def _format_equation_block(doc: Document, node: DocNode, config: AcademicLayoutConfig):
+
+def _format_equation_block(doc: Document, node: DocNode, config: AcademicLayoutConfig, style_manager: Optional[StyleManager] = None):
     """
     Format an equation block.
 
@@ -337,12 +301,10 @@ def _format_equation_block(doc: Document, node: DocNode, config: AcademicLayoutC
     para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # Phase 2.0.5: Apply enhanced equation spacing if enabled
-    if config.enable_advanced_equation_layout:
-        try:
-            StyleApplicator.apply_equation_style(para, centered=True, numbered=False)
-        except Exception as e:
-            logger.warning(f"Failed to apply equation styling: {e}")
-            # Continue without advanced styling
+    if style_manager:
+        style_manager.apply_body_style(para)
+    
+    para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
     # Check if OMML rendering is requested
     if config.equation_rendering_mode == "omml":

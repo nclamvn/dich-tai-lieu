@@ -574,7 +574,8 @@ class EbookRenderer:
             for line in result.stdout.split('\n'):
                 if line.startswith('Pages:'):
                     return int(line.split(':')[1].strip())
-        except:
+        except (subprocess.SubprocessError, OSError, ValueError):
+            # pdfinfo not available or failed
             pass
         return 0
 
@@ -908,7 +909,8 @@ class AcademicRenderer:
             for line in result.stdout.split('\n'):
                 if line.startswith('Pages:'):
                     return int(line.split(':')[1].strip())
-        except:
+        except (subprocess.SubprocessError, OSError, ValueError):
+            # pdfinfo not available or failed
             pass
         return 0
 

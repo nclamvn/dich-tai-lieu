@@ -5,19 +5,23 @@ Khi quay lại dự án, chỉ cần nói: **"continue"** hoặc **"tiếp tục
 
 Claude sẽ tự động đọc HANDOVER document và tiếp tục công việc.
 
+### Handover Files:
+- **UI Redesign 2026:** `docs/HANDOVER_UI_2026.md`
+- **General:** `docs/HANDOVER_v2.7.md`
+
 ## Quick Start
 ```bash
-cd /Users/mac/translator_project
-uvicorn api.main:app --host 0.0.0.0 --port 3001 --reload
+cd /Users/mac/ai-publisher-pro-public
+uvicorn api.main:app --host 0.0.0.0 --port 3000 --reload
 ```
-Then open: http://localhost:3001/ui
+Then open: http://localhost:3000/ui
 
 ## Project Type
 FastAPI web server for AI-powered document translation (PDF, DOCX, TXT).
 
-## Current Status (2025-12-24)
-- Server: Working (port 3001)
-- Version: 2.7.0
+## Current Status (2026-01-16)
+- Server: Working (port 3000)
+- Version: 2.8.0-ui-redesign
 - Score: 9.7/10 (Production Ready)
 - Translation: Smart Extraction + Parallel (10x faster)
 - Academic: arXiv/formula detection fixed

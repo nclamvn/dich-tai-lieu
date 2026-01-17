@@ -12,7 +12,7 @@ rather than STEM documents.
 
 import os
 from dataclasses import dataclass
-from typing import Optional, List
+from typing import Optional, List, Dict, Any, Union
 from docx import Document
 from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -111,7 +111,7 @@ class BookLayoutConfig:
 def build_book_docx(
     nodes: DocNodeList,
     output_path: str,
-    config: Optional[BookLayoutConfig] = None
+    config: Optional[Union[BookLayoutConfig, Dict[str, Any]]] = None
 ) -> str:
     """
     Build a professionally formatted book DOCX from semantic nodes.
@@ -150,6 +150,9 @@ def build_book_docx(
     # Use default config if none provided
     if config is None:
         config = BookLayoutConfig()
+    elif isinstance(config, dict):
+        # Convert dict to BookLayoutConfig for backward compatibility
+        config = BookLayoutConfig(**{k: v for k, v in config.items() if hasattr(BookLayoutConfig, k)})
 
     # Create new document
     doc = Document()
@@ -213,22 +216,22 @@ def _add_heading(doc: Document, node: DocNode, config: BookLayoutConfig) -> None
     is_chapter = node.node_type == DocNodeType.CHAPTER
 
     if is_chapter:
-        level = 0  # Heading 1
+        level = 1  # Heading 1 (Note: python-docx uses 1-9 for Heading 1-9, 0 is Title)
         font_size = config.h1_size
         font_name = config.heading_font
         # Page break before chapter (if enabled)
         if config.page_break_before_chapter and len(doc.paragraphs) > 0:
             doc.add_page_break()
     elif node.node_type == DocNodeType.SECTION:
-        level = 1  # Heading 2
+        level = 2  # Heading 2
         font_size = config.h2_size
         font_name = config.heading_font
     elif node.node_type == DocNodeType.SUBSECTION:
-        level = 2  # Heading 3
+        level = 3  # Heading 3
         font_size = config.h3_size
         font_name = config.heading_font
     else:
-        level = 0
+        level = 1  # Default to Heading 1
         font_size = config.h1_size
         font_name = config.heading_font
 

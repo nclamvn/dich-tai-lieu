@@ -1,0 +1,100 @@
+/* core/pdf_renderer_v2/templates/css/literary/children-book.css */
+
+/* Children's book - large fonts, playful, readable */
+
+:root {
+    --font-sans: 'Noto Sans', 'Comic Sans MS', Arial, sans-serif;
+    --text-base: 14pt;
+    --line-height: 1.8;
+}
+
+body {
+    font-family: var(--font-sans);
+}
+
+.document-header {
+    text-align: center;
+    margin-top: 2cm;
+    margin-bottom: 3cm;
+    border-bottom: none;
+}
+
+.doc-title {
+    font-size: 36pt;
+    font-weight: bold;
+    color: #2563eb;
+    margin-bottom: 0.5em;
+}
+
+.doc-author {
+    font-size: 16pt;
+    color: #666;
+}
+
+/* Chapter headings - fun and big */
+.content > h1 {
+    font-size: 24pt;
+    font-weight: bold;
+    color: #dc2626;
+    text-align: center;
+    margin-top: 2cm;
+    margin-bottom: 1cm;
+}
+
+.content > h2 {
+    font-size: 18pt;
+    color: #059669;
+}
+
+/* Large, readable paragraphs */
+p {
+    text-indent: 0;
+    text-align: left;
+    margin-bottom: 1.2em;
+}
+
+/* Lists - spaced for readability */
+li {
+    margin-bottom: 0.8em;
+}
+
+/* Fun blockquotes */
+blockquote {
+    background-color: #fef3c7;
+    border-left: 4px solid #f59e0b;
+    border-radius: 8px;
+    padding: 1em;
+    margin: 1.5em 1em;
+    font-style: normal;
+}
+
+/* Images - prominent */
+img {
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Fun page numbers */
+@page {
+    margin: 2cm;
+
+    @bottom-center {
+        content: "~ " counter(page) " ~";
+        font-size: 12pt;
+        color: #666;
+    }
+}
+
+/* Section breaks */
+hr {
+    border: none;
+    margin: 2em 0;
+    text-align: center;
+}
+
+hr::before {
+    content: "***";
+    font-size: 1.5em;
+    color: #f59e0b;
+    letter-spacing: 0.3em;
+}

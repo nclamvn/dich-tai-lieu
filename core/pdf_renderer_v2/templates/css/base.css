@@ -1,0 +1,190 @@
+/* Base CSS for PDF Renderer V2 - Upgrade 2026 */
+
+/* Import High-Quality Vietnamese Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400&display=swap');
+
+:root {
+    /* Fonts */
+    --font-serif: 'Crimson Pro', 'Times New Roman', serif;
+    --font-sans: 'Be Vietnam Pro', 'Inter', sans-serif;
+    --font-display: 'Playfair Display', 'Times New Roman', serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    /* Colors - Monochrome Luxury */
+    --color-text: #1a1a1a;
+    --color-text-secondary: #4a4a4a;
+    --color-accent: #000000;
+    --color-border: #e0e0e0;
+
+    /* Spacing */
+    --margin-page-top: 25mm;
+    --margin-page-bottom: 25mm;
+    --margin-page-inner: 25mm;
+    --margin-page-outer: 20mm;
+    --line-height-body: 1.6;
+    --paragraph-spacing: 1.25em;
+}
+
+/* Page Setup */
+@page {
+    size: A5;
+    margin-top: var(--margin-page-top);
+    margin-bottom: var(--margin-page-bottom);
+    margin-left: var(--margin-page-outer);
+    margin-right: var(--margin-page-inner);
+
+    @bottom-center {
+        content: counter(page);
+        font-family: var(--font-sans);
+        font-size: 9pt;
+        color: var(--color-text-secondary);
+    }
+}
+
+/* Right page (recto) has larger inner margin */
+@page :right {
+    margin-left: var(--margin-page-inner);
+    margin-right: var(--margin-page-outer);
+}
+
+/* Left page (verso) */
+@page :left {
+    margin-left: var(--margin-page-outer);
+    margin-right: var(--margin-page-inner);
+}
+
+/* Base Typography */
+body {
+    font-family: var(--font-serif);
+    font-size: 11pt;
+    line-height: var(--line-height-body);
+    color: var(--color-text);
+    text-align: justify;
+    hyphens: auto;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-display);
+    color: var(--color-accent);
+    line-height: 1.2;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    page-break-after: avoid;
+    break-after: avoid;
+}
+
+h1 {
+    font-size: 24pt;
+    font-weight: 700;
+    margin-top: 0;
+    text-align: center;
+    padding-bottom: 1em;
+    border-bottom: 1px solid var(--color-accent);
+}
+
+h2 {
+    font-size: 18pt;
+    font-weight: 600;
+    border-bottom: 1px solid var(--color-border);
+    padding-bottom: 0.3em;
+}
+
+h3 {
+    font-size: 14pt;
+    font-weight: 600;
+    font-style: italic;
+}
+
+p {
+    margin-bottom: 0;
+    margin-top: 0;
+    text-indent: 1.5em;
+    /* Literary style indent */
+}
+
+/* First paragraph after header should not indent */
+h1+p,
+h2+p,
+h3+p {
+    text-indent: 0;
+}
+
+/* Lists */
+ul,
+ol {
+    margin: 1em 0;
+    padding-left: 2em;
+}
+
+li {
+    margin-bottom: 0.5em;
+    text-indent: 0;
+}
+
+/* Blockquotes */
+blockquote {
+    font-family: var(--font-serif);
+    font-style: italic;
+    font-size: 10.5pt;
+    margin: 1.5em 2em;
+    padding-left: 1em;
+    border-left: 3px solid var(--color-accent);
+    color: var(--color-text-secondary);
+}
+
+/* Code */
+pre,
+code {
+    font-family: var(--font-mono);
+    font-size: 9pt;
+    background-color: #f5f5f5;
+}
+
+pre {
+    padding: 1em;
+    border-radius: 4px;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* Images */
+img {
+    max-width: 100%;
+    height: auto;
+    margin: 1.5em 0;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Tables */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 2em 0;
+    font-family: var(--font-sans);
+    font-size: 9pt;
+}
+
+th,
+td {
+    padding: 0.75em;
+    border-bottom: 1px solid var(--color-border);
+}
+
+th {
+    font-weight: 600;
+    text-align: left;
+    border-bottom: 2px solid var(--color-accent);
+}
+
+/* Footnotes */
+.footnote {
+    font-size: 9pt;
+    color: var(--color-text-secondary);
+}

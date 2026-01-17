@@ -1,4 +1,4 @@
-<!-- Login Modal Component for AI Translator Pro -->
+<!-- Login Modal Component for AI Publisher Pro - Light Theme -->
 <div id="loginModal" class="login-modal" style="display: none;">
   <div class="login-overlay" onclick="closeLoginModal()"></div>
   <div class="login-container">
@@ -10,28 +10,33 @@
     </button>
 
     <div class="login-header">
-      <h2>ĐĂNG NHẬP</h2>
-      <p>Truy cập AI Translator Pro</p>
+      <div class="login-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+        </svg>
+      </div>
+      <h2>Welcome Back</h2>
+      <p>Sign in to AI Publisher Pro</p>
     </div>
 
     <form id="loginForm" class="login-form">
       <div class="form-group">
-        <label for="loginEmail">EMAIL</label>
+        <label for="loginEmail">Email</label>
         <input
           type="email"
           id="loginEmail"
-          placeholder="your@email.com"
+          placeholder="you@example.com"
           required
           autocomplete="email"
         >
       </div>
 
       <div class="form-group">
-        <label for="loginPassword">MẬT KHẨU</label>
+        <label for="loginPassword">Password</label>
         <input
           type="password"
           id="loginPassword"
-          placeholder="••••••••"
+          placeholder="Enter your password"
           required
           autocomplete="current-password"
         >
@@ -40,7 +45,7 @@
       <div id="loginError" class="login-error" style="display: none;"></div>
 
       <button type="submit" id="loginBtn" class="login-btn">
-        <span class="btn-text">ĐĂNG NHẬP</span>
+        <span class="btn-text">Sign In</span>
         <span class="btn-loading" style="display: none;">
           <svg class="spinner" width="20" height="20" viewBox="0 0 24 24">
             <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="3" fill="none" opacity="0.3"/>
@@ -51,13 +56,13 @@
     </form>
 
     <p class="login-footer">
-      Chỉ dành cho người dùng được cấp quyền
+      Authorized users only
     </p>
   </div>
 </div>
 
 <style>
-/* Login Modal Styles - Notion + Apple Minimalist */
+/* Login Modal Styles - Signal SaaS Light Theme */
 .login-modal {
   position: fixed;
   top: 0;
@@ -73,39 +78,54 @@
 .login-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: rgba(17, 24, 39, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .login-container {
   position: relative;
-  background: #fff;
+  background: #FFFFFF;
   padding: 48px;
   width: 100%;
   max-width: 420px;
   margin: 20px;
+  border-radius: 24px;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: modalIn 300ms ease forwards;
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 .login-close {
   position: absolute;
-  top: 16px;
-  right: 16px;
+  top: 20px;
+  right: 20px;
   width: 40px;
   height: 40px;
   border: none;
-  background: none;
+  background: #F3F4F6;
+  border-radius: 12px;
   cursor: pointer;
-  color: #999;
+  color: #6B7280;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .login-close:hover {
-  color: #000;
+  background: #E5E7EB;
+  color: #111827;
 }
 
 .login-header {
@@ -113,18 +133,31 @@
   margin-bottom: 32px;
 }
 
+.login-icon {
+  width: 64px;
+  height: 64px;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px;
+  color: white;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
+}
+
 .login-header h2 {
   font-size: 24px;
-  font-weight: 600;
-  letter-spacing: 0.15em;
+  font-weight: 700;
   margin: 0 0 8px 0;
-  color: #000;
+  color: #111827;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
 .login-header p {
-  color: #6B6B6B;
+  color: #6B7280;
   margin: 0;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .login-form {
@@ -140,37 +173,43 @@
 }
 
 .form-group label {
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: #6B6B6B;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
 }
 
 .form-group input {
   width: 100%;
   padding: 14px 16px;
   font-size: 16px;
-  border: 1px solid #E5E5E5;
-  background: #FAFAFA;
+  border: 1px solid #E5E7EB;
+  border-radius: 12px;
+  background: #F9FAFB;
   transition: all 0.2s ease;
   font-family: inherit;
+  color: #111827;
+}
+
+.form-group input:hover {
+  border-color: #D1D5DB;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #000;
+  border-color: #6366F1;
   background: #fff;
+  box-shadow: 0 0 0 3px #EEF2FF;
 }
 
 .form-group input::placeholder {
-  color: #999;
+  color: #9CA3AF;
 }
 
 .login-error {
   padding: 12px 16px;
-  background: #FEF2F2;
+  background: #FEE2E2;
   border: 1px solid #FECACA;
+  border-radius: 12px;
   color: #DC2626;
   font-size: 14px;
   text-align: center;
@@ -179,12 +218,12 @@
 .login-btn {
   width: 100%;
   padding: 16px;
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  background: #000;
+  background: linear-gradient(135deg, #6366F1, #8B5CF6);
   color: #fff;
   border: none;
+  border-radius: 12px;
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -192,15 +231,22 @@
   justify-content: center;
   gap: 8px;
   margin-top: 8px;
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
 }
 
 .login-btn:hover:not(:disabled) {
-  background: #333;
+  box-shadow: 0 8px 24px rgba(99, 102, 241, 0.35);
+  transform: translateY(-1px);
+}
+
+.login-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .login-btn:disabled {
-  background: #666;
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 .login-btn .spinner {
@@ -214,8 +260,8 @@
 
 .login-footer {
   text-align: center;
-  font-size: 12px;
-  color: #999;
+  font-size: 13px;
+  color: #9CA3AF;
   margin-top: 24px;
   margin-bottom: 0;
 }
@@ -225,10 +271,21 @@
   .login-container {
     padding: 32px 24px;
     margin: 16px;
+    border-radius: 20px;
   }
 
   .login-header h2 {
-    font-size: 20px;
+    font-size: 22px;
+  }
+
+  .login-icon {
+    width: 56px;
+    height: 56px;
+  }
+
+  .login-icon svg {
+    width: 28px;
+    height: 28px;
   }
 }
 </style>
@@ -315,7 +372,7 @@ const LoginModal = {
     const password = document.getElementById('loginPassword')?.value;
 
     if (!email || !password) {
-      this.showError('Vui lòng nhập đầy đủ thông tin');
+      this.showError('Please enter your email and password');
       return;
     }
 
@@ -338,7 +395,7 @@ const LoginModal = {
       }
     } catch (err) {
       console.error('Login error:', err);
-      this.showError('Có lỗi xảy ra, vui lòng thử lại');
+      this.showError('An error occurred. Please try again.');
       this.setLoading(false);
     }
   }

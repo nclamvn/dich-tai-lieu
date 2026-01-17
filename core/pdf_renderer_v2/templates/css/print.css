@@ -1,0 +1,61 @@
+/* core/pdf_renderer_v2/templates/css/print.css */
+
+/* ===== PAGE SETUP ===== */
+@page {
+    size: A4;
+    margin: 2.5cm 2cm 2.5cm 2cm;
+
+    @bottom-center {
+        content: counter(page);
+        font-size: 9pt;
+        font-family: var(--font-sans);
+        color: #666;
+    }
+}
+
+/* First page - no page number */
+@page :first {
+    @bottom-center {
+        content: none;
+    }
+}
+
+/* ===== PAGE BREAKS ===== */
+
+/* Avoid breaks after headings */
+h1, h2, h3, h4, h5, h6 {
+    page-break-after: avoid;
+    break-after: avoid;
+}
+
+/* Avoid breaks inside these elements */
+pre, blockquote, table, figure, ul, ol {
+    page-break-inside: avoid;
+    break-inside: avoid;
+}
+
+/* Orphans and widows */
+p {
+    orphans: 3;
+    widows: 3;
+}
+
+/* ===== PRINT-SPECIFIC STYLES ===== */
+
+/* Links - show URL */
+a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 0.8em;
+    color: #666;
+    word-break: break-all;
+}
+
+/* Internal links - no URL */
+a[href^="#"]::after {
+    content: none;
+}
+
+/* Hide interactive elements */
+.no-print {
+    display: none !important;
+}

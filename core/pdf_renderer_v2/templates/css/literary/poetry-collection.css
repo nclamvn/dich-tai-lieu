@@ -1,0 +1,112 @@
+/* core/pdf_renderer_v2/templates/css/literary/poetry-collection.css */
+
+/* Poetry collection - centered, verse-friendly */
+
+:root {
+    --font-serif: 'Noto Serif', 'Palatino', Georgia, serif;
+    --text-base: 11pt;
+    --line-height: 1.8;
+}
+
+body {
+    font-family: var(--font-serif);
+}
+
+.document-header {
+    text-align: center;
+    margin-top: 4cm;
+    margin-bottom: 4cm;
+    border-bottom: none;
+}
+
+.doc-title {
+    font-size: 26pt;
+    font-weight: normal;
+    font-style: italic;
+    margin-bottom: 0.5em;
+}
+
+.doc-author {
+    font-size: 14pt;
+    font-variant: small-caps;
+    letter-spacing: 0.1em;
+}
+
+/* Poem titles */
+.content > h1,
+.content > h2 {
+    font-size: 14pt;
+    font-weight: normal;
+    font-style: italic;
+    text-align: center;
+    margin-top: 3cm;
+    margin-bottom: 1.5cm;
+}
+
+/* Verses - no indent, centered or left */
+p {
+    text-indent: 0;
+    text-align: left;
+    margin-bottom: 0.5em;
+    margin-left: 3cm;
+}
+
+/* Stanza breaks */
+p + p {
+    margin-top: 1em;
+}
+
+/* For centered poems */
+.centered p {
+    text-align: center;
+    margin-left: 0;
+}
+
+/* Line breaks within verses */
+br {
+    display: block;
+    margin: 0.25em 0;
+}
+
+/* Poem separators */
+hr {
+    border: none;
+    margin: 3cm 0;
+    text-align: center;
+}
+
+hr::before {
+    content: "~";
+    font-size: 1.5em;
+    color: #999;
+}
+
+/* Epigraphs */
+blockquote {
+    margin: 2em 4em;
+    border-left: none;
+    font-size: 10pt;
+    font-style: italic;
+    text-align: right;
+}
+
+@page {
+    margin: 3cm;
+
+    @bottom-center {
+        content: counter(page);
+        font-style: italic;
+        font-size: 10pt;
+    }
+}
+
+/* Each poem on new page */
+.content > h1,
+.content > h2 {
+    page-break-before: always;
+}
+
+.content > h1:first-child,
+.content > h2:first-child {
+    page-break-before: avoid;
+}

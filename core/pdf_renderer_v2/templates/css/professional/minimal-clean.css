@@ -1,0 +1,57 @@
+/* core/pdf_renderer_v2/templates/css/professional/minimal-clean.css */
+
+/* Minimal clean design - default template */
+
+:root {
+    --font-serif: 'Noto Sans', Arial, sans-serif;
+    --text-base: 10pt;
+    --line-height: 1.5;
+}
+
+body {
+    font-family: var(--font-serif);
+}
+
+.document-header {
+    border-bottom: none;
+    margin-bottom: 2em;
+}
+
+.doc-title {
+    font-size: 24pt;
+    font-weight: 300;
+}
+
+h1, h2, h3 {
+    font-weight: 400;
+}
+
+p {
+    text-align: left;
+    text-indent: 0;
+}
+
+/* Tables - minimal borders */
+table {
+    border: none;
+}
+
+th, td {
+    border: none;
+    border-bottom: 1px solid #eee;
+}
+
+th {
+    background-color: transparent;
+    border-bottom: 2px solid #333;
+}
+
+/* Code - subtle */
+code {
+    background-color: #f8f8f8;
+}
+
+pre {
+    border: none;
+    background-color: #f8f8f8;
+}

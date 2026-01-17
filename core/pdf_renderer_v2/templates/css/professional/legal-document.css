@@ -1,0 +1,158 @@
+/* core/pdf_renderer_v2/templates/css/professional/legal-document.css */
+
+/* Legal document - formal, numbered paragraphs, precise */
+
+:root {
+    --font-serif: 'Noto Serif', 'Times New Roman', serif;
+    --text-base: 11pt;
+    --line-height: 1.5;
+}
+
+body {
+    font-family: var(--font-serif);
+    counter-reset: article section paragraph;
+}
+
+@page {
+    size: A4;
+    margin: 2.5cm;
+
+    @bottom-center {
+        content: "Page " counter(page) " of " counter(pages);
+        font-size: 9pt;
+        color: #666;
+    }
+}
+
+.document-header {
+    text-align: center;
+    margin-bottom: 2cm;
+    border-bottom: 2px solid #333;
+    padding-bottom: 1cm;
+}
+
+.doc-title {
+    font-size: 16pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+}
+
+.doc-date {
+    font-size: 10pt;
+    margin-top: 0.5em;
+}
+
+/* Articles */
+.content > h1 {
+    font-size: 13pt;
+    font-weight: bold;
+    text-transform: uppercase;
+    text-align: center;
+    margin-top: 1.5cm;
+    margin-bottom: 0.5cm;
+    counter-increment: article;
+    counter-reset: section;
+}
+
+.content > h1::before {
+    content: "ARTICLE " counter(article) ": ";
+}
+
+/* Sections */
+.content > h2 {
+    font-size: 11pt;
+    font-weight: bold;
+    margin-top: 1cm;
+    counter-increment: section;
+    counter-reset: paragraph;
+}
+
+.content > h2::before {
+    content: "Section " counter(article) "." counter(section) " ";
+}
+
+/* Numbered paragraphs */
+.content > p {
+    text-indent: 0;
+    margin-bottom: 0.8em;
+    counter-increment: paragraph;
+    padding-left: 2em;
+    position: relative;
+}
+
+.content > p::before {
+    content: counter(article) "." counter(section) "." counter(paragraph);
+    position: absolute;
+    left: 0;
+    font-weight: bold;
+    font-size: 9pt;
+}
+
+/* Definitions */
+dl {
+    margin: 1em 0;
+}
+
+dt {
+    font-weight: bold;
+}
+
+dd {
+    margin-left: 2em;
+    margin-bottom: 0.5em;
+}
+
+/* Lists in legal docs */
+ol {
+    counter-reset: list-item;
+    list-style: none;
+    padding-left: 2em;
+}
+
+ol li {
+    counter-increment: list-item;
+    position: relative;
+    padding-left: 1.5em;
+}
+
+ol li::before {
+    content: "(" counter(list-item, lower-alpha) ")";
+    position: absolute;
+    left: 0;
+}
+
+/* Sub-lists */
+ol ol li::before {
+    content: "(" counter(list-item, lower-roman) ")";
+}
+
+/* Signature blocks */
+.signature-block {
+    margin-top: 2cm;
+    page-break-inside: avoid;
+}
+
+/* Emphasis */
+strong {
+    text-transform: uppercase;
+}
+
+/* Blockquotes - for cited text */
+blockquote {
+    margin: 1em 2em;
+    padding-left: 1em;
+    border-left: 2px solid #333;
+    font-style: italic;
+}
+
+/* Tables */
+table {
+    font-size: 10pt;
+}
+
+th {
+    background-color: #f0f0f0;
+    text-transform: uppercase;
+    font-size: 9pt;
+}

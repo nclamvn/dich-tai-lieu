@@ -1,0 +1,127 @@
+# =============================================================================
+# AI Publisher Pro - Docker Compose Configuration
+# Production-ready setup with all services
+# =============================================================================
+
+version: '3.8'
+
+services:
+  # ==========================================================================
+  # Main Application
+  # ==========================================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: ai-publisher-pro
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3001}:3001"
+    environment:
+      - PORT=3001
+      - HOST=0.0.0.0
+      - PYTHONPATH=/app
+      # API Keys (from .env file)
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY}
+      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - GOOGLE_API_KEY=${GOOGLE_API_KEY}
+      # Optional: MathPix for OCR
+      - MATHPIX_APP_ID=${MATHPIX_APP_ID:-}
+      - MATHPIX_APP_KEY=${MATHPIX_APP_KEY:-}
+      # Rate limiting
+      - RATE_LIMIT=${RATE_LIMIT:-60/minute}
+      # Redis (if using distributed rate limiting)
+      - REDIS_URL=${REDIS_URL:-redis://redis:6379/0}
+      # JWT Secret
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-in-production}
+    volumes:
+      # Persistent data
+      - app_data:/app/data
+      - app_outputs:/app/outputs
+      - app_logs:/app/logs
+      # Optional: Mount local .env for development
+      # - ./.env:/app/.env:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ai-publisher-network
+    deploy:
+      resources:
+        limits:
+          cpus: '4'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 1G
+
+  # ==========================================================================
+  # Redis - For rate limiting and caching
+  # ==========================================================================
+  redis:
+    image: redis:7-alpine
+    container_name: ai-publisher-redis
+    restart: unless-stopped
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ai-publisher-network
+
+  # ==========================================================================
+  # Nginx - Reverse Proxy (Optional, for production)
+  # ==========================================================================
+  nginx:
+    image: nginx:alpine
+    container_name: ai-publisher-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker/nginx/ssl:/etc/nginx/ssl:ro
+      - nginx_logs:/var/log/nginx
+    depends_on:
+      - app
+    networks:
+      - ai-publisher-network
+    profiles:
+      - production
+
+# =============================================================================
+# Networks
+# =============================================================================
+networks:
+  ai-publisher-network:
+    driver: bridge
+
+# =============================================================================
+# Volumes
+# =============================================================================
+volumes:
+  app_data:
+    driver: local
+  app_outputs:
+    driver: local
+  app_logs:
+    driver: local
+  redis_data:
+    driver: local
+  nginx_logs:
+    driver: local

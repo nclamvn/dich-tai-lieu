@@ -233,7 +233,16 @@ def extract_semantic_structure(paragraphs: List[str]) -> DocNodeList:
             ))
             continue
 
-        # 9. Default: PARAGRAPH
+        # 9. Smart Tables (Phase 8)
+        if _detect_smart_table(para_stripped):
+            nodes.append(DocNode(
+                node_type=DocNodeType.TABLE,
+                text=para_stripped,
+                metadata={'source_para': i}
+            ))
+            continue
+
+        # 10. Default: PARAGRAPH
         nodes.append(DocNode(
             node_type=DocNodeType.PARAGRAPH,
             text=para_stripped,
@@ -751,5 +760,44 @@ def _detect_scene_break(text: str) -> bool:
     # Pattern 5: Multiple decorative symbols with spacing
     if all(c in decorative_symbols + [' '] for c in s) and any(c in decorative_symbols for c in s):
         return True
+
+    return False
+
+
+def _detect_smart_table(text: str) -> bool:
+    """
+    Phase 8: Detect if text represents a table-like structure.
+
+    Heuristics:
+        - Contains multiple pipe characters (|) - markdown tables
+        - Contains tab-separated columns
+        - Consistent column alignment patterns
+
+    Args:
+        text: Single paragraph text to analyze
+
+    Returns:
+        True if text appears to be a table, False otherwise
+    """
+    if not text or len(text) < 5:
+        return False
+
+    # Pattern 1: Markdown table (contains | chars in a row-like pattern)
+    if '|' in text:
+        # Count pipe characters - tables typically have multiple
+        pipe_count = text.count('|')
+        if pipe_count >= 2:
+            # Check for table separator row (|---|---|)
+            if re.search(r'\|[\s-]+\|', text):
+                return True
+            # Check for typical table row pattern
+            if re.search(r'\|\s*\w+.*\|', text):
+                return True
+
+    # Pattern 2: Tab-separated values
+    if '\t' in text:
+        tab_count = text.count('\t')
+        if tab_count >= 2:
+            return True
 
     return False

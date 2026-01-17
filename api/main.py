@@ -93,11 +93,29 @@ from api.aps_service import get_aps_service
 from api.aps_v2_router import router as aps_v2_router
 
 # Batch Processing routes
-from api.batch_router import router as batch_router
-
 # Multi-AI Provider routes
+# Glossary and Translation Memory routes (Rich UI Support)
+from api.batch_router import router as batch_router
 from api.provider_routes import router as provider_router
+from api.glossary_router import router as glossary_router
+from api.tm_router import router as tm_router
+from api.editor_router import router as editor_router
 
+# P1: Authentication and Error Dashboard routes
+from api.auth_router import router as auth_router
+from api.error_dashboard_router import router as error_router
+
+# P4: Usage tracking, API keys, and Preview routes
+from api.usage_router import router as usage_router
+from api.api_keys_router import router as api_keys_router
+from api.preview_router import router as preview_router
+
+# P1: Error tracking integration
+from core.error_integration import (
+    track_api_error,
+    track_job_error,
+    ErrorTrackingContext
+)
 
 # =============================================================================
 # Pydantic Models for API
@@ -113,6 +131,7 @@ class JobCreate(BaseModel):
     priority: int = Field(default=JobPriority.NORMAL, description="Job priority (1-50)")
     provider: str = Field(default="openai", description="AI provider")
     model: str = Field(default="gpt-4o-mini", description="Model name")
+    use_smart_tables: bool = Field(default=False, description="Enable Premium Vision Table Reconstruction")
     domain: Optional[str] = Field(default=None, description="Domain (general/stem/finance/literature/medical/technology). Use 'stem' for STEM documents with formulas/code.")
     glossary: Optional[str] = Field(default=None, description="Glossary name")
     concurrency: int = Field(default=5, description="Parallel chunks")
@@ -347,6 +366,7 @@ app.add_middleware(
 
 # Phase 4.1: Include Author Mode routes
 app.include_router(author.router)
+app.include_router(editor_router)
 
 # APS V2: Include Claude-Native Universal Publishing routes
 app.include_router(aps_v2_router)
@@ -370,7 +390,20 @@ async def startup_resume_jobs():
 app.include_router(batch_router)
 
 # Multi-AI Provider: Include provider management routes
-app.include_router(provider_router)
+app.include_router(provider_router, prefix="/api/v2/providers", tags=["AI Providers"])
+app.include_router(glossary_router, prefix="/api/glossary", tags=["Glossary"])
+
+# P1: Authentication routes (JWT-based)
+app.include_router(auth_router)
+
+# P1: Error Dashboard routes
+app.include_router(error_router)
+app.include_router(tm_router, prefix="/api/tm", tags=["Translation Memory"])
+
+# P4: Usage tracking, API keys, and Preview
+app.include_router(usage_router)
+app.include_router(api_keys_router)
+app.include_router(preview_router)
 
 # UI Page Routes (for clean URLs)
 ui_path = Path(__file__).parent.parent / "ui"
@@ -378,10 +411,11 @@ ui_path = Path(__file__).parent.parent / "ui"
 
 @app.get("/app", include_in_schema=False)
 async def publisher_studio():
-    """Serve Publisher Studio page"""
-    app_html = ui_path / "app.html"
-    if app_html.exists():
-        return FileResponse(app_html)
+    """Serve Publisher Studio page (Claude-style UI)"""
+    # Use new Claude-style UI
+    claude_ui = ui_path / "app-claude-style.html"
+    if claude_ui.exists():
+        return FileResponse(claude_ui)
     return RedirectResponse(url="/ui/landing/")
 
 
@@ -394,7 +428,25 @@ async def admin_dashboard():
     return RedirectResponse(url="/ui/landing/")
 
 
-# Mount static files for UI
+@app.get("/admin/errors", include_in_schema=False)
+async def error_dashboard():
+    """Serve Error Dashboard page"""
+    errors_html = ui_path / "admin" / "errors.html"
+    if errors_html.exists():
+        return FileResponse(errors_html)
+    return RedirectResponse(url="/admin")
+
+
+@app.get("/ui", response_class=HTMLResponse)
+async def ui_dashboard():
+    """Serve Claude-style UI dashboard (2026 redesign)"""
+    claude_ui = ui_path / "app-claude-style.html"
+    if claude_ui.exists():
+        return FileResponse(claude_ui)
+    raise HTTPException(status_code=404, detail="UI dashboard not found")
+
+
+# Mount static files for UI (CSS, JS, images, etc.)
 app.mount("/ui", StaticFiles(directory=str(ui_path), html=True), name="ui")
 
 # Global state
@@ -464,7 +516,8 @@ class ConnectionManager:
         for connection in self.active_connections:
             try:
                 await connection.send_json(message)
-            except:
+            except Exception:
+                # Silently ignore connection errors (client may have disconnected)
                 pass
 
 
@@ -552,31 +605,11 @@ async def get_session_info(session: SessionInfo = Depends(get_optional_session))
 
 @app.get("/", response_class=HTMLResponse)
 async def root():
-    """Serve dashboard HTML"""
-    dashboard_path = Path(__file__).parent / "dashboard.html"
-    if dashboard_path.exists():
-        return FileResponse(dashboard_path)
-    return """
-    <html>
-        <head><title>AI Translator Pro</title></head>
-        <body>
-            <h1>AI Translator Pro API</h1>
-            <p>API is running. Access documentation at <a href="/docs">/docs</a></p>
-        </body>
-    </html>
-    """
-
-
-@app.get("/ui", response_class=HTMLResponse)
-async def ui_dashboard():
-    """Serve premium UI dashboard"""
-    # Try new app.html first, fallback to archived dashboard
-    ui_dir = Path(__file__).parent.parent / "ui"
-    for filename in ["app.html", "_archive/dashboard_premium_vn.html"]:
-        ui_path = ui_dir / filename
-        if ui_path.exists():
-            return FileResponse(ui_path)
-    raise HTTPException(status_code=404, detail="UI dashboard not found")
+    """Serve landing page directly at root URL"""
+    landing_html = ui_path / "landing" / "index.html"
+    if landing_html.exists():
+        return FileResponse(landing_html)
+    return RedirectResponse(url="/ui/landing/")
 
 
 @app.get("/api/jobs", response_model=List[JobResponse])
@@ -1248,7 +1281,8 @@ async def convert_document_format(source_path: Path, target_format: str, output_
             try:
                 pdfmetrics.registerFont(TTFont('DejaVu', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
                 font_name = 'DejaVu'
-            except:
+            except Exception:
+                # Fallback to Helvetica if DejaVu not available
                 font_name = 'Helvetica'
 
             doc = Document(str(source_path))

@@ -1,0 +1,139 @@
+/* core/pdf_renderer_v2/templates/css/professional/business-report.css */
+
+/* Business report - corporate, clean, charts-friendly */
+
+:root {
+    --font-sans: 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+    --text-base: 10pt;
+    --line-height: 1.5;
+    --color-primary: #1e40af;
+    --color-secondary: #64748b;
+}
+
+body {
+    font-family: var(--font-sans);
+}
+
+.document-header {
+    margin-bottom: 2cm;
+    padding-bottom: 1cm;
+    border-bottom: 3px solid var(--color-primary);
+}
+
+.doc-title {
+    font-size: 24pt;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-bottom: 0.3em;
+}
+
+.doc-author {
+    font-size: 11pt;
+    color: var(--color-secondary);
+}
+
+.doc-date {
+    font-size: 10pt;
+    color: var(--color-secondary);
+}
+
+/* Section headings */
+.content > h1 {
+    font-size: 16pt;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-top: 1.5cm;
+    margin-bottom: 0.5cm;
+    padding-bottom: 0.3em;
+    border-bottom: 2px solid var(--color-primary);
+}
+
+.content > h2 {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #333;
+    margin-top: 1cm;
+}
+
+.content > h3 {
+    font-size: 11pt;
+    font-weight: 600;
+    color: var(--color-secondary);
+}
+
+/* Paragraphs - no indent for business */
+p {
+    text-indent: 0;
+    text-align: left;
+    margin-bottom: 0.8em;
+}
+
+/* Tables - professional */
+table {
+    margin: 1em 0;
+    border: 1px solid #ddd;
+}
+
+th {
+    background-color: var(--color-primary);
+    color: white;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 9pt;
+    letter-spacing: 0.03em;
+}
+
+td {
+    font-size: 9pt;
+}
+
+tr:nth-child(even) {
+    background-color: #f8fafc;
+}
+
+/* Key metrics / callouts */
+blockquote {
+    background-color: #eff6ff;
+    border-left: 4px solid var(--color-primary);
+    padding: 1em;
+    margin: 1em 0;
+    font-style: normal;
+}
+
+/* Lists - business style */
+ul, ol {
+    margin-left: 1.5em;
+}
+
+li {
+    margin-bottom: 0.5em;
+}
+
+/* Executive summary style */
+.content > h1:first-of-type + p {
+    font-size: 11pt;
+    font-weight: 500;
+    color: #333;
+}
+
+@page {
+    margin: 2cm;
+
+    @top-right {
+        content: string(doc-title);
+        font-size: 8pt;
+        color: #999;
+    }
+
+    @bottom-center {
+        content: "Page " counter(page);
+        font-size: 8pt;
+        color: #666;
+    }
+}
+
+@page :first {
+    @top-right {
+        content: none;
+    }
+}

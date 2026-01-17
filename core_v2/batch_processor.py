@@ -109,6 +109,9 @@ class BatchJob:
         }
 
 
+from core_v2.router.analyzer import DocumentAnalyzer
+from core_v2.router.types import ProcessingPipeline
+
 class BatchProcessor:
     """
     Batch Processing Manager
@@ -134,6 +137,9 @@ class BatchProcessor:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.max_concurrent = max_concurrent
+
+        # Smart Router
+        self.analyzer = DocumentAnalyzer()
 
         # Active batches
         self._batches: Dict[str, BatchJob] = {}
@@ -286,8 +292,35 @@ class BatchProcessor:
             if progress_callback:
                 progress_callback(batch)
 
+
             # Read file content - pass path for Vision mode
             content = str(batch_file.file_path)
+
+            # Smart Routing (Phase 3.2)
+            # Analyze document to check if Vision is actually needed
+            complexity, pipeline = self.analyzer.analyze(str(batch_file.file_path))
+            logger.info(
+                f"[Batch:{batch.batch_id}] File Analysis {batch_file.filename}: "
+                f"Math={complexity.math_count}, "
+                f"Images={complexity.image_count}, "
+                f"Scanned={complexity.is_scanned} -> "
+                f"Pipeline={pipeline.value}"
+            )
+
+            # Determine effective mode
+            # If batch configured for Vision (True), we respect it as "Auto/Enabled"
+            # If user explicitly turned OFF Vision (False), we force native (unless scanned?)
+            # Let's assume batch.use_vision acts as "Enable Smart Routing" if True.
+            effective_use_vision = batch.use_vision
+            
+            if batch.use_vision:
+                # If "Auto/On", checking if we can downgrade to Native to save cost/speed
+                if pipeline == ProcessingPipeline.NATIVE_TEXT:
+                    logger.info(f"Optimizing: Downgrading to Native Text pipeline for simple document.")
+                    effective_use_vision = False
+                else:
+                    logger.info(f"Routing: Keeping Vision pipeline for complex content.")
+                    effective_use_vision = True
 
             # File progress callback
             def file_progress(progress: float, stage: str):
@@ -305,7 +338,7 @@ class BatchProcessor:
                 profile_id=batch.profile_id,
                 output_format=batch.output_formats[0] if batch.output_formats else "docx",
                 progress_callback=file_progress,
-                use_vision=batch.use_vision,
+                use_vision=effective_use_vision,
             )
 
             # Update file status

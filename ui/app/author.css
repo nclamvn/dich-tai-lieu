@@ -1,0 +1,249 @@
+/* 
+   AUTHOR STUDIO THEME (Commercial Grade)
+   Consumes: design_tokens.css
+*/
+
+/* === THE SPINE (Global Nav) === */
+.sidebar-switcher {
+    width: var(--sys-layout-spine-width);
+    background: var(--sys-color-surface-1);
+    border-right: 1px solid var(--sys-border-dim);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: var(--sys-spacing-3) 0;
+    gap: var(--sys-spacing-3);
+    z-index: 5000;
+    /* Topmost */
+}
+
+.workspace-tab {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    /* Smooth rect */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    transition: all 0.2s cubic-bezier(0.2, 0, 0, 1);
+    position: relative;
+    cursor: pointer;
+}
+
+.workspace-tab:hover {
+    color: #EEE;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.workspace-tab.active {
+    color: var(--sys-color-primary);
+    background: var(--sys-color-primary-dim);
+}
+
+/* Active Indicator (The "pill" on the left) */
+.workspace-tab.active::before {
+    content: '';
+    position: absolute;
+    left: -12px;
+    width: 4px;
+    height: 20px;
+    background: var(--sys-color-primary);
+    border-radius: 0 4px 4px 0;
+}
+
+/* === AUTHOR LAYOUT GRID === */
+.author-layout {
+    display: grid;
+    /* Spine is separate, so this grid is Inside the Workspace container */
+    grid-template-columns: var(--sys-layout-sidebar-width) 1fr var(--sys-layout-aux-width);
+    height: 100vh;
+    background: var(--sys-color-void);
+}
+
+/* === 1. NAVIGATION PANEL (Left) === */
+.author-sidebar {
+    background: #080808;
+    /* Slightly lighter than void for separation */
+    border-right: 1px solid #222;
+    /* More visible border */
+    display: flex;
+    flex-direction: column;
+}
+
+/* ... headers ... */
+
+/* === 2. THE STAGE (Center - Editor) === */
+.author-stage {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    background: #000;
+    /* Deepest Void */
+    /* Subtle dot pattern */
+    background-image: radial-gradient(#222 1px, transparent 1px);
+    background-size: 32px 32px;
+}
+
+/* Toolbar (Floating Glass) */
+.stage-toolbar {
+    height: 56px;
+    /* Slightly more compact */
+    margin: 20px auto;
+    /* Centered with breathing room */
+    width: 90%;
+    max-width: 840px;
+    background: rgba(30, 30, 30, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    /* Lifted */
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    z-index: 100;
+}
+
+/* The Paper */
+.editor-viewport {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    padding: 0 var(--sys-spacing-4) 100px;
+}
+
+.paper-surface {
+    width: 100%;
+    max-width: 800px;
+    min-height: 1200px;
+    background: #151515;
+    /* Lighter than before (#111) for contrast */
+    border: 1px solid #2A2A2A;
+    /* Subtle highlight */
+    border-top: 1px solid #333;
+    /* Top light catch */
+
+    /* Deep "Floating" Shadow */
+    box-shadow:
+        0 0 0 1px #000,
+        0 20px 50px rgba(0, 0, 0, 0.7),
+        0 5px 15px rgba(0, 0, 0, 0.5);
+
+    padding: 80px 100px;
+    margin-top: 10px;
+
+    color: #E5E5E5;
+    /* Higher contrast text */
+    font-family: var(--sys-font-content);
+    font-size: 1.15rem;
+    line-height: 1.85;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.paper-surface:focus {
+    background: #181818;
+    /* Slight glow on focus */
+    border-color: #444;
+    box-shadow:
+        0 0 0 1px #000,
+        0 30px 60px rgba(0, 0, 0, 0.8);
+}
+
+.paper-surface h1 {
+    font-family: var(--sys-font-ui);
+    font-weight: 800;
+    font-size: 2.5rem;
+    letter-spacing: -1px;
+    margin-bottom: 2rem;
+    color: #FFF;
+}
+
+
+/* === 3. AUXILIARY (Right - AI) === */
+.author-aux {
+    background: var(--sys-color-surface-1);
+    border-left: 1px solid var(--sys-border-dim);
+    display: flex;
+    flex-direction: column;
+}
+
+.aux-header {
+    height: 64px;
+    border-bottom: 1px solid var(--sys-border-dim);
+    display: flex;
+    align-items: center;
+    padding: 0 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--sys-color-primary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.aux-content {
+    flex: 1;
+    padding: var(--sys-spacing-3);
+    overflow-y: auto;
+}
+
+.ai-msg {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.ai-msg.system {
+    background: var(--sys-color-surface-2);
+    border: 1px solid var(--sys-border-dim);
+    color: #CCC;
+}
+
+.aux-input {
+    padding: var(--sys-spacing-3);
+    border-top: 1px solid var(--sys-border-dim);
+    display: flex;
+    gap: 8px;
+}
+
+.aux-input textarea {
+    flex: 1;
+    background: var(--sys-color-surface-2);
+    border: 1px solid var(--sys-border-dim);
+    border-radius: 8px;
+    padding: 10px;
+    color: #FFF;
+    resize: none;
+    height: 48px;
+    font-family: var(--sys-font-ui);
+    outline: none;
+}
+
+.aux-input textarea:focus {
+    border-color: var(--sys-color-primary);
+}
+
+.aux-input button {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    background: var(--sys-color-surface-3);
+    border: 1px solid var(--sys-border-dim);
+    color: #FFF;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.aux-input button:hover {
+    background: var(--sys-color-primary);
+    border-color: var(--sys-color-primary);
+    color: #000;
+}

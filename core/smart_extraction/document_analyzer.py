@@ -312,7 +312,8 @@ class DocumentAnalyzer:
             line_count = sum(1 for d in drawings if d.get("type") == "l")
             if line_count > 10:  # Multiple lines suggest table
                 return True
-        except:
+        except (AttributeError, TypeError):
+            # Page doesn't support get_drawings or invalid data
             pass
 
         return False

@@ -25,63 +25,96 @@ CHAPTER_PATTERNS = [
 
 # FIX-006: Section heading patterns
 SECTION_PATTERNS = [
-    r'^(\d+\.)+\s+\w',  # 1.1 Section
+    r'^(\d+\.)+\s*\w',  # 1.1. Section (with trailing dot)
+    r'^\d+\.\d+\.?\s+\w',  # 1.1 Section or 1.1. Section (flexible)
     r'^(Section|SECTION|Phần|PHẦN|Mục|MỤC)\s+\d+',
     r'^[IVXLCDM]+\.\s+\w',  # I. Section, II. Section
 ]
 
 
-def setup_styles(doc):
+def setup_styles(doc, style_mode='ebook'):
     """
     Thiết lập các styles chuẩn cho document
+
+    Args:
+        doc: Document object
+        style_mode: 'ebook' (commercial, spacious) or 'academic' (compact)
     """
     styles = doc.styles
-    
+
+    # Style configuration based on mode
+    if style_mode == 'ebook':
+        # Commercial ebook - spacious, readable
+        body_config = {
+            'font_name': 'Georgia',
+            'font_size': 12,
+            'line_spacing': 1.5,
+            'space_after': 12,
+            'first_line_indent': 0.3,
+        }
+    else:
+        # Academic - compact
+        body_config = {
+            'font_name': 'Times New Roman',
+            'font_size': 11,
+            'line_spacing': 1.15,
+            'space_after': 6,
+            'first_line_indent': 0.2,
+        }
+
     # Style cho Body Text (nội dung chính)
     try:
         body_style = styles['Body Text']
     except KeyError:
         body_style = styles.add_style('Body Text', WD_STYLE_TYPE.PARAGRAPH)
-    
+
     body_font = body_style.font
-    body_font.name = 'Times New Roman'
-    body_font.size = Pt(12)
-    
+    body_font.name = body_config['font_name']
+    body_font.size = Pt(body_config['font_size'])
+
     body_para = body_style.paragraph_format
-    body_para.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    body_para.first_line_indent = Inches(0.2)  # Thụt đầu dòng
-    body_para.line_spacing = 1.15
-    body_para.space_after = Pt(6)
+    body_para.alignment = WD_ALIGN_PARAGRAPH.JUSTIFY  # Justify for professional look
+    body_para.first_line_indent = Inches(body_config['first_line_indent'])
+    body_para.line_spacing = body_config['line_spacing']
+    body_para.space_after = Pt(body_config['space_after'])
     
+    # Heading configuration based on mode
+    if style_mode == 'ebook':
+        h1_config = {'font_size': 24, 'space_before': 48, 'space_after': 18}
+        h2_config = {'font_size': 18, 'space_before': 24, 'space_after': 12}
+    else:
+        h1_config = {'font_size': 18, 'space_before': 36, 'space_after': 12}
+        h2_config = {'font_size': 14, 'space_before': 18, 'space_after': 6}
+
     # Style cho Heading 1 (tiêu đề chương)
     heading1_style = styles['Heading 1']
     h1_font = heading1_style.font
     h1_font.name = 'Arial'
-    h1_font.size = Pt(18)
+    h1_font.size = Pt(h1_config['font_size'])
     h1_font.bold = True
     h1_font.color.rgb = RGBColor(0, 0, 0)
-    
+
     h1_para = heading1_style.paragraph_format
     h1_para.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    h1_para.space_before = Pt(36)
-    h1_para.space_after = Pt(12)
+    h1_para.space_before = Pt(h1_config['space_before'])
+    h1_para.space_after = Pt(h1_config['space_after'])
     h1_para.keep_with_next = True
     h1_para.page_break_before = True  # Bắt đầu chương ở trang mới
-    
+
     # Style cho Heading 2 (tiểu mục)
     heading2_style = styles['Heading 2']
     h2_font = heading2_style.font
     h2_font.name = 'Arial'
-    h2_font.size = Pt(14)
+    h2_font.size = Pt(h2_config['font_size'])
     h2_font.bold = True
-    
+
     h2_para = heading2_style.paragraph_format
     h2_para.alignment = WD_ALIGN_PARAGRAPH.LEFT
-    h2_para.space_before = Pt(18)
-    h2_para.space_after = Pt(6)
+    h2_para.space_before = Pt(h2_config['space_before'])
+    h2_para.space_after = Pt(h2_config['space_after'])
     h2_para.keep_with_next = True
-    
-    print("✓ Đã thiết lập styles")
+
+    print(f"✓ Đã thiết lập styles (mode: {style_mode})")
 
 
 def is_chapter_heading(text: str) -> bool:

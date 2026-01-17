@@ -49,16 +49,20 @@ class Settings(BaseSettings):
 
     # ========== Security ==========
     # Security mode: development | internal | production
+    # ⚠️ PRODUCTION WARNING: Change to "production" and enable auth before deploying!
     security_mode: str = "development"  # Default: no auth required
 
     # Session-based authentication (for internal deployment)
+    # ⚠️ PRODUCTION WARNING: Enable this for production deployments!
     session_auth_enabled: bool = False  # Default OFF - enable per organization
     session_timeout_hours: int = 8  # Working day session
-    session_secret: str = "change-this-in-production"  # Auto-gen per org
+    # ⚠️ SECURITY: MUST be changed via SESSION_SECRET env var in production!
+    session_secret: str = "INSECURE-DEV-SECRET-CHANGE-IN-PRODUCTION"
 
     # CSRF Protection (only for internet-facing deployments)
     csrf_enabled: bool = False  # Default OFF - not needed for internal
-    csrf_secret_key: str = "change-this-secret-key-in-production-asap"
+    # ⚠️ SECURITY: MUST be changed via CSRF_SECRET_KEY env var in production!
+    csrf_secret_key: str = "INSECURE-DEV-CSRF-CHANGE-IN-PRODUCTION"
 
     # API Key authentication (for API integrations)
     api_key_auth_enabled: bool = False
@@ -151,6 +155,59 @@ class Settings(BaseSettings):
             self.glossary_dir
         ]:
             dir_path.mkdir(exist_ok=True, parents=True)
+
+        # Security validation for production mode
+        self._validate_security_settings()
+
+    def _validate_security_settings(self):
+        """Validate security settings for production mode."""
+        import warnings
+
+        insecure_secrets = [
+            "INSECURE-DEV-SECRET-CHANGE-IN-PRODUCTION",
+            "INSECURE-DEV-CSRF-CHANGE-IN-PRODUCTION",
+            "change-this-in-production",
+            "change-this-secret-key-in-production-asap",
+        ]
+
+        if self.security_mode == "production":
+            errors = []
+
+            # Check session secret
+            if self.session_secret in insecure_secrets:
+                errors.append(
+                    "SESSION_SECRET must be set to a secure value in production! "
+                    "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                )
+
+            # Check CSRF secret if enabled
+            if self.csrf_enabled and self.csrf_secret_key in insecure_secrets:
+                errors.append(
+                    "CSRF_SECRET_KEY must be set to a secure value when CSRF is enabled! "
+                    "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                )
+
+            # Check auth is enabled
+            if not self.session_auth_enabled and not self.api_key_auth_enabled:
+                errors.append(
+                    "Production mode requires authentication! "
+                    "Enable SESSION_AUTH_ENABLED=true or API_KEY_AUTH_ENABLED=true"
+                )
+
+            if errors:
+                raise ValueError(
+                    "🔒 SECURITY ERROR - Production mode requires secure configuration:\n"
+                    + "\n".join(f"  • {e}" for e in errors)
+                )
+
+        elif self.security_mode == "development":
+            # Warn about insecure defaults in development
+            if self.session_secret in insecure_secrets:
+                warnings.warn(
+                    "⚠️  Running with default insecure secrets. "
+                    "Set SESSION_SECRET and CSRF_SECRET_KEY env vars for production.",
+                    UserWarning
+                )
 
     def get_api_key(self) -> str:
         """Get API key based on provider"""

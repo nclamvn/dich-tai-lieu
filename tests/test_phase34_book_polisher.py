@@ -156,9 +156,9 @@ def test_quotes_conversion():
     para1_text = doc.paragraphs[0].text
     para2_text = doc.paragraphs[1].text
 
-    # Should have curly quotes
-    assert '"' in para1_text or '"' in para1_text, f"Expected curly quotes in: {para1_text}"
-    assert "'" in para2_text or "'" in para2_text, f"Expected curly apostrophe in: {para2_text}"
+    # Should have curly quotes (unicode: " = \u201c, " = \u201d)
+    assert '\u201c' in para1_text or '\u201d' in para1_text, f"Expected curly quotes in: {para1_text}"
+    assert '\u2019' in para2_text, f"Expected curly apostrophe in: {para2_text}"
 
     # Should NOT have straight quotes
     assert '"' not in para1_text, "Straight quotes should be converted"
@@ -227,14 +227,22 @@ def test_blockquote_indentation():
 # ============================================================================
 
 def test_epigraph_alignment():
-    """Test that epigraphs are right-aligned with proper formatting."""
+    """Test that epigraphs are right-aligned with proper formatting.
+
+    Note: BookPolisher detects epigraphs by:
+    - Right alignment AND
+    - Left indent >= 0.8 inches
+
+    Both conditions must be met for epigraph formatting to apply.
+    """
     doc = create_test_document()
 
     # Add epigraph (short, italicized quote at chapter start)
-    # Polisher detects epigraphs by position and length
+    # Must have BOTH right alignment AND left indent >= 0.8 inches
     chapter = doc.add_heading("Chapter 1", level=1)
     epigraph = add_paragraph(doc, '"In the beginning..." - Ancient Proverb')
-    epigraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT  # Pre-mark as right-aligned
+    epigraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    epigraph.paragraph_format.left_indent = Inches(1.0)  # >= 0.8" required
 
     # Apply polisher
     polisher = BookPolisher(BookPolishConfig())

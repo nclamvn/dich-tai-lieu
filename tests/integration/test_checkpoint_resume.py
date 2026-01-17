@@ -36,22 +36,27 @@ class TestCheckpointResumeIntegration:
 
     @pytest.fixture
     def sample_text(self):
-        """Sample text for chunking"""
+        """Sample text for chunking - must be long enough to create at least 5 chunks with max_chars=200"""
         return """
         Chapter 1: Introduction
-        This is the first paragraph of our test document.
+        This is the first paragraph of our test document. It contains important information
+        about the topic we are discussing. We need to make sure this text is long enough.
 
         Chapter 2: Methods
-        This is the second chapter with more content.
+        This is the second chapter with more content about our methodology.
+        We used various techniques to gather and analyze the data for this study.
 
         Chapter 3: Results
-        The third chapter contains our findings.
+        The third chapter contains our findings and observations from the experiments.
+        The data shows interesting patterns that we need to explore further.
 
         Chapter 4: Discussion
-        We discuss the implications here.
+        We discuss the implications here and what they mean for future research.
+        The results have significant impact on how we understand this topic.
 
         Chapter 5: Conclusion
-        Final thoughts and summary.
+        Final thoughts and summary of everything we have learned in this document.
+        We hope this information will be useful for readers and researchers.
         """
 
     @pytest.mark.asyncio

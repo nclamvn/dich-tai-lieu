@@ -1,0 +1,139 @@
+/* core/pdf_renderer_v2/templates/css/professional/academic-paper.css */
+
+/* Academic paper - formal, citation-friendly, double-spaced */
+
+:root {
+    --font-serif: 'Noto Serif', 'Times New Roman', serif;
+    --text-base: 12pt;
+    --line-height: 2; /* Double-spaced */
+}
+
+body {
+    font-family: var(--font-serif);
+}
+
+@page {
+    size: A4;
+    margin: 2.54cm; /* 1 inch margins */
+
+    @top-right {
+        content: counter(page);
+        font-size: 12pt;
+    }
+
+    @bottom-center {
+        content: none;
+    }
+}
+
+.document-header {
+    text-align: center;
+    margin-bottom: 2em;
+    border-bottom: none;
+}
+
+.doc-title {
+    font-size: 14pt;
+    font-weight: bold;
+    text-transform: none;
+    margin-bottom: 0.5em;
+}
+
+.doc-author {
+    font-size: 12pt;
+    font-style: normal;
+}
+
+.doc-date {
+    font-size: 12pt;
+}
+
+/* Headings - APA/MLA style */
+h1, h2, h3 {
+    font-family: var(--font-serif);
+    font-weight: bold;
+}
+
+.content > h1 {
+    font-size: 14pt;
+    text-align: center;
+    margin-top: 1em;
+    margin-bottom: 1em;
+}
+
+.content > h2 {
+    font-size: 12pt;
+    font-style: italic;
+    margin-top: 1em;
+}
+
+.content > h3 {
+    font-size: 12pt;
+    font-weight: bold;
+    margin-top: 1em;
+}
+
+/* Paragraphs - first line indent */
+p {
+    text-indent: 0.5in;
+    margin-bottom: 0;
+    text-align: justify;
+}
+
+p:first-of-type,
+h1 + p, h2 + p, h3 + p {
+    text-indent: 0;
+}
+
+/* Block quotes - indented, single-spaced */
+blockquote {
+    margin: 1em 0.5in;
+    border-left: none;
+    font-style: normal;
+    line-height: 1.5; /* Single-spaced for block quotes */
+}
+
+blockquote p {
+    text-indent: 0;
+}
+
+/* Tables */
+table {
+    font-size: 11pt;
+    line-height: 1.5;
+}
+
+th {
+    background-color: transparent;
+    border-bottom: 2px solid #333;
+}
+
+td {
+    border-top: none;
+    border-bottom: 1px solid #ddd;
+}
+
+/* Footnotes */
+.footnotes {
+    font-size: 10pt;
+    line-height: 1.5;
+    margin-top: 2em;
+}
+
+/* References section style */
+.content > h1:last-of-type {
+    page-break-before: always;
+}
+
+/* Hanging indent for references */
+.references p,
+.bibliography p {
+    text-indent: -0.5in;
+    padding-left: 0.5in;
+}
+
+/* Code - minimal styling */
+code, pre {
+    font-size: 10pt;
+    line-height: 1.5;
+}

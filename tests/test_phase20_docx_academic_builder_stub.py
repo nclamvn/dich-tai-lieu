@@ -31,30 +31,26 @@ class TestAcademicLayoutConfig(unittest.TestCase):
     """Test AcademicLayoutConfig dataclass"""
 
     def test_default_config(self):
-        """Test default configuration values"""
+        """Test default configuration values (theme-based after Phase 9 refactor)"""
         config = AcademicLayoutConfig()
-        
-        self.assertEqual(config.font_name, "Times New Roman")
-        self.assertEqual(config.font_size, 12)
-        self.assertEqual(config.line_spacing, 1.5)
-        self.assertEqual(config.paragraph_spacing_before, 6)
-        self.assertEqual(config.paragraph_spacing_after, 6)
+
+        # Phase 9: Config now uses themes, legacy fields default to None
+        self.assertEqual(config.theme, "academic")
+        self.assertIsNone(config.font_name)  # Theme-based, not hardcoded
+        self.assertIsNone(config.font_size)  # Theme-based, not hardcoded
+        self.assertEqual(config.equation_rendering_mode, "latex_text")
 
     def test_custom_config(self):
         """Test custom configuration values"""
         config = AcademicLayoutConfig(
             font_name="Arial",
             font_size=11,
-            line_spacing=2.0,
-            paragraph_spacing_before=12,
-            paragraph_spacing_after=12
+            theme="modern",
         )
-        
+
         self.assertEqual(config.font_name, "Arial")
         self.assertEqual(config.font_size, 11)
-        self.assertEqual(config.line_spacing, 2.0)
-        self.assertEqual(config.paragraph_spacing_before, 12)
-        self.assertEqual(config.paragraph_spacing_after, 12)
+        self.assertEqual(config.theme, "modern")
 
 
 class TestBuildAcademicDOCXStub(unittest.TestCase):
@@ -104,18 +100,18 @@ class TestBuildAcademicDOCXStub(unittest.TestCase):
         nodes = [
             DocNode(DocNodeType.PARAGRAPH, "Test paragraph.")
         ]
-        
+
         config = AcademicLayoutConfig(
             font_name="Arial",
             font_size=14,
-            line_spacing=2.0
+            theme="modern"
         )
-        
+
         output_path = os.path.join(self.temp_dir, "test_custom_config.docx")
-        
+
         # Should accept config parameter without error
         build_academic_docx(nodes, output_path, config=config)
-        
+
         self.assertTrue(os.path.exists(output_path))
 
     def test_stub_with_complex_document(self):

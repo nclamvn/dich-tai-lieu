@@ -166,7 +166,7 @@ class HealthMonitor:
                         test_file.touch()
                         test_file.unlink()
                         details[name] = "ok"
-                    except:
+                    except OSError:
                         all_ok = False
                         details[name] = "not_writable"
 

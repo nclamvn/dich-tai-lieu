@@ -18,7 +18,8 @@ from core.translator import TranslatorEngine
 from core.validator import QualityValidator
 from core.chunker import SmartChunker
 from core.translation_memory import TranslationMemory
-from core.glossary import GlossaryManager
+# Import GlossaryManager from legacy module (not the new package)
+from core.glossary_legacy import GlossaryManager
 from config.settings import Settings
 
 

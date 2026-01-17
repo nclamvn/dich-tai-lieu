@@ -59,7 +59,7 @@ def count_lines(file_path: Path) -> dict:
             "comments": comment_lines,
             "blank": blank_lines,
         }
-    except:
+    except (OSError, UnicodeDecodeError):
         return {"total": 0, "code": 0, "comments": 0, "blank": 0}
 
 
@@ -91,7 +91,7 @@ def analyze_python_file(file_path: Path) -> dict:
             "functions": functions[:20],  # Limit
             "imports": list(set(imports))[:20],
         }
-    except:
+    except (SyntaxError, OSError, UnicodeDecodeError):
         return {"classes": [], "functions": [], "imports": []}
 
 

@@ -47,3 +47,4 @@ data/**/*.db
 dist/
 build/
 *.egg-info/
+ui/node_modules/

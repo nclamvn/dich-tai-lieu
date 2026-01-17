@@ -1,0 +1,53 @@
+/* Modern Novel - Clean Sans/Serif Mix */
+
+:root {
+    --font-body: 'Be Vietnam Pro', sans-serif;
+    --font-heading: 'Be Vietnam Pro', sans-serif;
+
+    --line-height-body: 1.7;
+    /* Airy */
+    --font-size-body: 10.5pt;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: var(--font-size-body);
+    font-weight: 300;
+}
+
+h1,
+h2,
+h3 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+}
+
+h1 {
+    font-size: 28pt;
+    text-align: left;
+    letter-spacing: -0.02em;
+    border-bottom: 2px solid #000;
+}
+
+p {
+    text-indent: 0;
+    margin-bottom: 1em;
+    /* Block style */
+}
+
+@page {
+    /* Larger margins for modern feel */
+    margin-top: 30mm;
+    margin-bottom: 30mm;
+
+    /* Custom footer styles */
+    @bottom-center {
+        content: none;
+    }
+
+    @bottom-right {
+        content: counter(page);
+        font-family: var(--font-body);
+        font-weight: bold;
+    }
+}

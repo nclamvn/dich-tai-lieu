@@ -161,7 +161,8 @@ class StreamingEbookRenderer:
         try:
             from reportlab.pdfbase import pdfmetrics
             pdfmetrics.getFont('BookFont')
-        except:
+        except KeyError:
+            # BookFont not registered, use fallback
             font_name = 'Helvetica'
 
         # Body text
@@ -434,7 +435,7 @@ class StreamingEbookRenderer:
             canvas.saveState()
             try:
                 canvas.setFont('BookFont', 9)
-            except:
+            except KeyError:
                 canvas.setFont('Helvetica', 9)
             canvas.drawCentredString(
                 self.page_width / 2,
@@ -512,7 +513,8 @@ class StreamingEbookRenderer:
             for line in result.stdout.split('\n'):
                 if line.startswith('Pages:'):
                     return int(line.split(':')[1].strip())
-        except:
+        except (subprocess.SubprocessError, OSError, ValueError):
+            # pdfinfo not available or failed
             pass
         return 0
 
@@ -668,7 +670,8 @@ class StreamingAcademicRenderer:
             for line in result.stdout.split('\n'):
                 if line.startswith('Pages:'):
                     return int(line.split(':')[1].strip())
-        except:
+        except (subprocess.SubprocessError, OSError, ValueError):
+            # pdfinfo not available or failed
             pass
         return 0
 

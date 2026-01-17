@@ -26,6 +26,10 @@ PROJECT_ROOT = Path(__file__).parent.parent
 PDF_PATH = PROJECT_ROOT / "Stemsample.pdf"
 
 
+@pytest.mark.skipif(
+    not PDF_PATH.exists(),
+    reason="Stemsample.pdf not found - skip E2E test"
+)
 def test_stemsample_e2e_academic_omml():
     """
     E2E test: Stemsample.pdf → Academic DOCX with OMML equations

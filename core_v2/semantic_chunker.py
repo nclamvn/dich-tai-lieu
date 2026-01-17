@@ -340,7 +340,8 @@ If no clear boundaries, return empty array: []
             boundaries = json.loads(response.content)
             if isinstance(boundaries, list):
                 return [b for b in boundaries if isinstance(b, int)]
-        except:
+        except (json.JSONDecodeError, AttributeError, TypeError):
+            # Failed to parse LLM response as JSON boundaries
             pass
 
         return []

@@ -1,0 +1,92 @@
+/* 
+   DESIGN SYSTEM v1.0 (Commercial Standard)
+   Based on Material Design 3 ("You") & IBM Carbon
+   Philosophy: High Contrast, OLED Optimized, Strict Token Usage.
+*/
+
+:root {
+    /* === PALETTE: NEUTRAL (The Void) === */
+    --sys-color-void: #000000;
+    /* True Black */
+    --sys-color-surface-1: #0A0A0A;
+    /* Sidebar / Panels */
+    --sys-color-surface-2: #121212;
+    /* Cards / Elevations */
+    --sys-color-surface-3: #1E1E1E;
+    /* Modals / Popovers */
+
+    /* === PALETTE: ACCENTS (Commercial Professional) === */
+    /* Primary: Emerald (Growth, Creation) - Replaces "Hacker Green" */
+    --sys-color-primary: #10B981;
+    --sys-color-primary-dim: rgba(16, 185, 129, 0.1);
+    --sys-color-primary-glow: rgba(16, 185, 129, 0.3);
+
+    /* Secondary: Slate (Structure) */
+    --sys-color-secondary: #64748B;
+
+    /* Destructive: Rose (Errors) */
+    --sys-color-error: #E11D48;
+
+    /* === TYPOGRAPHY (Intentional) === */
+    --sys-font-ui: 'Inter', system-ui, -apple-system, sans-serif;
+    --sys-font-content: 'Merriweather', 'Georgia', serif;
+    --sys-font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    /* === BORDERS & SEPARATORS === */
+    --sys-border-dim: #222222;
+    --sys-border-subtle: #333333;
+    --sys-border-highlight: #444444;
+
+    /* === SIZES (8pt Grid) === */
+    --sys-spacing-1: 4px;
+    --sys-spacing-2: 8px;
+    --sys-spacing-3: 16px;
+    --sys-spacing-4: 24px;
+    --sys-spacing-6: 48px;
+
+    /* === LAYOUT DIMENSIONS === */
+    --sys-layout-spine-width: 68px;
+    --sys-layout-sidebar-width: 300px;
+    --sys-layout-aux-width: 360px;
+}
+
+/* GLOBAL RESET IMPROVEMENTS */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background-color: var(--sys-color-void);
+    color: #E0E0E0;
+    font-family: var(--sys-font-ui);
+    -webkit-font-smoothing: antialiased;
+}
+
+/* UTILITIES */
+.u-flex-center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.u-text-subtle {
+    color: #888;
+    font-size: 0.85rem;
+}
+
+.u-hidden {
+    display: none !important;
+}
+
+/* ANIMATIONS */
+@keyframes sys-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(4px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

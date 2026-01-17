@@ -1,0 +1,182 @@
+/* core/pdf_renderer_v2/templates/css/professional/presentation-handout.css */
+
+/* Presentation handout - large margins for notes, clear structure */
+
+:root {
+    --font-sans: 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+    --text-base: 11pt;
+    --line-height: 1.5;
+    --color-primary: #4f46e5;
+}
+
+body {
+    font-family: var(--font-sans);
+}
+
+@page {
+    size: A4;
+    margin: 2cm 5cm 2cm 2cm; /* Extra right margin for notes */
+
+    @bottom-left {
+        content: counter(page) " / " counter(pages);
+        font-size: 9pt;
+        color: #666;
+    }
+
+    @right-middle {
+        content: "Notes";
+        font-size: 8pt;
+        color: #999;
+        writing-mode: vertical-rl;
+    }
+}
+
+.document-header {
+    background-color: var(--color-primary);
+    color: white;
+    padding: 1cm;
+    margin: -2cm -5cm 1.5cm -2cm;
+    padding-right: 5cm;
+}
+
+.doc-title {
+    font-size: 20pt;
+    font-weight: 600;
+    margin-bottom: 0.3em;
+    color: white;
+}
+
+.doc-author,
+.doc-date {
+    font-size: 10pt;
+    opacity: 0.9;
+    color: white;
+}
+
+/* Slide headings */
+.content > h1 {
+    font-size: 16pt;
+    font-weight: 600;
+    color: var(--color-primary);
+    margin-top: 1.5cm;
+    margin-bottom: 0.5cm;
+    padding-bottom: 0.3em;
+    border-bottom: 2px solid var(--color-primary);
+    page-break-before: always;
+}
+
+.content > h1:first-of-type {
+    page-break-before: avoid;
+}
+
+.content > h2 {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #333;
+    margin-top: 0.8cm;
+}
+
+/* Key points */
+p {
+    text-indent: 0;
+    margin-bottom: 0.8em;
+}
+
+/* Bullet points - prominent */
+ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+ul li {
+    padding-left: 1.5em;
+    margin-bottom: 0.6em;
+    position: relative;
+}
+
+ul li::before {
+    content: ">";
+    position: absolute;
+    left: 0;
+    color: var(--color-primary);
+    font-weight: bold;
+}
+
+/* Numbered steps */
+ol {
+    counter-reset: step;
+    list-style: none;
+    padding-left: 0;
+}
+
+ol li {
+    counter-increment: step;
+    padding-left: 2em;
+    margin-bottom: 0.8em;
+    position: relative;
+}
+
+ol li::before {
+    content: counter(step);
+    position: absolute;
+    left: 0;
+    background-color: var(--color-primary);
+    color: white;
+    width: 1.5em;
+    height: 1.5em;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 1.5em;
+    font-size: 0.9em;
+    font-weight: bold;
+}
+
+/* Key takeaways */
+blockquote {
+    background-color: #f0f4ff;
+    border-left: 4px solid var(--color-primary);
+    padding: 1em;
+    margin: 1em 0;
+    border-radius: 0 8px 8px 0;
+    font-style: normal;
+}
+
+blockquote strong:first-child {
+    color: var(--color-primary);
+    text-transform: uppercase;
+    font-size: 9pt;
+    display: block;
+    margin-bottom: 0.5em;
+}
+
+/* Code examples */
+pre {
+    font-size: 9pt;
+    background-color: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 6px;
+}
+
+/* Tables - clear */
+table {
+    font-size: 10pt;
+}
+
+th {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+/* Images */
+img {
+    max-width: 100%;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Section divider */
+hr {
+    border: none;
+    border-top: 2px dashed #ddd;
+    margin: 1.5em 0;
+}

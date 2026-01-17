@@ -1,0 +1,104 @@
+# =============================================================================
+# Docker Ignore File - AI Publisher Pro
+# =============================================================================
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+.eggs/
+*.egg-info/
+.installed.cfg
+*.egg
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Documentation (keep minimal)
+docs/implementation-notes/
+docs/specs/
+*.md
+!README.md
+!CHANGELOG.md
+!LICENSE.md
+
+# Tests (not needed in production)
+tests/
+pytest.ini
+.coveragerc
+
+# Development files
+*.log
+*.tmp
+.env.local
+.env.development
+*.bak
+
+# Node modules (if any)
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+
+# Data and outputs (mounted as volumes)
+data/
+outputs/
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Large files
+*.pdf
+*.docx
+*.zip
+*.tar.gz
+
+# Docker files (not needed inside container)
+Dockerfile*
+docker-compose*.yml
+.dockerignore
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Playwright/E2E tests
+ui/e2e/
+ui/playwright-report/
+ui/test-results/
+playwright.config.js
+
+# Load tests
+tests/load/
+
+# Deprecated/backup
+*.deprecated
+*.backup
+translator_project/

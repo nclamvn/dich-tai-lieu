@@ -26,8 +26,8 @@ from .docx_styles import (
     PAGE_MARGINS,
     PAGE_SIZES,
     DEFAULT_OPTIONS,
-    AcademicStyles,
-    StyleApplicator,
+    DEFAULT_OPTIONS,
+    StyleManager,
     THEOREM_TYPES,
     HEADING_LEVELS,
 )
@@ -68,8 +68,8 @@ __all__ = [
     'PAGE_MARGINS',
     'PAGE_SIZES',
     'DEFAULT_OPTIONS',
-    'AcademicStyles',
-    'StyleApplicator',
+    'DEFAULT_OPTIONS',
+    'StyleManager',
     'THEOREM_TYPES',
     'HEADING_LEVELS',
 

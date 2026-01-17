@@ -19,6 +19,108 @@ const PublisherApp = {
     pollInterval: null,
     aiProvider: 'claude', // AI provider: claude, openai, gemini, deepseek
     costMode: 'balanced', // economy, balanced, quality
+    pdfTemplate: 'classic_serif', // PDF template for output
+    pdfRendererVersion: 'v2', // PDF renderer: v2 (Pandoc+WeasyPrint) or v1 (ReportLab)
+    glossaryIds: [], // Selected glossary IDs
+    availableGlossaries: [], // Loaded glossaries from API
+    tmIds: [], // Selected TM IDs
+    tmIds: [], // Selected TM IDs
+    availableTMs: [], // Loaded TMs from API
+    smartTables: false, // Premium Table Reconstruction
+  },
+
+  // PDF Template data
+  pdfTemplates: {
+    // Literary Templates
+    classic_serif: {
+      name: 'Classic Serif',
+      pageSize: 'A5 (148×210mm)',
+      font: 'Noto Serif',
+      bestFor: 'Tiểu thuyết, văn học',
+      category: 'literary'
+    },
+    modern_minimal: {
+      name: 'Modern Minimal',
+      pageSize: 'B5 (176×250mm)',
+      font: 'Inter',
+      bestFor: 'Self-help, phi hư cấu',
+      category: 'literary'
+    },
+    literary_elegant: {
+      name: 'Literary Elegant',
+      pageSize: 'Trade (140×215mm)',
+      font: 'Crimson Pro',
+      bestFor: 'Thơ, truyện ngắn',
+      category: 'literary'
+    },
+    compact_pocket: {
+      name: 'Compact Pocket',
+      pageSize: 'A6 (105×148mm)',
+      font: 'Literata',
+      bestFor: 'Light novels, sách bỏ túi',
+      category: 'literary'
+    },
+    premium_hardcover: {
+      name: 'Premium Hardcover',
+      pageSize: 'Royal (156×234mm)',
+      font: 'EB Garamond',
+      bestFor: 'Collector, sách quà tặng',
+      category: 'literary'
+    },
+    easy_read: {
+      name: 'Easy Read',
+      pageSize: 'A4 (210×297mm)',
+      font: 'Atkinson',
+      bestFor: 'Accessibility, giáo dục',
+      category: 'literary'
+    },
+    // Business Templates
+    business_report: {
+      name: 'Business Report',
+      pageSize: 'A4 (210×297mm)',
+      font: 'Source Sans Pro',
+      bestFor: 'Báo cáo, proposal, quarterly reports',
+      category: 'business'
+    },
+    // Academic Templates
+    academic_paper: {
+      name: 'Academic Paper',
+      pageSize: 'A4 (210×297mm)',
+      font: 'Noto Serif',
+      bestFor: 'Bài nghiên cứu, luận văn, journal',
+      category: 'academic'
+    },
+    // Technical Templates
+    technical_doc: {
+      name: 'Technical Documentation',
+      pageSize: 'A4 (210×297mm)',
+      font: 'Inter',
+      bestFor: 'User manuals, API docs, technical guides',
+      category: 'technical'
+    },
+    // Legal Templates
+    legal_document: {
+      name: 'Legal Document',
+      pageSize: 'A4 (210×297mm)',
+      font: 'Noto Serif',
+      bestFor: 'Hợp đồng, biên bản, văn bản pháp lý',
+      category: 'legal'
+    },
+    // Media Templates
+    newsletter: {
+      name: 'Newsletter',
+      pageSize: 'A4 (210×297mm)',
+      font: 'Source Sans Pro',
+      bestFor: 'Bản tin công ty, magazine, tạp chí',
+      category: 'media'
+    },
+    presentation: {
+      name: 'Presentation',
+      pageSize: '16:9 (297×167mm)',
+      font: 'Inter',
+      bestFor: 'Slide decks, pitch decks, training',
+      category: 'media'
+    }
   },
 
   // Cost mode configurations
@@ -42,13 +144,13 @@ const PublisherApp = {
       costPerPage: 0.05,
     },
   },
-  
+
   // API Base
   API_BASE: '/api/v2',
-  
+
   // Profiles data
   profiles: [],
-  
+
   // Profile icons (Lucide icon names)
   profileIcons: {
     novel: 'book-open',
@@ -64,7 +166,7 @@ const PublisherApp = {
     screenplay: 'clapperboard',
     game_localization: 'gamepad-2',
   },
-  
+
   // Format icons
   formatIcons: {
     docx: 'file-text',
@@ -86,13 +188,22 @@ const PublisherApp = {
     vi: 'Tiếng Việt',
     auto: 'Tự động phát hiện',
   },
-  
+
   // Initialize
   async init() {
     console.log('🚀 Publisher Studio initializing...');
 
+    // Initialize WebSocket connection (P2)
+    this.initWebSocket();
+
     // Load profiles
     await this.loadProfiles();
+
+    // Load glossaries
+    await this.loadGlossaries();
+
+    // Load TMs
+    await this.loadTMs();
 
     // Bind events
     this.bindEvents();
@@ -107,6 +218,263 @@ const PublisherApp = {
     await this.checkRunningJob();
 
     console.log('✅ Publisher Studio ready');
+  },
+
+  // P2: Initialize WebSocket for real-time updates
+  initWebSocket() {
+    if (typeof WebSocketClient === 'undefined') {
+      console.warn('[WS] WebSocketClient not loaded, using polling only');
+      return;
+    }
+
+    // Initialize WebSocket with status callback
+    WebSocketClient.init((status, info) => {
+      this.updateConnectionStatus(status, info);
+    });
+
+    // Register event handlers
+    WebSocketClient.on('job_progress', (data) => {
+      if (data.job_id === this.state.job?.job_id) {
+        this.handleWSJobProgress(data);
+      }
+    });
+
+    WebSocketClient.on('job_updated', (data) => {
+      if (data.job_id === this.state.job?.job_id) {
+        this.handleWSJobUpdated(data);
+      }
+    });
+
+    WebSocketClient.on('job_completed', (data) => {
+      if (data.job_id === this.state.job?.job_id) {
+        this.handleWSJobCompleted(data);
+      }
+    });
+
+    WebSocketClient.on('job_failed', (data) => {
+      if (data.job_id === this.state.job?.job_id) {
+        this.handleWSJobFailed(data);
+      }
+    });
+
+    WebSocketClient.on('chunk_translated', (data) => {
+      if (data.job_id === this.state.job?.job_id) {
+        this.handleWSChunkTranslated(data);
+      }
+    });
+
+    console.log('[WS] WebSocket handlers registered');
+  },
+
+  // P2: Update connection status indicator
+  updateConnectionStatus(status, info) {
+    const indicator = document.getElementById('connection-status');
+    if (!indicator) return;
+
+    const statusConfig = {
+      connecting: { text: 'Đang kết nối...', color: 'text-yellow-500', icon: 'loader-2' },
+      connected: { text: 'Real-time', color: 'text-green-500', icon: 'wifi' },
+      disconnected: { text: 'Mất kết nối', color: 'text-red-500', icon: 'wifi-off' },
+      reconnecting: { text: `Đang kết nối lại (${info.reconnectAttempts})...`, color: 'text-yellow-500', icon: 'loader-2' },
+      polling: { text: 'Polling mode', color: 'text-orange-500', icon: 'refresh-cw' },
+    };
+
+    const config = statusConfig[status] || statusConfig.disconnected;
+    indicator.innerHTML = `
+      <i data-lucide="${config.icon}" class="w-3 h-3 ${status === 'connecting' || status === 'reconnecting' ? 'animate-spin' : ''}"></i>
+      <span class="${config.color} text-xs">${config.text}</span>
+    `;
+    this.refreshIcons();
+  },
+
+  // P2: Handle WebSocket job progress event
+  handleWSJobProgress(data) {
+    const job = {
+      ...this.state.job,
+      progress: data.progress,
+      current_task: data.message || data.current_task,
+      current_stage: data.stage || data.current_stage,
+    };
+    this.updateJobProgress(job);
+  },
+
+  // P2: Handle WebSocket job updated event
+  handleWSJobUpdated(data) {
+    const job = {
+      ...this.state.job,
+      ...data,
+      progress: data.progress,
+      status: data.status,
+      current_task: data.message || data.current_task,
+    };
+    this.state.job = job;
+    this.updateJobProgress(job);
+  },
+
+  // P2: Handle WebSocket job completed event
+  handleWSJobCompleted(data) {
+    console.log('[WS] Job completed:', data);
+    this.stopPolling();
+    if (typeof WebSocketClient !== 'undefined') {
+      WebSocketClient.unsubscribeFromJob();
+    }
+    this.fetchJobAndComplete(data.job_id);
+  },
+
+  // P2: Handle WebSocket job failed event
+  handleWSJobFailed(data) {
+    console.log('[WS] Job failed:', data);
+    this.stopPolling();
+    if (typeof WebSocketClient !== 'undefined') {
+      WebSocketClient.unsubscribeFromJob();
+    }
+    const job = { ...this.state.job, ...data, status: 'failed' };
+    this.onJobFailed(job);
+  },
+
+  // P2: Handle WebSocket chunk translated event
+  handleWSChunkTranslated(data) {
+    if (data.preview) {
+      console.log(`[WS] Chunk ${data.chunk_id} translated (quality: ${data.quality_score})`);
+    }
+  },
+
+  // P2: Fetch full job data and complete
+  async fetchJobAndComplete(jobId) {
+    try {
+      const res = await fetch(`${this.API_BASE}/jobs/${jobId}`);
+      const job = await res.json();
+      this.onJobComplete(job);
+    } catch (e) {
+      console.error('Failed to fetch completed job:', e);
+      if (this.state.job) {
+        this.state.job.status = 'complete';
+        this.onJobComplete(this.state.job);
+      }
+    }
+  },
+
+  // Load available glossaries (user + prebuilt)
+  async loadGlossaries() {
+    try {
+      // Load user glossaries
+      const userRes = await fetch('/api/glossary/');
+      const userData = userRes.ok ? await userRes.json() : { glossaries: [] };
+
+      // Load prebuilt glossaries
+      const prebuiltRes = await fetch('/api/glossary/prebuilt/list');
+      const prebuiltData = prebuiltRes.ok ? await prebuiltRes.json() : { glossaries: [] };
+
+      // Combine: user first, then prebuilt with prefix
+      this.state.availableGlossaries = [
+        ...(userData.glossaries || []),
+        ...(prebuiltData.glossaries || []).map(g => ({
+          ...g,
+          id: `prebuilt:${g.id}`,
+          name: `[Sẵn có] ${g.name}`,
+          isPrebuilt: true,
+        })),
+      ];
+
+      this.renderGlossarySelector();
+    } catch (e) {
+      console.warn('Failed to load glossaries:', e);
+    }
+  },
+
+  // Render glossary selector
+  renderGlossarySelector() {
+    const select = document.getElementById('glossary-select');
+    if (!select) return;
+
+    select.innerHTML = this.state.availableGlossaries.map(g => `
+      <option value="${g.id}" data-terms="${g.term_count || 0}">
+        ${g.name} (${g.term_count || 0} thuật ngữ)
+      </option>
+    `).join('');
+
+    // Bind change event
+    select.addEventListener('change', () => {
+      const selected = Array.from(select.selectedOptions).map(o => o.value);
+      this.state.glossaryIds = selected;
+      this.updateGlossaryInfo();
+    });
+
+    this.updateGlossaryInfo();
+  },
+
+  // Update glossary info display
+  updateGlossaryInfo() {
+    const infoEl = document.querySelector('.glossary-count');
+    if (!infoEl) return;
+
+    const count = this.state.glossaryIds.length;
+    if (count === 0) {
+      infoEl.textContent = 'Chưa chọn thuật ngữ';
+    } else {
+      const totalTerms = this.state.glossaryIds.reduce((sum, id) => {
+        const g = this.state.availableGlossaries.find(x => x.id === id);
+        return sum + (g?.term_count || 0);
+      }, 0);
+      infoEl.textContent = `${count} bộ thuật ngữ (${totalTerms} từ)`;
+    }
+  },
+
+  // Load available TMs
+  async loadTMs() {
+    try {
+      const res = await fetch('/api/tm/');
+      if (res.ok) {
+        const data = await res.json();
+        this.state.availableTMs = data.tms || [];
+        this.renderTMSelector();
+      }
+    } catch (e) {
+      console.warn('Failed to load TMs:', e);
+    }
+  },
+
+  // Render TM selector
+  renderTMSelector() {
+    const select = document.getElementById('tm-select');
+    if (!select) return;
+
+    if (this.state.availableTMs.length === 0) {
+      select.innerHTML = '<option disabled>Chưa có bộ nhớ dịch</option>';
+      return;
+    }
+
+    select.innerHTML = this.state.availableTMs.map(tm => `
+      <option value="${tm.id}" data-segments="${tm.segment_count || 0}">
+        ${tm.name} (${tm.segment_count || 0} segments)
+      </option>
+    `).join('');
+
+    // Bind change event
+    select.addEventListener('change', () => {
+      const selected = Array.from(select.selectedOptions).map(o => o.value);
+      this.state.tmIds = selected;
+      this.updateTMInfo();
+    });
+
+    this.updateTMInfo();
+  },
+
+  // Update TM info display
+  updateTMInfo() {
+    const infoEl = document.querySelector('.tm-count');
+    if (!infoEl) return;
+
+    const count = this.state.tmIds.length;
+    if (count === 0) {
+      infoEl.textContent = 'Chưa chọn bộ nhớ';
+    } else {
+      const totalSegments = this.state.tmIds.reduce((sum, id) => {
+        const tm = this.state.availableTMs.find(x => x.id === id);
+        return sum + (tm?.segment_count || 0);
+      }, 0);
+      infoEl.textContent = `${count} bộ nhớ (${totalSegments} segments)`;
+    }
   },
 
   // Check for running job on page load
@@ -160,14 +528,14 @@ const PublisherApp = {
       localStorage.removeItem('currentJobId');
     }
   },
-  
+
   // Refresh Lucide icons
   refreshIcons() {
     if (typeof lucide !== 'undefined') {
       lucide.createIcons();
     }
   },
-  
+
   // Load publishing profiles
   async loadProfiles() {
     try {
@@ -191,12 +559,12 @@ const PublisherApp = {
       this.renderProfiles();
     }
   },
-  
+
   // Render profile dropdown
   renderProfiles() {
     const dropdown = document.getElementById('profile-dropdown');
     if (!dropdown) return;
-    
+
     dropdown.innerHTML = this.profiles.map(p => `
       <div class="profile-option ${p.id === this.state.profile ? 'selected' : ''}" 
            data-profile="${p.id}">
@@ -209,12 +577,12 @@ const PublisherApp = {
         </div>
       </div>
     `).join('');
-    
+
     // Update selected display
     this.updateProfileDisplay();
     this.refreshIcons();
   },
-  
+
   // Update profile display
   updateProfileDisplay() {
     const profile = this.profiles.find(p => p.id === this.state.profile);
@@ -226,6 +594,34 @@ const PublisherApp = {
       selected.querySelector('.profile-name').textContent = profile.name;
       selected.querySelector('.profile-desc').textContent = profile.description;
       this.refreshIcons();
+    }
+  },
+
+  // Update PDF template preview
+  updateTemplatePreview() {
+    const template = this.pdfTemplates[this.state.pdfTemplate];
+    if (!template) return;
+
+    const pageSizeEl = document.getElementById('preview-page-size');
+    const fontEl = document.getElementById('preview-font');
+    const bestForEl = document.getElementById('preview-best-for');
+
+    if (pageSizeEl) pageSizeEl.textContent = template.pageSize;
+    if (fontEl) fontEl.textContent = template.font;
+    if (bestForEl) bestForEl.textContent = template.bestFor;
+  },
+
+  // Toggle template section visibility based on PDF format selection
+  toggleTemplateSection() {
+    const pdfCheckbox = document.querySelector('.format-option input[value="pdf"]');
+    const templateSection = document.getElementById('pdf-template-section');
+
+    if (templateSection) {
+      if (pdfCheckbox?.checked) {
+        templateSection.classList.remove('hidden');
+      } else {
+        templateSection.classList.add('hidden');
+      }
     }
   },
 
@@ -330,29 +726,29 @@ const PublisherApp = {
         this.setMode(mode);
       });
     });
-    
+
     // Profile selector
     const profileSelected = document.getElementById('profile-selected');
     const profileDropdown = document.getElementById('profile-dropdown');
-    
+
     profileSelected?.addEventListener('click', () => {
       profileDropdown?.classList.toggle('hidden');
     });
-    
+
     profileDropdown?.addEventListener('click', (e) => {
       const option = e.target.closest('.profile-option');
       if (option) {
         this.state.profile = option.dataset.profile;
         this.updateProfileDisplay();
         profileDropdown.classList.add('hidden');
-        
+
         // Update selected state
         document.querySelectorAll('.profile-option').forEach(o => {
           o.classList.toggle('selected', o.dataset.profile === this.state.profile);
         });
       }
     });
-    
+
     // Close dropdown on outside click
     document.addEventListener('click', (e) => {
       if (!e.target.closest('.profile-selector')) {
@@ -386,10 +782,34 @@ const PublisherApp = {
       });
     });
 
+    // PDF Template selector
+    const templateSelect = document.getElementById('pdf-template');
+    templateSelect?.addEventListener('change', (e) => {
+      this.state.pdfTemplate = e.target.value;
+      this.updateTemplatePreview();
+    });
+
+    // PDF Renderer Version selector
+    const rendererSelect = document.getElementById('pdf-renderer');
+    rendererSelect?.addEventListener('change', (e) => {
+      this.state.pdfRendererVersion = e.target.value;
+      console.log('PDF Renderer:', e.target.value);
+    });
+
+    // Show/hide template section based on PDF format selection
+    document.querySelectorAll('.format-option input[value="pdf"]').forEach(cb => {
+      cb.addEventListener('change', () => {
+        this.toggleTemplateSection();
+      });
+    });
+
+    // Initialize template section visibility
+    this.toggleTemplateSection();
+
     // Dropzone (Single)
     const dropzone = document.getElementById('dropzone');
     const fileInput = document.getElementById('file-input');
-    
+
     dropzone?.addEventListener('click', () => fileInput?.click());
     dropzone?.addEventListener('dragover', (e) => {
       e.preventDefault();
@@ -404,17 +824,17 @@ const PublisherApp = {
       const files = e.dataTransfer.files;
       if (files.length > 0) this.handleFileSelect(files[0]);
     });
-    
+
     fileInput?.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
         this.handleFileSelect(e.target.files[0]);
       }
     });
-    
+
     // Batch dropzone
     const batchDropzone = document.getElementById('batch-dropzone');
     const batchInput = document.getElementById('batch-input');
-    
+
     batchDropzone?.addEventListener('click', () => batchInput?.click());
     batchDropzone?.addEventListener('dragover', (e) => {
       e.preventDefault();
@@ -429,26 +849,26 @@ const PublisherApp = {
       const files = Array.from(e.dataTransfer.files);
       this.handleBatchFiles(files);
     });
-    
+
     batchInput?.addEventListener('change', (e) => {
       const files = Array.from(e.target.files);
       this.handleBatchFiles(files);
     });
-    
+
     // File remove
     document.getElementById('file-remove')?.addEventListener('click', () => {
       this.clearFile();
     });
-    
+
     // Language selects
     document.getElementById('source-lang')?.addEventListener('change', (e) => {
       this.state.sourceLang = e.target.value;
     });
-    
+
     document.getElementById('target-lang')?.addEventListener('change', (e) => {
       this.state.targetLang = e.target.value;
     });
-    
+
     // Format options
     document.querySelectorAll('.format-option input').forEach(input => {
       input.addEventListener('change', () => {
@@ -458,19 +878,20 @@ const PublisherApp = {
         this.updateStartButton();
       });
     });
-    
+    this.bindSmartTableEvents();
+
     // Vision toggle
     document.getElementById('vision-toggle')?.addEventListener('click', (e) => {
       const btn = e.currentTarget;
       btn.classList.toggle('active');
       this.state.useVision = btn.classList.contains('active');
     });
-    
+
     // Start button
     document.getElementById('btn-start')?.addEventListener('click', () => {
       this.startPublishing();
     });
-    
+
     // Tab buttons
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.addEventListener('click', () => {
@@ -479,7 +900,31 @@ const PublisherApp = {
       });
     });
   },
-  
+
+  // Smart Tables toggle logic (moved to method if needed, or kept in bindEvents)
+
+
+  // Helper for Smart Tables
+  bindSmartTableEvents() {
+    const toggle = document.getElementById('smart-tables-toggle');
+    if (!toggle) return;
+
+    toggle.addEventListener('change', (e) => {
+      this.state.smartTables = e.target.checked;
+      const warningEl = document.getElementById('smart-tables-warning');
+
+      if (warningEl) {
+        warningEl.style.display = this.state.smartTables ? 'block' : 'none';
+      }
+
+      if (this.state.smartTables) {
+        this.showToast('Đã bật Bảng Thông Minh (Premium)', 'info');
+      }
+    });
+  },
+
+
+
   // Handle file select (single)
   handleFileSelect(file) {
     const validTypes = ['.pdf', '.docx', '.txt', '.md', '.tex'];
@@ -776,7 +1221,7 @@ const PublisherApp = {
 
     this.refreshIcons();
   },
-  
+
   // Handle batch files
   handleBatchFiles(files) {
     const validTypes = ['.pdf', '.docx', '.txt', '.md', '.tex'];
@@ -784,17 +1229,17 @@ const PublisherApp = {
       const ext = '.' + f.name.split('.').pop().toLowerCase();
       return validTypes.includes(ext);
     }).slice(0, 10); // Max 10 files
-    
+
     this.state.files = validFiles;
     this.renderBatchFiles();
     this.updateStartButton();
   },
-  
+
   // Render batch files
   renderBatchFiles() {
     const container = document.getElementById('batch-files');
     if (!container) return;
-    
+
     container.innerHTML = this.state.files.map((file, i) => {
       const ext = '.' + file.name.split('.').pop().toLowerCase();
       const iconMap = {
@@ -815,94 +1260,94 @@ const PublisherApp = {
         </div>
       `;
     }).join('');
-    
+
     this.refreshIcons();
   },
-  
+
   // Remove batch file
   removeBatchFile(index) {
     this.state.files.splice(index, 1);
     this.renderBatchFiles();
     this.updateStartButton();
   },
-  
+
   // Clear file
   clearFile() {
     this.state.file = null;
-    
+
     document.getElementById('dropzone')?.classList.remove('hidden');
     document.getElementById('file-preview')?.classList.add('hidden');
     document.getElementById('file-input').value = '';
-    
+
     this.updateStartButton();
   },
-  
+
   // Set mode (single/batch)
   setMode(mode) {
     this.state.mode = mode;
-    
+
     document.querySelectorAll('.mode-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.mode === mode);
     });
-    
+
     document.getElementById('upload-section')?.classList.toggle('hidden', mode === 'batch');
     document.getElementById('batch-section')?.classList.toggle('hidden', mode === 'single');
-    
+
     this.updateStartButton();
   },
-  
+
   // Switch tab
   switchTab(tab) {
     document.querySelectorAll('.tab-btn').forEach(btn => {
       btn.classList.toggle('active', btn.dataset.tab === tab);
     });
-    
+
     document.querySelectorAll('.tab-content').forEach(content => {
       content.classList.toggle('active', content.id === `tab-${tab}`);
     });
   },
-  
+
   // Update start button state
   updateStartButton() {
     const btn = document.getElementById('btn-start');
     if (!btn) return;
-    
+
     let canStart = false;
-    
+
     if (this.state.mode === 'single') {
       canStart = this.state.file !== null && this.state.outputFormats.length > 0;
     } else {
       canStart = this.state.files.length > 0 && this.state.outputFormats.length > 0;
     }
-    
+
     btn.disabled = !canStart;
   },
-  
+
   // Start publishing
   async startPublishing() {
     if (this.state.mode === 'batch') {
       this.startBatchPublishing();
       return;
     }
-    
+
     if (!this.state.file) {
       this.showToast('Vui lòng chọn file trước', 'error');
       return;
     }
-    
+
     console.log('📚 Starting publishing...', this.state);
-    
+
     // Update UI
     const btn = document.getElementById('btn-start');
     btn.disabled = true;
     btn.querySelector('.btn-text').textContent = 'Publishing...';
-    
+
     // Reset agents
     this.resetAgents();
-    
+
     // Switch to progress tab
     this.switchTab('progress');
-    
+
     // Create form data
     const formData = new FormData();
     formData.append('file', this.state.file);
@@ -911,24 +1356,28 @@ const PublisherApp = {
     formData.append('profile_id', this.state.profile);
     formData.append('output_formats', this.state.outputFormats.join(','));
     formData.append('use_vision', this.state.useVision.toString());
+    formData.append('pdf_template', this.state.pdfTemplate);
+    formData.append('pdf_renderer_version', this.state.pdfRendererVersion);
+    formData.append('glossary_ids', this.state.glossaryIds.join(','));
+    formData.append('tm_ids', this.state.tmIds.join(','));
 
     // Add API key for current provider
     const apiKey = this.getApiKeyForProvider(this.state.aiProvider);
     if (apiKey) {
       formData.append('api_key', apiKey);
     }
-    
+
     try {
       // Submit job
       const res = await fetch(`${this.API_BASE}/publish`, {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!res.ok) {
         throw new Error('Failed to submit job');
       }
-      
+
       const job = await res.json();
       this.state.job = job;
 
@@ -940,48 +1389,76 @@ const PublisherApp = {
 
       // Start polling
       this.startPolling(job.job_id);
-      
+
     } catch (e) {
       console.error('Publishing error:', e);
       this.showToast('Không thể bắt đầu xuất bản: ' + e.message, 'error');
-      
+
       btn.disabled = false;
       btn.querySelector('.btn-text').textContent = 'Bắt Đầu Xuất Bản';
     }
   },
-  
+
   // Start batch publishing
   async startBatchPublishing() {
     console.log('📚 Starting batch publishing...', this.state.files);
     this.showToast('Đang bắt đầu xử lý hàng loạt...', 'success');
     this.switchTab('progress');
   },
-  
-  // Start polling job status
+
+  // Start polling job status (P2: Hybrid mode - WebSocket primary, polling fallback)
   startPolling(jobId) {
     this.stopPolling();
-    
-    this.state.pollInterval = setInterval(async () => {
-      try {
-        const res = await fetch(`${this.API_BASE}/jobs/${jobId}`);
-        const job = await res.json();
-        
-        this.updateJobProgress(job);
-        
-        if (job.status === 'complete') {
-          this.stopPolling();
-          this.onJobComplete(job);
-        } else if (job.status === 'failed') {
-          this.stopPolling();
-          this.onJobFailed(job);
+
+    // P2: Subscribe to WebSocket updates for this job
+    if (typeof WebSocketClient !== 'undefined' && WebSocketClient.isConnected()) {
+      WebSocketClient.subscribeToJob(jobId);
+      console.log(`[WS] Subscribed to job ${jobId}, using WebSocket for updates`);
+
+      // Use slower polling as safety net (every 5 seconds instead of 1)
+      this.state.pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`${this.API_BASE}/jobs/${jobId}`);
+          const job = await res.json();
+
+          // Only update if WS missed something (safety net)
+          if (job.status === 'complete') {
+            this.stopPolling();
+            WebSocketClient.unsubscribeFromJob();
+            this.onJobComplete(job);
+          } else if (job.status === 'failed') {
+            this.stopPolling();
+            WebSocketClient.unsubscribeFromJob();
+            this.onJobFailed(job);
+          }
+        } catch (e) {
+          console.error('Safety poll error:', e);
         }
-        
-      } catch (e) {
-        console.error('Poll error:', e);
-      }
-    }, 1000);
+      }, 5000); // 5 second safety net polling
+    } else {
+      // Fallback to traditional polling (1 second) if no WebSocket
+      console.log('[WS] WebSocket not connected, using polling mode');
+      this.state.pollInterval = setInterval(async () => {
+        try {
+          const res = await fetch(`${this.API_BASE}/jobs/${jobId}`);
+          const job = await res.json();
+
+          this.updateJobProgress(job);
+
+          if (job.status === 'complete') {
+            this.stopPolling();
+            this.onJobComplete(job);
+          } else if (job.status === 'failed') {
+            this.stopPolling();
+            this.onJobFailed(job);
+          }
+        } catch (e) {
+          console.error('Poll error:', e);
+        }
+      }, 1000);
+    }
   },
-  
+
   // Stop polling
   stopPolling() {
     if (this.state.pollInterval) {
@@ -989,7 +1466,7 @@ const PublisherApp = {
       this.state.pollInterval = null;
     }
   },
-  
+
   // Update job progress
   updateJobProgress(job) {
     // API returns progress as 0-1 decimal, convert to percentage
@@ -1014,13 +1491,21 @@ const PublisherApp = {
 
     // Update current task
     const taskDisplay = document.getElementById('current-task-display');
+    const noJobMsg = document.getElementById('no-job-message'); // New
+    const statsDiv = document.getElementById('usage-stats'); // New
+
     if (taskDisplay) {
+      taskDisplay.classList.remove('hidden'); // Show spinner
       taskDisplay.innerHTML = `
         <i data-lucide="loader-2" class="task-icon"></i>
         <span>${job.current_task || 'Processing...'}</span>
       `;
       this.refreshIcons();
     }
+
+    if (noJobMsg) noJobMsg.classList.add('hidden'); // Hide empty state
+    if (statsDiv) statsDiv.classList.remove('hidden'); // Show stats
+
 
     // Get current stage from job.current_stage (more accurate) or fallback to status
     let rawStage = (job.current_stage || status || '').toLowerCase();
@@ -1153,7 +1638,7 @@ const PublisherApp = {
       }
     }
   },
-  
+
   // Reset agents
   resetAgents() {
     ['editor', 'translator', 'publisher'].forEach(agent => {
@@ -1165,7 +1650,7 @@ const PublisherApp = {
       }
     });
   },
-  
+
   // Update agent status
   updateAgentStatus(currentStage, progress) {
     const editorStatuses = ['vision_reading', 'analyzing', 'chunking'];
@@ -1180,8 +1665,8 @@ const PublisherApp = {
         editorEl.querySelector('.status-text').textContent = 'Đang xử lý...';
         // Update progress based on sub-stage
         const editorProgress = currentStage === 'vision_reading' ? 33 :
-                              currentStage === 'analyzing' ? 66 :
-                              currentStage === 'chunking' ? 100 : 0;
+          currentStage === 'analyzing' ? 66 :
+            currentStage === 'chunking' ? 100 : 0;
         editorEl.querySelector('.progress-bar').style.width = `${editorProgress}%`;
       } else if (['translating', 'assembling', 'converting', 'verifying', 'complete'].includes(currentStage)) {
         editorEl.dataset.status = 'complete';
@@ -1214,8 +1699,8 @@ const PublisherApp = {
         publisherEl.querySelector('.status-text').textContent = 'Đang xử lý...';
         // Update progress based on sub-stage
         const publisherProgress = currentStage === 'assembling' ? 33 :
-                                 currentStage === 'converting' ? 66 :
-                                 currentStage === 'verifying' ? 90 : 0;
+          currentStage === 'converting' ? 66 :
+            currentStage === 'verifying' ? 90 : 0;
         publisherEl.querySelector('.progress-bar').style.width = `${publisherProgress}%`;
       } else if (currentStage === 'complete') {
         publisherEl.dataset.status = 'complete';
@@ -1224,7 +1709,7 @@ const PublisherApp = {
       }
     }
   },
-  
+
   // Job completed
   onJobComplete(job) {
     console.log('🎉 Job complete:', job);
@@ -1258,12 +1743,30 @@ const PublisherApp = {
 
     this.showToast('Xuất bản thất bại: ' + (job.error || 'Lỗi không xác định'), 'error');
   },
-  
+
   // Show downloads
   showDownloads(job) {
     document.getElementById('downloads-placeholder')?.classList.add('hidden');
     const grid = document.getElementById('downloads-grid');
     grid?.classList.remove('hidden');
+
+    // Add Proofread Button (Phase 6)
+    const proofreadContainer = document.createElement('div');
+    proofreadContainer.className = 'proofread-cta-container';
+    proofreadContainer.innerHTML = `
+      <button class="btn-secondary w-full mb-4 flex items-center justify-center gap-2 py-3 bg-[#1e1e1e] border border-gray-700 hover:bg-[#252525] rounded-xl transition-all" 
+              onclick="Editor.open('${job.job_id}', '${this.state.file?.name || 'Document'}')">
+        <i data-lucide="scan-search" class="w-5 h-5 text-indigo-400"></i>
+        <span class="font-medium text-white">Chế độ Biên Tập / Hiệu Đính (Proofread)</span>
+      </button>
+    `;
+    // Prepend to grid container or insert before grid
+    if (grid && !grid.previousElementSibling?.classList.contains('proofread-cta-container')) {
+      grid.parentNode.insertBefore(proofreadContainer, grid);
+    }
+
+    // Refresh icons so the button gets its icon
+    setTimeout(() => this.refreshIcons(), 0);
 
     // Always show these formats as download options
     const downloadFormats = [
@@ -1317,13 +1820,13 @@ const PublisherApp = {
       this.showToast(`Lỗi tải ${ext}: ${e.message}`, 'error');
     }
   },
-  
+
   // Show DNA
   showDNA(dna) {
     document.getElementById('dna-placeholder')?.classList.add('hidden');
     const content = document.getElementById('dna-content');
     content?.classList.remove('hidden');
-    
+
     content.innerHTML = `
       <div class="dna-section">
         <h4><i data-lucide="file-scan"></i> Document Info</h4>
@@ -1363,36 +1866,36 @@ const PublisherApp = {
         </div>
       ` : ''}
     `;
-    
+
     this.refreshIcons();
   },
-  
+
   // Show toast notification
   showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
-    
+
     const iconMap = {
       success: 'check-circle',
       error: 'alert-circle',
       info: 'info',
     };
-    
+
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
     toast.innerHTML = `
       <i data-lucide="${iconMap[type] || 'info'}"></i>
       <span class="toast-message">${message}</span>
     `;
-    
+
     container.appendChild(toast);
     this.refreshIcons();
-    
+
     setTimeout(() => {
       toast.remove();
     }, 4000);
   },
-  
+
   // Utility: Format file size
   formatFileSize(bytes) {
     if (bytes < 1024) return bytes + ' B';

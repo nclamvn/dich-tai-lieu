@@ -26,8 +26,6 @@ from .docx_styles import (
     PAGE_MARGINS,
     PAGE_SIZES,
     DEFAULT_OPTIONS,
-    AcademicStyles,
-    StyleApplicator,
 )
 from config.logging_config import get_logger
 
@@ -133,6 +131,9 @@ class DocxExporterBase(ABC):
         # Set metadata
         self._setup_metadata(metadata or {})
 
+        # Front Matter Hook
+        self._add_front_matter(metadata or {})
+
         # Add content (implemented by subclass)
         self._add_content(content)
 
@@ -152,6 +153,13 @@ class DocxExporterBase(ABC):
 
         Args:
             content: Content to add (type depends on implementation)
+        """
+        pass
+
+    def _add_front_matter(self, metadata: Dict[str, str]) -> None:
+        """
+        Add front matter (Title Page, TOC).
+        Override in subclasses.
         """
         pass
 

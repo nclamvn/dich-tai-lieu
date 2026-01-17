@@ -750,5 +750,6 @@ class OutputConverter:
             for f in self.temp_dir.iterdir():
                 try:
                     f.unlink()
-                except:
+                except OSError:
+                    # File may be in use or already deleted
                     pass

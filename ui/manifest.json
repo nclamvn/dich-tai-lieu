@@ -1,0 +1,128 @@
+{
+  "name": "AI Publisher Pro",
+  "short_name": "AI Publisher",
+  "description": "Dịch & Xuất Bản Tài Liệu Với AI - AI-powered document translation and publishing",
+  "start_url": "/ui",
+  "display": "standalone",
+  "background_color": "#F9FAFB",
+  "theme_color": "#6366F1",
+  "orientation": "any",
+  "scope": "/",
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "/ui/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/ui/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/ui/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/ui/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/ui/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/ui/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/ui/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/ui/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities", "business"],
+  "screenshots": [
+    {
+      "src": "/ui/screenshots/desktop.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "AI Publisher Pro - Desktop View"
+    },
+    {
+      "src": "/ui/screenshots/mobile.png",
+      "sizes": "390x844",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "AI Publisher Pro - Mobile View"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "New Translation",
+      "short_name": "Translate",
+      "description": "Start a new document translation",
+      "url": "/ui?action=new",
+      "icons": [{ "src": "/ui/icons/translate-96.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Batch Upload",
+      "short_name": "Batch",
+      "description": "Upload multiple documents",
+      "url": "/ui/batch-upload.html",
+      "icons": [{ "src": "/ui/icons/batch-96.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false,
+  "share_target": {
+    "action": "/ui/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "files": [
+        {
+          "name": "file",
+          "accept": [".pdf", ".docx", ".txt", ".md", ".tex", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", "text/plain", "text/markdown"]
+        }
+      ]
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "/ui?source=file-handler",
+      "accept": {
+        "application/pdf": [".pdf"],
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document": [".docx"],
+        "text/plain": [".txt"],
+        "text/markdown": [".md"],
+        "application/x-tex": [".tex"]
+      }
+    }
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+aipublisher",
+      "url": "/ui?protocol=%s"
+    }
+  ]
+}

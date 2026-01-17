@@ -1,0 +1,159 @@
+/* core/pdf_renderer_v2/templates/css/professional/newsletter.css */
+
+/* Newsletter - magazine style, multi-column friendly */
+
+:root {
+    --font-sans: 'Noto Sans', 'Helvetica Neue', Arial, sans-serif;
+    --font-serif: 'Noto Serif', Georgia, serif;
+    --text-base: 10pt;
+    --line-height: 1.4;
+    --color-primary: #1e40af;
+    --color-accent: #dc2626;
+}
+
+body {
+    font-family: var(--font-sans);
+}
+
+@page {
+    size: A4;
+    margin: 1.5cm;
+
+    @bottom-center {
+        content: counter(page);
+        font-size: 9pt;
+    }
+}
+
+.document-header {
+    background: linear-gradient(135deg, var(--color-primary), #3b82f6);
+    color: white;
+    padding: 1.5cm;
+    margin: -1.5cm -1.5cm 1cm -1.5cm;
+    text-align: center;
+    border-bottom: 4px solid var(--color-accent);
+}
+
+.doc-title {
+    font-size: 32pt;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    margin-bottom: 0.2em;
+    color: white;
+}
+
+.doc-date {
+    font-size: 11pt;
+    opacity: 0.9;
+    color: white;
+}
+
+/* Section headings - magazine style */
+.content > h1 {
+    font-size: 18pt;
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-top: 1.5cm;
+    margin-bottom: 0.5cm;
+    border-left: 4px solid var(--color-accent);
+    padding-left: 0.5em;
+}
+
+.content > h2 {
+    font-size: 13pt;
+    font-weight: 600;
+    color: #333;
+    margin-top: 0.8cm;
+}
+
+/* Lead paragraph */
+.content > h1 + p,
+.content > p:first-of-type {
+    font-size: 12pt;
+    font-weight: 500;
+    color: #444;
+    margin-bottom: 1em;
+}
+
+/* Body text */
+p {
+    text-indent: 0;
+    text-align: justify;
+    margin-bottom: 0.8em;
+    font-family: var(--font-serif);
+}
+
+/* Callout boxes */
+blockquote {
+    background: linear-gradient(135deg, #fef3c7, #fef9c3);
+    border-left: 4px solid #f59e0b;
+    padding: 1em;
+    margin: 1em 0;
+    border-radius: 0 8px 8px 0;
+    font-style: normal;
+    font-family: var(--font-sans);
+}
+
+/* Pull quotes */
+blockquote.pullquote {
+    font-size: 16pt;
+    font-style: italic;
+    font-family: var(--font-serif);
+    text-align: center;
+    border: none;
+    background: none;
+    color: var(--color-primary);
+    padding: 1em 2em;
+}
+
+/* Lists */
+ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+ul li {
+    padding-left: 1.5em;
+    position: relative;
+    margin-bottom: 0.5em;
+}
+
+ul li::before {
+    content: ">";
+    position: absolute;
+    left: 0;
+    color: var(--color-accent);
+    font-weight: bold;
+}
+
+/* Images with captions */
+figure {
+    margin: 1em 0;
+    text-align: center;
+}
+
+figcaption {
+    font-size: 9pt;
+    font-style: italic;
+    color: #666;
+    margin-top: 0.5em;
+}
+
+/* Tables */
+table {
+    font-size: 9pt;
+}
+
+th {
+    background-color: var(--color-primary);
+    color: white;
+}
+
+/* Horizontal rule - decorative */
+hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--color-primary), transparent);
+    margin: 1.5em 0;
+}

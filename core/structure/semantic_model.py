@@ -55,6 +55,9 @@ class DocNodeType(Enum):
     REFERENCES_SECTION = "references_section"
     REFERENCE_ENTRY = "reference_entry"
 
+    # Tables (Phase 8: Smart Tables)
+    TABLE = "table"
+
     # Fallback
     UNKNOWN = "unknown"
 

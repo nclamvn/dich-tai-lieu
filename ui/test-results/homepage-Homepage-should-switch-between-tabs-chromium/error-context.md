@@ -1,0 +1,44 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "AI Publisher" [ref=e4] [cursor=pointer]:
+      - /url: "#"
+      - generic [ref=e5]: AI Publisher
+    - generic [ref=e6]:
+      - button "History" [ref=e7] [cursor=pointer]:
+        - img [ref=e8]
+      - button "Settings" [ref=e11] [cursor=pointer]:
+        - img [ref=e12]
+  - main [ref=e15]:
+    - generic [ref=e16]:
+      - generic [ref=e17]:
+        - img [ref=e18]
+        - generic [ref=e20]: Powered by AI
+      - heading "Dịch và xuất bản tài liệu chuyên nghiệp" [level=1] [ref=e21]:
+        - text: Dịch và xuất bản tài liệu
+        - text: chuyên nghiệp
+      - paragraph [ref=e22]: Tải lên tài liệu của bạn và để AI xử lý việc còn lại. Nhanh chóng, chính xác, đa định dạng.
+    - generic [ref=e25] [cursor=pointer]:
+      - img [ref=e27]
+      - paragraph [ref=e30]: Kéo thả tài liệu vào đây hoặc chọn file
+      - paragraph [ref=e31]: Hỗ trợ PDF, DOCX, TXT, MD (tối đa 50MB)
+      - generic [ref=e32]:
+        - generic [ref=e33]: PDF
+        - generic [ref=e34]: DOCX
+        - generic [ref=e35]: TXT
+        - generic [ref=e36]: MD
+    - button "Tùy chọn nâng cao" [ref=e38] [cursor=pointer]:
+      - generic [ref=e39]: Tùy chọn nâng cao
+      - img [ref=e40]
+    - button "Bắt đầu xử lý" [disabled] [ref=e43]:
+      - img [ref=e44]
+      - generic [ref=e47]: Bắt đầu xử lý
+  - contentinfo [ref=e48]:
+    - paragraph [ref=e49]:
+      - text: Powered by
+      - link "Claude AI" [ref=e50] [cursor=pointer]:
+        - /url: https://claude.ai
+      - text: • Built with Anthropic Technology
+```

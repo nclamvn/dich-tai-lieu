@@ -1,0 +1,2400 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Publisher Pro</title>
+
+  <!-- Fonts - Similar to Claude -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Söhne:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    /* =============================================
+       AI PUBLISHER PRO - CLAUDE DESIGN SYSTEM
+       Minimalist • Clean • Premium • Trust
+       ============================================= */
+
+    /* CSS Reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    /* Design Tokens - Claude Inspired */
+    :root {
+      /* Colors - Cool, Neutral, Professional */
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F9FAFB;
+      --bg-tertiary: #F3F4F6;
+      --bg-hover: #F0F1F3;
+
+      /* Text */
+      --text-primary: #1F2937;
+      --text-secondary: #6B7280;
+      --text-tertiary: #9CA3AF;
+      --text-inverse: #FFFFFF;
+
+      /* Accent - Coral/Salmon like Claude */
+      --accent-primary: #D97757;
+      --accent-hover: #C96A4B;
+      --accent-light: #FDF4F1;
+      --accent-glow: rgba(217, 119, 87, 0.15);
+
+      /* Borders */
+      --border-light: #E5E7EB;
+      --border-medium: #D1D5DB;
+      --border-focus: var(--accent-primary);
+
+      /* Shadows - Subtle */
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.05);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.08);
+      --shadow-focus: 0 0 0 3px var(--accent-glow);
+
+      /* Typography */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+      --font-size-xs: 0.75rem;
+      --font-size-sm: 0.875rem;
+      --font-size-base: 1rem;
+      --font-size-lg: 1.125rem;
+      --font-size-xl: 1.25rem;
+      --font-size-2xl: 1.5rem;
+      --font-size-3xl: 2rem;
+
+      /* Spacing */
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+      --space-16: 4rem;
+      --space-20: 5rem;
+
+      /* Radius */
+      --radius-sm: 6px;
+      --radius-md: 8px;
+      --radius-lg: 12px;
+      --radius-xl: 16px;
+      --radius-2xl: 24px;
+      --radius-full: 9999px;
+
+      /* Transitions */
+      --transition-fast: 150ms ease;
+      --transition-normal: 200ms ease;
+      --transition-slow: 300ms ease;
+
+      /* Layout */
+      --max-width: 680px;
+      --header-height: 56px;
+    }
+
+    /* Base Styles */
+    html {
+      font-size: 16px;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* =============================================
+       LAYOUT
+       ============================================= */
+
+    .app-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header - Minimal like Claude */
+    .header {
+      height: var(--header-height);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 var(--space-6);
+      background: var(--bg-primary);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-weight: 600;
+      font-size: var(--font-size-lg);
+      color: var(--text-primary);
+      text-decoration: none;
+    }
+
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .header-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-fast);
+    }
+
+    .header-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .header-btn svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: var(--space-16) var(--space-6);
+    }
+
+    /* =============================================
+       HERO - Single Focus Point
+       ============================================= */
+
+    .hero {
+      text-align: center;
+      max-width: var(--max-width);
+      margin-bottom: var(--space-12);
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background: var(--accent-light);
+      color: var(--accent-primary);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      margin-bottom: var(--space-6);
+    }
+
+    .hero-badge svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .hero-title {
+      font-size: var(--font-size-3xl);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-4);
+      letter-spacing: -0.02em;
+      line-height: 1.2;
+    }
+
+    .hero-subtitle {
+      font-size: var(--font-size-lg);
+      color: var(--text-secondary);
+      max-width: 480px;
+      margin: 0 auto;
+    }
+
+    /* =============================================
+       UPLOAD ZONE - The Hero Element
+       ============================================= */
+
+    .upload-container {
+      width: 100%;
+      max-width: var(--max-width);
+    }
+
+    .upload-zone {
+      border: 1px solid var(--border-medium);
+      border-radius: var(--radius-xl);
+      padding: var(--space-16) var(--space-8);
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition-normal);
+      background: var(--bg-primary);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-zone::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: var(--accent-light);
+      opacity: 0;
+      transition: var(--transition-normal);
+    }
+
+    .upload-zone:hover {
+      border-color: var(--accent-primary);
+    }
+
+    .upload-zone:hover::before {
+      opacity: 1;
+    }
+
+    .upload-zone.drag-over {
+      border-color: var(--accent-primary);
+    }
+
+    .upload-zone.drag-over::before {
+      opacity: 1;
+    }
+
+    .upload-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .upload-icon {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto var(--space-6);
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: var(--transition-normal);
+    }
+
+    .upload-zone:hover .upload-icon {
+      background: var(--accent-primary);
+      color: white;
+      transform: scale(1.05);
+    }
+
+    .upload-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .upload-text {
+      font-size: var(--font-size-base);
+      color: var(--text-primary);
+      margin-bottom: var(--space-2);
+    }
+
+    .upload-text-link {
+      color: var(--accent-primary);
+      font-weight: 500;
+    }
+
+    .upload-hint {
+      font-size: var(--font-size-sm);
+      color: var(--text-tertiary);
+    }
+
+    .upload-formats {
+      display: flex;
+      justify-content: center;
+      gap: var(--space-2);
+      margin-top: var(--space-6);
+    }
+
+    .format-tag {
+      padding: var(--space-1) var(--space-3);
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Hidden file input */
+    .upload-input {
+      display: none;
+    }
+
+    /* =============================================
+       OPTIONS - Progressive Disclosure
+       ============================================= */
+
+    .options-section {
+      width: 100%;
+      max-width: var(--max-width);
+      margin-top: var(--space-8);
+    }
+
+    .options-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-3) var(--space-4);
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition-fast);
+      margin: 0 auto;
+      border-radius: var(--radius-md);
+    }
+
+    .options-toggle:hover {
+      color: var(--text-primary);
+      background: var(--bg-hover);
+    }
+
+    .options-toggle svg {
+      width: 16px;
+      height: 16px;
+      transition: var(--transition-normal);
+    }
+
+    .options-toggle.expanded svg {
+      transform: rotate(180deg);
+    }
+
+    .options-panel {
+      display: none;
+      margin-top: var(--space-6);
+      padding: var(--space-6);
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      animation: slideDown 0.3s ease;
+    }
+
+    .options-panel.show {
+      display: block;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .options-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: var(--space-4);
+    }
+
+    @media (max-width: 600px) {
+      .options-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .option-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .option-label {
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .option-select {
+      padding: var(--space-3) var(--space-4);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      background: var(--bg-primary);
+      font-size: var(--font-size-sm);
+      color: var(--text-primary);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 40px;
+    }
+
+    .option-select:hover {
+      border-color: var(--border-medium);
+    }
+
+    .option-select:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: var(--shadow-focus);
+    }
+
+    /* =============================================
+       PRIMARY BUTTON
+       ============================================= */
+
+    .primary-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      padding: var(--space-4) var(--space-8);
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-lg);
+      font-size: var(--font-size-base);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition-normal);
+      margin-top: var(--space-8);
+      min-width: 200px;
+    }
+
+    .primary-btn:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .primary-btn:active {
+      transform: translateY(0);
+    }
+
+    .primary-btn:disabled {
+      background: var(--border-medium);
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    .primary-btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Button wrapper for centering */
+    .button-wrapper {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+      max-width: var(--max-width);
+    }
+
+    /* =============================================
+       FILE PREVIEW (After Upload)
+       ============================================= */
+
+    .file-preview {
+      display: none;
+      width: 100%;
+      max-width: var(--max-width);
+      padding: var(--space-6);
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      margin-top: var(--space-6);
+    }
+
+    .file-preview.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .file-icon {
+      width: 48px;
+      height: 48px;
+      background: var(--accent-light);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-primary);
+      flex-shrink: 0;
+    }
+
+    .file-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .file-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .file-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .file-meta {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      margin-top: var(--space-1);
+    }
+
+    .file-remove {
+      width: 32px;
+      height: 32px;
+      border: none;
+      background: transparent;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-fast);
+    }
+
+    .file-remove:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .file-remove svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* =============================================
+       ENHANCED PROGRESS UI - Long Running Tasks
+       ============================================= */
+
+    .progress-section {
+      display: none;
+      width: 100%;
+      max-width: 800px;
+      margin-top: var(--space-8);
+    }
+
+    .progress-section.show {
+      display: block;
+      animation: fadeIn 0.4s ease;
+    }
+
+    /* Progress Header with Stats */
+    .progress-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-6);
+    }
+
+    .progress-title-area {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .progress-spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid var(--bg-tertiary);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    .progress-title {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .progress-subtitle {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      margin-top: var(--space-1);
+    }
+
+    .background-btn {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background: var(--bg-tertiary);
+      border: none;
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .background-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .background-btn svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Main Progress Card */
+    .progress-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+      margin-bottom: var(--space-6);
+    }
+
+    /* Progress Bar */
+    .progress-bar-container {
+      margin-bottom: var(--space-6);
+    }
+
+    .progress-bar-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: var(--space-3);
+    }
+
+    .progress-percentage {
+      font-size: var(--font-size-2xl);
+      font-weight: 600;
+      color: var(--accent-primary);
+    }
+
+    .progress-eta {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    .progress-bar {
+      height: 8px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--accent-primary), #E8967D);
+      border-radius: var(--radius-full);
+      width: 0%;
+      transition: width 0.5s ease;
+      position: relative;
+    }
+
+    .progress-fill::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-4);
+      padding-top: var(--space-6);
+      border-top: 1px solid var(--border-light);
+    }
+
+    .stat-item {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: var(--font-size-xl);
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .stat-label {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Progress Steps */
+    .progress-steps {
+      display: flex;
+      justify-content: space-between;
+      position: relative;
+      margin: var(--space-6) 0;
+    }
+
+    .progress-steps::before {
+      content: '';
+      position: absolute;
+      top: 16px;
+      left: 40px;
+      right: 40px;
+      height: 2px;
+      background: var(--bg-tertiary);
+    }
+
+    .step {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      position: relative;
+      z-index: 1;
+    }
+
+    .step-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: var(--radius-full);
+      background: var(--bg-primary);
+      border: 2px solid var(--border-medium);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-tertiary);
+      transition: var(--transition-normal);
+    }
+
+    .step.active .step-icon {
+      background: var(--accent-light);
+      border-color: var(--accent-primary);
+      color: var(--accent-primary);
+      animation: pulse 2s infinite;
+    }
+
+    .step.completed .step-icon {
+      background: #10B981;
+      border-color: #10B981;
+      color: white;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(217, 119, 87, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(217, 119, 87, 0); }
+    }
+
+    .step-icon svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .step-label {
+      font-size: var(--font-size-sm);
+      color: var(--text-tertiary);
+      font-weight: 500;
+    }
+
+    .step.active .step-label {
+      color: var(--accent-primary);
+    }
+
+    .step.completed .step-label {
+      color: #10B981;
+    }
+
+    /* Live Preview Section */
+    .preview-section {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      margin-bottom: var(--space-6);
+    }
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4) var(--space-6);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .preview-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .preview-title svg {
+      width: 16px;
+      height: 16px;
+      color: var(--accent-primary);
+    }
+
+    .preview-tabs {
+      display: flex;
+      gap: var(--space-1);
+    }
+
+    .preview-tab {
+      padding: var(--space-2) var(--space-3);
+      border: none;
+      background: transparent;
+      color: var(--text-tertiary);
+      font-size: var(--font-size-sm);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .preview-tab:hover {
+      background: var(--bg-hover);
+    }
+
+    .preview-tab.active {
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
+
+    .preview-content {
+      padding: var(--space-6);
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .preview-chunk {
+      padding: var(--space-4);
+      background: var(--bg-primary);
+      border-radius: var(--radius-md);
+      margin-bottom: var(--space-3);
+      border-left: 3px solid var(--accent-primary);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from {
+        opacity: 0;
+        transform: translateX(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    .preview-chunk-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-2);
+    }
+
+    .chunk-badge {
+      font-size: var(--font-size-xs);
+      color: var(--accent-primary);
+      font-weight: 500;
+    }
+
+    .chunk-time {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+    }
+
+    .preview-text {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    .preview-empty {
+      text-align: center;
+      padding: var(--space-8);
+      color: var(--text-tertiary);
+    }
+
+    .preview-empty svg {
+      width: 32px;
+      height: 32px;
+      margin-bottom: var(--space-3);
+      opacity: 0.5;
+    }
+
+    /* Activity Log */
+    .activity-section {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+
+    .activity-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4) var(--space-6);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .activity-title {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .activity-title svg {
+      width: 16px;
+      height: 16px;
+      color: var(--text-secondary);
+    }
+
+    .activity-badge {
+      padding: var(--space-1) var(--space-2);
+      background: var(--accent-light);
+      color: var(--accent-primary);
+      font-size: var(--font-size-xs);
+      font-weight: 500;
+      border-radius: var(--radius-sm);
+    }
+
+    .activity-list {
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-6);
+      border-bottom: 1px solid var(--border-light);
+      animation: fadeIn 0.3s ease;
+    }
+
+    .activity-item:last-child {
+      border-bottom: none;
+    }
+
+    .activity-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-primary);
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+
+    .activity-dot.success {
+      background: #10B981;
+    }
+
+    .activity-dot.warning {
+      background: #F59E0B;
+    }
+
+    .activity-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .activity-message {
+      font-size: var(--font-size-sm);
+      color: var(--text-primary);
+    }
+
+    .activity-time {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+      margin-top: var(--space-1);
+    }
+
+    /* Tips Section */
+    .tips-section {
+      margin-top: var(--space-6);
+      padding: var(--space-4) var(--space-6);
+      background: var(--accent-light);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+    }
+
+    .tips-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-primary);
+      flex-shrink: 0;
+    }
+
+    .tips-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .tips-content {
+      flex: 1;
+    }
+
+    .tips-title {
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .tips-text {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .progress-steps {
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+
+      .progress-steps::before {
+        display: none;
+      }
+
+      .step {
+        flex-direction: row;
+        justify-content: flex-start;
+        gap: var(--space-3);
+      }
+
+      .progress-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-4);
+      }
+
+      .background-btn {
+        width: 100%;
+        justify-content: center;
+      }
+    }
+
+    /* =============================================
+       DOWNLOAD FORMAT SELECTOR
+       ============================================= */
+
+    .download-section {
+      display: none;
+      width: 100%;
+      max-width: 800px;
+      margin-top: var(--space-6);
+      animation: fadeIn 0.4s ease;
+    }
+
+    .download-section.show {
+      display: block;
+    }
+
+    .download-card {
+      background: var(--bg-secondary);
+      border-radius: var(--radius-xl);
+      padding: var(--space-6);
+    }
+
+    .download-header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-6);
+    }
+
+    .download-icon {
+      width: 48px;
+      height: 48px;
+      background: #10B981;
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .download-icon svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .download-title {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .download-subtitle {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+      margin-top: var(--space-1);
+    }
+
+    .download-formats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--space-3);
+    }
+
+    @media (max-width: 600px) {
+      .download-formats {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    .format-card {
+      background: var(--bg-primary);
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      padding: var(--space-4);
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition-normal);
+      position: relative;
+    }
+
+    .format-card:hover {
+      border-color: var(--accent-primary);
+      background: var(--accent-light);
+    }
+
+    .format-card.downloading {
+      pointer-events: none;
+      opacity: 0.7;
+    }
+
+    .format-card-icon {
+      width: 40px;
+      height: 40px;
+      margin: 0 auto var(--space-3);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: var(--font-size-sm);
+      font-weight: 600;
+    }
+
+    .format-card-icon.pdf {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    .format-card-icon.docx {
+      background: #DBEAFE;
+      color: #2563EB;
+    }
+
+    .format-card-icon.txt {
+      background: #E5E7EB;
+      color: #374151;
+    }
+
+    .format-card-icon.md {
+      background: #D1FAE5;
+      color: #059669;
+    }
+
+    .format-card-name {
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .format-card-desc {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+    }
+
+    .format-card-spinner {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 24px;
+      height: 24px;
+      border: 2px solid var(--border-light);
+      border-top-color: var(--accent-primary);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    .format-card-check {
+      position: absolute;
+      top: var(--space-2);
+      right: var(--space-2);
+      width: 20px;
+      height: 20px;
+      background: #10B981;
+      border-radius: 50%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      color: white;
+    }
+
+    .format-card-check svg {
+      width: 12px;
+      height: 12px;
+    }
+
+    .format-card.downloaded .format-card-check {
+      display: flex;
+    }
+
+    /* =============================================
+       FOOTER
+       ============================================= */
+
+    .footer {
+      padding: var(--space-6);
+      text-align: center;
+      margin-top: auto;
+    }
+
+    .footer-text {
+      font-size: 0.65rem;
+      color: var(--text-tertiary);
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .footer-link {
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+
+    .footer-link:hover {
+      text-decoration: underline;
+    }
+
+    /* =============================================
+       DARK MODE
+       ============================================= */
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #1A1A1A;
+        --bg-secondary: #242424;
+        --bg-tertiary: #2E2E2E;
+        --bg-hover: #333333;
+
+        --text-primary: #FAFAFA;
+        --text-secondary: #A1A1A1;
+        --text-tertiary: #737373;
+
+        --border-light: #333333;
+        --border-medium: #444444;
+
+        --accent-light: rgba(217, 119, 87, 0.15);
+      }
+    }
+
+    /* =============================================
+       LOADING SPINNER
+       ============================================= */
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid transparent;
+      border-top-color: currentColor;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* =============================================
+       RESPONSIVE
+       ============================================= */
+
+    @media (max-width: 768px) {
+      .main-content {
+        padding: var(--space-10) var(--space-4);
+      }
+
+      .hero-title {
+        font-size: var(--font-size-2xl);
+      }
+
+      .upload-zone {
+        padding: var(--space-10) var(--space-4);
+      }
+
+      .progress-steps {
+        flex-direction: column;
+        gap: var(--space-4);
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-container">
+    <!-- Header -->
+    <header class="header">
+      <a href="#" class="logo">
+        <span>AI Publisher</span>
+      </a>
+      <div class="header-actions">
+        <button class="header-btn" title="History">
+          <i data-lucide="clock"></i>
+        </button>
+        <button class="header-btn" title="Settings">
+          <i data-lucide="settings"></i>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="hero-badge">
+          <i data-lucide="zap"></i>
+          <span>Powered by AI</span>
+        </div>
+        <h1 class="hero-title">Dịch và xuất bản tài liệu<br>chuyên nghiệp</h1>
+        <p class="hero-subtitle">
+          Tải lên tài liệu của bạn và để AI xử lý việc còn lại.
+          Nhanh chóng, chính xác, đa định dạng.
+        </p>
+      </section>
+
+      <!-- Upload Zone -->
+      <div class="upload-container">
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-content">
+            <div class="upload-icon">
+              <i data-lucide="upload-cloud"></i>
+            </div>
+            <p class="upload-text">
+              Kéo thả tài liệu vào đây hoặc
+              <span class="upload-text-link">chọn file</span>
+            </p>
+            <p class="upload-hint">Hỗ trợ PDF, DOCX, TXT, MD (tối đa 50MB)</p>
+            <div class="upload-formats">
+              <span class="format-tag">PDF</span>
+              <span class="format-tag">DOCX</span>
+              <span class="format-tag">TXT</span>
+              <span class="format-tag">MD</span>
+            </div>
+          </div>
+          <input type="file" class="upload-input" id="file-input"
+                 accept=".pdf,.docx,.txt,.md,.tex">
+        </div>
+      </div>
+
+      <!-- File Preview (Hidden by default) -->
+      <div class="file-preview" id="file-preview">
+        <div class="file-info">
+          <div class="file-icon">
+            <i data-lucide="file-text"></i>
+          </div>
+          <div class="file-details">
+            <div class="file-name" id="file-name">document.pdf</div>
+            <div class="file-meta" id="file-meta">2.4 MB • PDF Document</div>
+          </div>
+          <button class="file-remove" id="file-remove" title="Remove file">
+            <i data-lucide="x"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Options (Progressive Disclosure) -->
+      <section class="options-section">
+        <button class="options-toggle" id="options-toggle">
+          <span>Tùy chọn nâng cao</span>
+          <i data-lucide="chevron-down"></i>
+        </button>
+
+        <div class="options-panel" id="options-panel">
+          <div class="options-grid">
+            <div class="option-group">
+              <label class="option-label">Hồ sơ xuất bản</label>
+              <select class="option-select" id="profile-select">
+                <option value="academic">Academic / Research</option>
+                <option value="business">Business / Professional</option>
+                <option value="book">Book / Literature</option>
+                <option value="technical">Technical Documentation</option>
+              </select>
+            </div>
+            <div class="option-group">
+              <label class="option-label">Mô hình AI</label>
+              <select class="option-select" id="model-select">
+                <option value="gpt-4o">GPT-4o (Khuyên dùng)</option>
+                <option value="gpt-4o-mini">GPT-4o Mini (Nhanh)</option>
+                <option value="claude">Claude 3.5 Sonnet</option>
+              </select>
+            </div>
+            <div class="option-group">
+              <label class="option-label">Ngôn ngữ nguồn</label>
+              <select class="option-select" id="source-lang">
+                <option value="auto">Tự động phát hiện</option>
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+                <option value="ja">日本語</option>
+                <option value="ko">한국어</option>
+              </select>
+            </div>
+            <div class="option-group">
+              <label class="option-label">Ngôn ngữ đích</label>
+              <select class="option-select" id="target-lang">
+                <option value="vi">Tiếng Việt</option>
+                <option value="en">English</option>
+                <option value="zh">中文</option>
+                <option value="ja">日本語</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Submit Button -->
+      <div class="button-wrapper">
+        <button class="primary-btn" id="submit-btn" disabled>
+          <i data-lucide="sparkles"></i>
+          <span>Bắt đầu xử lý</span>
+        </button>
+      </div>
+
+      <!-- Enhanced Progress Section (Hidden by default) -->
+      <section class="progress-section" id="progress-section">
+        <!-- Progress Header -->
+        <div class="progress-header">
+          <div class="progress-title-area">
+            <div class="progress-spinner" id="progress-spinner"></div>
+            <div>
+              <h2 class="progress-title" id="progress-title">Đang xử lý tài liệu</h2>
+              <p class="progress-subtitle" id="progress-subtitle">document.pdf • 24 trang</p>
+            </div>
+          </div>
+          <button class="background-btn" id="background-btn" title="Chạy ngầm và nhận thông báo khi hoàn thành">
+            <i data-lucide="bell"></i>
+            <span>Chạy ngầm</span>
+          </button>
+        </div>
+
+        <!-- Progress Card with Stats -->
+        <div class="progress-card">
+          <!-- Progress Bar -->
+          <div class="progress-bar-container">
+            <div class="progress-bar-header">
+              <span class="progress-percentage" id="progress-percentage">0%</span>
+              <span class="progress-eta" id="progress-eta">Còn khoảng 15 phút</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+            </div>
+          </div>
+
+          <!-- Stats Grid -->
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-value" id="stat-chunks">0/48</div>
+              <div class="stat-label">Chunks</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-time">00:00</div>
+              <div class="stat-label">Thời gian</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-tokens">0</div>
+              <div class="stat-label">Tokens</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-value" id="stat-cost">$0.00</div>
+              <div class="stat-label">Chi phí</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Progress Steps -->
+        <div class="progress-steps">
+          <div class="step active" id="step-1">
+            <div class="step-icon">
+              <i data-lucide="scan"></i>
+            </div>
+            <span class="step-label">Phân tích</span>
+          </div>
+          <div class="step" id="step-2">
+            <div class="step-icon">
+              <i data-lucide="languages"></i>
+            </div>
+            <span class="step-label">Dịch thuật</span>
+          </div>
+          <div class="step" id="step-3">
+            <div class="step-icon">
+              <i data-lucide="file-output"></i>
+            </div>
+            <span class="step-label">Xuất bản</span>
+          </div>
+        </div>
+
+        <!-- Live Preview -->
+        <div class="preview-section">
+          <div class="preview-header">
+            <div class="preview-title">
+              <i data-lucide="eye"></i>
+              <span>Xem trước bản dịch</span>
+            </div>
+            <div class="preview-tabs">
+              <button class="preview-tab active" data-tab="translated">Bản dịch</button>
+              <button class="preview-tab" data-tab="original">Gốc</button>
+            </div>
+          </div>
+          <div class="preview-content" id="preview-content">
+            <div class="preview-empty" id="preview-empty">
+              <i data-lucide="file-text"></i>
+              <p>Nội dung sẽ hiển thị khi có chunks hoàn thành</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="activity-section">
+          <div class="activity-header">
+            <div class="activity-title">
+              <i data-lucide="activity"></i>
+              <span>Hoạt động</span>
+            </div>
+            <span class="activity-badge" id="activity-count">0 sự kiện</span>
+          </div>
+          <div class="activity-list" id="activity-list">
+            <!-- Activity items will be added here dynamically -->
+          </div>
+        </div>
+
+        <!-- Tips -->
+        <div class="tips-section" id="tips-section">
+          <div class="tips-icon">
+            <i data-lucide="lightbulb"></i>
+          </div>
+          <div class="tips-content">
+            <div class="tips-title" id="tips-title">Bạn có biết?</div>
+            <div class="tips-text" id="tips-text">AI Publisher Pro sử dụng mô hình ngôn ngữ tiên tiến để dịch chính xác thuật ngữ chuyên ngành.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Download Section (Shown after processing complete) -->
+      <section class="download-section" id="download-section">
+        <div class="download-card">
+          <div class="download-header">
+            <div class="download-icon">
+              <i data-lucide="check-circle"></i>
+            </div>
+            <div>
+              <h2 class="download-title">Tài liệu đã sẵn sàng!</h2>
+              <p class="download-subtitle" id="download-subtitle">Chọn định dạng để tải xuống</p>
+            </div>
+          </div>
+          <div class="download-formats">
+            <div class="format-card" data-format="pdf" onclick="downloadFormat('pdf')">
+              <div class="format-card-check"><i data-lucide="check"></i></div>
+              <div class="format-card-icon pdf">PDF</div>
+              <div class="format-card-name">PDF</div>
+              <div class="format-card-desc">Giữ nguyên layout</div>
+            </div>
+            <div class="format-card" data-format="docx" onclick="downloadFormat('docx')">
+              <div class="format-card-check"><i data-lucide="check"></i></div>
+              <div class="format-card-icon docx">DOC</div>
+              <div class="format-card-name">DOCX</div>
+              <div class="format-card-desc">Có thể chỉnh sửa</div>
+            </div>
+            <div class="format-card" data-format="txt" onclick="downloadFormat('txt')">
+              <div class="format-card-check"><i data-lucide="check"></i></div>
+              <div class="format-card-icon txt">TXT</div>
+              <div class="format-card-name">TXT</div>
+              <div class="format-card-desc">Văn bản thuần</div>
+            </div>
+            <div class="format-card" data-format="md" onclick="downloadFormat('md')">
+              <div class="format-card-check"><i data-lucide="check"></i></div>
+              <div class="format-card-icon md">MD</div>
+              <div class="format-card-name">Markdown</div>
+              <div class="format-card-desc">Dễ đọc, dễ chia sẻ</div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p class="footer-text">
+        Powered by <a href="https://claude.ai" class="footer-link">Claude AI</a> •
+        Built with Anthropic Technology
+      </p>
+    </footer>
+  </div>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // API Base URL
+    const API_BASE = window.location.origin;
+
+    // DOM Elements
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('file-input');
+    const filePreview = document.getElementById('file-preview');
+    const fileName = document.getElementById('file-name');
+    const fileMeta = document.getElementById('file-meta');
+    const fileRemove = document.getElementById('file-remove');
+    const optionsToggle = document.getElementById('options-toggle');
+    const optionsPanel = document.getElementById('options-panel');
+    const submitBtn = document.getElementById('submit-btn');
+    const progressSection = document.getElementById('progress-section');
+    const progressFill = document.getElementById('progress-fill');
+    const backgroundBtn = document.getElementById('background-btn');
+    const downloadSection = document.getElementById('download-section');
+
+    let selectedFile = null;
+    let serverFilePath = null; // Path returned from upload API
+    let startTime = null;
+    let timerInterval = null;
+    let activityCount = 0;
+    let isProcessingComplete = false;
+    let currentJobId = null;
+    let progressPollInterval = null;
+    let previewData = []; // Store both original and translated
+    let currentPreviewTab = 'translated';
+    let downloadedFormats = new Set();
+
+    // Tips data for rotating display
+    const tips = [
+      { title: 'Bạn có biết?', text: 'AI Publisher Pro sử dụng mô hình ngôn ngữ tiên tiến để dịch chính xác thuật ngữ chuyên ngành.' },
+      { title: 'Mẹo hay', text: 'Bạn có thể chạy ngầm và làm việc khác. Chúng tôi sẽ thông báo khi hoàn thành.' },
+      { title: 'Tính năng mới', text: 'Hỗ trợ giữ nguyên format bảng biểu và công thức toán học trong tài liệu PDF.' },
+      { title: 'Tiết kiệm chi phí', text: 'Hệ thống cache thông minh giúp tiết kiệm đến 70% chi phí cho tài liệu tương tự.' },
+      { title: 'Chất lượng cao', text: 'Thuật ngữ chuyên ngành được kiểm tra với glossary có sẵn hoặc tùy chỉnh.' },
+    ];
+    let currentTipIndex = 0;
+
+    // Sample translated chunks for demo
+    const sampleChunks = [
+      { original: 'Artificial intelligence is transforming how we live and work.', translated: 'Trí tuệ nhân tạo đang thay đổi cách chúng ta sống và làm việc.' },
+      { original: 'Machine learning algorithms can process vast amounts of data.', translated: 'Thuật toán học máy có thể xử lý lượng lớn dữ liệu.' },
+      { original: 'The technology industry continues to grow rapidly.', translated: 'Ngành công nghệ tiếp tục phát triển nhanh chóng.' },
+      { original: 'Cloud computing enables scalable solutions for businesses.', translated: 'Điện toán đám mây cho phép các giải pháp có khả năng mở rộng cho doanh nghiệp.' },
+      { original: 'Natural language processing has made significant advances.', translated: 'Xử lý ngôn ngữ tự nhiên đã có những tiến bộ đáng kể.' },
+    ];
+
+    // Upload Zone Click
+    uploadZone.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // Drag & Drop
+    uploadZone.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      uploadZone.classList.add('drag-over');
+    });
+
+    uploadZone.addEventListener('dragleave', () => {
+      uploadZone.classList.remove('drag-over');
+    });
+
+    uploadZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadZone.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        handleFile(files[0]);
+      }
+    });
+
+    // File Input Change
+    fileInput.addEventListener('change', (e) => {
+      if (e.target.files.length > 0) {
+        handleFile(e.target.files[0]);
+      }
+    });
+
+    // Handle File Selection
+    function handleFile(file) {
+      selectedFile = file;
+
+      // Update preview
+      fileName.textContent = file.name;
+      const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
+      const extension = file.name.split('.').pop().toUpperCase();
+      fileMeta.textContent = `${sizeInMB} MB • ${extension} Document`;
+
+      // Show preview, hide upload zone
+      uploadZone.style.display = 'none';
+      filePreview.classList.add('show');
+
+      // Enable submit button
+      submitBtn.disabled = false;
+    }
+
+    // Remove File
+    fileRemove.addEventListener('click', () => {
+      selectedFile = null;
+      fileInput.value = '';
+      filePreview.classList.remove('show');
+      uploadZone.style.display = 'block';
+      submitBtn.disabled = true;
+    });
+
+    // Options Toggle
+    optionsToggle.addEventListener('click', () => {
+      optionsToggle.classList.toggle('expanded');
+      optionsPanel.classList.toggle('show');
+    });
+
+    // Background mode button
+    backgroundBtn.addEventListener('click', () => {
+      if ('Notification' in window && Notification.permission !== 'granted') {
+        Notification.requestPermission();
+      }
+      addActivity('Chế độ chạy ngầm đã bật', 'success');
+      backgroundBtn.innerHTML = '<i data-lucide="check"></i><span>Đã bật thông báo</span>';
+      backgroundBtn.style.background = 'var(--accent-light)';
+      backgroundBtn.style.color = 'var(--accent-primary)';
+      lucide.createIcons();
+    });
+
+    // Preview tabs - switch between translated and original
+    document.querySelectorAll('.preview-tab').forEach(tab => {
+      tab.addEventListener('click', () => {
+        document.querySelectorAll('.preview-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        currentPreviewTab = tab.dataset.tab;
+        renderPreviewContent();
+      });
+    });
+
+    // Render preview content based on current tab
+    function renderPreviewContent() {
+      const content = document.getElementById('preview-content');
+      const empty = document.getElementById('preview-empty');
+
+      if (previewData.length === 0) {
+        if (empty) empty.style.display = 'block';
+        return;
+      }
+
+      if (empty) empty.style.display = 'none';
+
+      // Clear existing chunks
+      content.querySelectorAll('.preview-chunk').forEach(c => c.remove());
+
+      // Add chunks in reverse order (newest first)
+      [...previewData].reverse().forEach(item => {
+        const chunk = document.createElement('div');
+        chunk.className = 'preview-chunk';
+        const text = currentPreviewTab === 'translated' ? item.translated : item.original;
+        chunk.innerHTML = `
+          <div class="preview-chunk-header">
+            <span class="chunk-badge">Chunk ${item.index}</span>
+            <span class="chunk-time">${item.time}</span>
+          </div>
+          <div class="preview-text">${text}</div>
+        `;
+        content.appendChild(chunk);
+      });
+    }
+
+    // Format time
+    function formatTime(seconds) {
+      const mins = Math.floor(seconds / 60);
+      const secs = seconds % 60;
+      return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    // Format number with commas
+    function formatNumber(num) {
+      return num.toLocaleString();
+    }
+
+    // Add activity item
+    function addActivity(message, type = 'normal') {
+      activityCount++;
+      const list = document.getElementById('activity-list');
+      const item = document.createElement('div');
+      item.className = 'activity-item';
+      item.innerHTML = `
+        <div class="activity-dot ${type}"></div>
+        <div class="activity-content">
+          <div class="activity-message">${message}</div>
+          <div class="activity-time">${new Date().toLocaleTimeString('vi-VN')}</div>
+        </div>
+      `;
+      list.insertBefore(item, list.firstChild);
+      document.getElementById('activity-count').textContent = `${activityCount} sự kiện`;
+    }
+
+    // Add preview chunk - stores both original and translated
+    function addPreviewChunk(chunkIndex, original, translated) {
+      const time = new Date().toLocaleTimeString('vi-VN');
+      previewData.push({
+        index: chunkIndex,
+        original: original,
+        translated: translated,
+        time: time
+      });
+      renderPreviewContent();
+    }
+
+    // Rotate tips
+    function rotateTips() {
+      currentTipIndex = (currentTipIndex + 1) % tips.length;
+      const tip = tips[currentTipIndex];
+      document.getElementById('tips-title').textContent = tip.title;
+      document.getElementById('tips-text').textContent = tip.text;
+    }
+
+    // Update step indicators
+    function updateStep(stepNum) {
+      for (let i = 1; i <= 3; i++) {
+        const stepEl = document.getElementById(`step-${i}`);
+        if (i < stepNum) {
+          stepEl.classList.remove('active');
+          stepEl.classList.add('completed');
+        } else if (i === stepNum) {
+          stepEl.classList.add('active');
+          stepEl.classList.remove('completed');
+        } else {
+          stepEl.classList.remove('active', 'completed');
+        }
+      }
+    }
+
+    // =============================================
+    // API FUNCTIONS - Real Backend Integration
+    // =============================================
+
+    // Helper to convert error to string
+    function errorToString(error) {
+      if (typeof error === 'string') return error;
+      if (error instanceof Error) return error.message;
+      if (error && typeof error === 'object') {
+        // Handle API error responses
+        if (error.detail) return typeof error.detail === 'string' ? error.detail : JSON.stringify(error.detail);
+        if (error.message) return error.message;
+        if (error.error) return typeof error.error === 'string' ? error.error : JSON.stringify(error.error);
+        return JSON.stringify(error);
+      }
+      return String(error);
+    }
+
+    // Upload file to server
+    async function uploadFile(file) {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      try {
+        const response = await fetch(`${API_BASE}/api/upload`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.detail || 'Upload failed');
+        }
+
+        const data = await response.json();
+        return data.server_path || data.path || data.file_path;
+      } catch (error) {
+        console.error('Upload error:', error);
+        throw error;
+      }
+    }
+
+    // Create translation job
+    async function createJob(filePath, sourceLang, targetLang, outputFormats) {
+      // Generate output path based on input
+      const inputFileName = filePath.split('/').pop();
+      const baseName = inputFileName.replace(/\.[^/.]+$/, '');
+      const outputPath = filePath.replace(inputFileName, `${baseName}_translated.docx`);
+
+      const payload = {
+        job_name: `Translate ${selectedFile.name}`,
+        input_file: filePath,
+        output_file: outputPath,
+        source_lang: sourceLang === 'auto' ? 'en' : sourceLang,
+        target_lang: targetLang,
+        output_formats: outputFormats || ['docx', 'pdf', 'txt', 'md'],
+        model: document.getElementById('model-select').value || 'gpt-4o-mini',
+        output_format: 'docx'
+      };
+
+      try {
+        const response = await fetch(`${API_BASE}/api/jobs`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorToString(errorData));
+        }
+
+        const data = await response.json();
+        return data.job_id || data.id;
+      } catch (error) {
+        console.error('Create job error:', error);
+        throw error;
+      }
+    }
+
+    // Ensure batch processor is running
+    async function ensureProcessorRunning() {
+      try {
+        const response = await fetch(`${API_BASE}/api/processor/start`, {
+          method: 'POST'
+        });
+        if (response.ok) {
+          console.log('Batch processor started/confirmed running');
+        }
+      } catch (error) {
+        console.warn('Could not start processor (may already be running):', error);
+      }
+    }
+
+    // Poll job progress
+    async function pollProgress(jobId) {
+      try {
+        const response = await fetch(`${API_BASE}/api/jobs/${jobId}/progress`);
+
+        if (!response.ok) {
+          if (response.status === 404) {
+            return { status: 'not_found' };
+          }
+          throw new Error('Failed to get progress');
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Progress poll error:', error);
+        return null;
+      }
+    }
+
+    // Get preview content
+    async function fetchPreview(jobId, limit = 10) {
+      try {
+        const response = await fetch(`${API_BASE}/api/jobs/${jobId}/preview?limit=${limit}`);
+
+        if (!response.ok) {
+          return null;
+        }
+
+        return await response.json();
+      } catch (error) {
+        console.error('Preview fetch error:', error);
+        return null;
+      }
+    }
+
+    // Download file in specific format
+    async function downloadFile(jobId, format) {
+      const card = document.querySelector(`.format-card[data-format="${format}"]`);
+      if (card) {
+        card.classList.add('downloading');
+        // Add spinner using appendChild instead of innerHTML to preserve existing content
+        const spinner = document.createElement('div');
+        spinner.className = 'format-card-spinner';
+        card.appendChild(spinner);
+      }
+
+      try {
+        const response = await fetch(`${API_BASE}/api/jobs/${jobId}/download/${format}`);
+
+        if (!response.ok) {
+          throw new Error(`Download failed: ${response.statusText}`);
+        }
+
+        // Get filename from Content-Disposition header or generate one
+        const contentDisposition = response.headers.get('Content-Disposition');
+        let filename = `${selectedFile.name.replace(/\.[^/.]+$/, '')}_translated.${format}`;
+        if (contentDisposition) {
+          const match = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+          if (match && match[1]) {
+            filename = match[1].replace(/['"]/g, '');
+          }
+        }
+
+        // Download the file
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        // Mark as downloaded
+        downloadedFormats.add(format);
+        if (card) {
+          card.classList.remove('downloading');
+          card.classList.add('downloaded');
+          const spinnerEl = card.querySelector('.format-card-spinner');
+          if (spinnerEl) spinnerEl.remove();
+        }
+        lucide.createIcons();
+
+        addActivity(`Đã tải xuống bản ${format.toUpperCase()}`, 'success');
+        return true;
+      } catch (error) {
+        console.error(`Download ${format} error:`, error);
+        if (card) {
+          card.classList.remove('downloading');
+          const spinnerEl = card.querySelector('.format-card-spinner');
+          if (spinnerEl) spinnerEl.remove();
+        }
+        addActivity(`Lỗi tải ${format.toUpperCase()}: ${error.message}`, 'warning');
+        return false;
+      }
+    }
+
+    // Global download function for onclick
+    window.downloadFormat = async function(format) {
+      if (!currentJobId) {
+        addActivity('Không tìm thấy job ID', 'warning');
+        return;
+      }
+      await downloadFile(currentJobId, format);
+    };
+
+    // =============================================
+    // MAIN SUBMIT HANDLER
+    // =============================================
+
+    submitBtn.addEventListener('click', async () => {
+      // If processing is complete, scroll to download section
+      if (isProcessingComplete) {
+        downloadSection.scrollIntoView({ behavior: 'smooth' });
+        return;
+      }
+
+      if (!selectedFile) return;
+
+      // Reset state for new processing
+      previewData = [];
+      isProcessingComplete = false;
+      downloadedFormats.clear();
+      currentJobId = null;
+      serverFilePath = null;
+
+      // Reset download cards
+      document.querySelectorAll('.format-card').forEach(card => {
+        card.classList.remove('downloaded', 'downloading');
+        const spinner = card.querySelector('.format-card-spinner');
+        if (spinner) spinner.remove();
+      });
+
+      // Setup UI for processing
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span><span>Đang tải lên...</span>';
+      progressSection.classList.add('show');
+      downloadSection.classList.remove('show');
+
+      // Update file info in progress header
+      document.getElementById('progress-subtitle').textContent = `${selectedFile.name} • Đang tải lên...`;
+
+      // Start timer
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('stat-time').textContent = formatTime(elapsed);
+      }, 1000);
+
+      // Rotate tips every 10 seconds
+      const tipsInterval = setInterval(rotateTips, 10000);
+
+      // Add initial activity
+      addActivity('Bắt đầu tải lên tài liệu', 'success');
+
+      try {
+        // Step 1: Upload file
+        updateStep(1);
+        serverFilePath = await uploadFile(selectedFile);
+        addActivity('Tải lên thành công', 'success');
+        document.getElementById('progress-fill').style.width = '10%';
+        document.getElementById('progress-percentage').textContent = '10%';
+
+        // Step 2: Create translation job
+        submitBtn.innerHTML = '<span class="spinner"></span><span>Đang xử lý...</span>';
+        document.getElementById('progress-subtitle').textContent = `${selectedFile.name} • Đang khởi tạo...`;
+
+        const sourceLang = document.getElementById('source-lang').value;
+        const targetLang = document.getElementById('target-lang').value;
+
+        currentJobId = await createJob(serverFilePath, sourceLang, targetLang, ['docx', 'pdf', 'txt', 'md']);
+        addActivity(`Khởi tạo job: ${currentJobId.substring(0, 8)}...`, 'success');
+
+        // Ensure batch processor is running
+        await ensureProcessorRunning();
+
+        // Step 3: Poll progress
+        updateStep(2);
+        addActivity('Bắt đầu dịch thuật...');
+
+        let lastProgress = 0;
+        let lastChunkCount = 0;
+
+        progressPollInterval = setInterval(async () => {
+          const progress = await pollProgress(currentJobId);
+
+          if (!progress) return;
+
+          // Debug log to console
+          console.log('Progress response:', progress);
+
+          // Update progress bar
+          const percent = typeof progress.progress_percent === 'number' ? progress.progress_percent :
+                         (typeof progress.progress === 'number' ? progress.progress : 0);
+          document.getElementById('progress-fill').style.width = `${percent}%`;
+          document.getElementById('progress-percentage').textContent = `${Math.floor(percent)}%`;
+
+          // Update ETA - handle various response formats
+          if (progress.estimated_remaining_seconds && typeof progress.estimated_remaining_seconds === 'number') {
+            const mins = Math.ceil(progress.estimated_remaining_seconds / 60);
+            document.getElementById('progress-eta').textContent = `Còn khoảng ${mins} phút`;
+          } else if (progress.eta && typeof progress.eta === 'string') {
+            document.getElementById('progress-eta').textContent = progress.eta;
+          } else if (progress.message && typeof progress.message === 'string') {
+            document.getElementById('progress-eta').textContent = progress.message;
+          }
+
+          // Update stats
+          const chunksCompleted = typeof progress.chunks_completed === 'number' ? progress.chunks_completed :
+                                  (typeof progress.completed_chunks === 'number' ? progress.completed_chunks : undefined);
+          const totalChunks = typeof progress.total_chunks === 'number' ? progress.total_chunks :
+                             (typeof progress.chunks_total === 'number' ? progress.chunks_total : undefined);
+
+          if (chunksCompleted !== undefined && totalChunks !== undefined) {
+            document.getElementById('stat-chunks').textContent = `${chunksCompleted}/${totalChunks}`;
+
+            // Add activity for new chunks
+            if (chunksCompleted > lastChunkCount) {
+              const newChunks = chunksCompleted - lastChunkCount;
+              addActivity(`Hoàn thành ${newChunks} chunks`, 'success');
+              lastChunkCount = chunksCompleted;
+            }
+          }
+
+          if (progress.tokens_used !== undefined) {
+            document.getElementById('stat-tokens').textContent = formatNumber(progress.tokens_used);
+            document.getElementById('stat-cost').textContent = `$${(progress.tokens_used * 0.00001).toFixed(4)}`;
+          }
+
+          // Update step indicator based on progress
+          if (percent < 20) {
+            updateStep(1);
+          } else if (percent < 90) {
+            updateStep(2);
+          } else {
+            updateStep(3);
+          }
+
+          // Update subtitle with page count if available
+          if (progress.pages) {
+            document.getElementById('progress-subtitle').textContent = `${selectedFile.name} • ${progress.pages} trang`;
+          }
+
+          // Fetch preview periodically
+          if (percent > lastProgress + 10) {
+            const preview = await fetchPreview(currentJobId, 5);
+            if (preview) {
+              // Handle both API formats: preview.chunks or preview.preview
+              const chunks = preview.chunks || preview.preview || [];
+              chunks.forEach((chunk, idx) => {
+                const chunkIndex = chunk.index || idx + 1;
+                if (!previewData.find(p => p.index === chunkIndex)) {
+                  // Handle various field names for translated text
+                  const translatedText = chunk.translated || chunk.text || '';
+                  const originalText = chunk.original || chunk.source || '';
+                  addPreviewChunk(chunkIndex, originalText, translatedText);
+                }
+              });
+            }
+            lastProgress = percent;
+          }
+
+          // Check if completed
+          if (progress.status === 'completed' || percent >= 100) {
+            clearInterval(progressPollInterval);
+            onProcessingComplete(tipsInterval);
+          } else if (progress.status === 'failed' || progress.status === 'error') {
+            clearInterval(progressPollInterval);
+            onProcessingError(errorToString(progress.error) || 'Unknown error', tipsInterval);
+          }
+        }, 2000); // Poll every 2 seconds
+
+      } catch (error) {
+        onProcessingError(errorToString(error), tipsInterval);
+      }
+    });
+
+    // Processing complete handler
+    async function onProcessingComplete(tipsInterval) {
+      clearInterval(timerInterval);
+      clearInterval(tipsInterval);
+      if (progressPollInterval) clearInterval(progressPollInterval);
+
+      isProcessingComplete = true;
+
+      document.getElementById('progress-percentage').textContent = '100%';
+      document.getElementById('progress-fill').style.width = '100%';
+      document.getElementById('progress-eta').textContent = 'Hoàn thành!';
+      document.getElementById('progress-spinner').style.display = 'none';
+      document.getElementById('progress-title').textContent = 'Hoàn thành!';
+
+      // Fetch final preview
+      try {
+        const preview = await fetchPreview(currentJobId, 10);
+        console.log('Final preview response:', preview);
+        if (preview) {
+          const chunks = preview.chunks || preview.preview || [];
+          if (chunks.length > 0) {
+            chunks.forEach((chunk, idx) => {
+              const chunkIndex = chunk.index || idx + 1;
+              if (!previewData.find(p => p.index === chunkIndex)) {
+                // API may return only 'text' field (translated content)
+                const translatedText = chunk.translated || chunk.text || '';
+                const originalText = chunk.original || chunk.source || '';
+                addPreviewChunk(chunkIndex, originalText, translatedText);
+              }
+            });
+          } else {
+            // No chunks in response, show a message
+            addPreviewChunk(1, '', 'Nội dung đã được xử lý. Tải xuống để xem kết quả.');
+          }
+        }
+      } catch (e) {
+        console.error('Failed to fetch final preview:', e);
+      }
+
+      // Update button
+      submitBtn.innerHTML = '<i data-lucide="download"></i><span>Xem định dạng tải</span>';
+      submitBtn.disabled = false;
+      submitBtn.style.background = '#10B981';
+      lucide.createIcons();
+
+      // Show download section
+      downloadSection.classList.add('show');
+      document.getElementById('download-subtitle').textContent = `${selectedFile.name} • Chọn định dạng để tải`;
+
+      addActivity('Tài liệu đã sẵn sàng để tải xuống', 'success');
+
+      // Show notification if in background mode
+      if ('Notification' in window && Notification.permission === 'granted') {
+        new Notification('AI Publisher Pro', {
+          body: 'Tài liệu của bạn đã được xử lý xong!',
+          icon: '/favicon.ico'
+        });
+      }
+
+      // Scroll to download section
+      setTimeout(() => {
+        downloadSection.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+    }
+
+    // Processing error handler
+    function onProcessingError(errorMessage, tipsInterval) {
+      clearInterval(timerInterval);
+      clearInterval(tipsInterval);
+      if (progressPollInterval) clearInterval(progressPollInterval);
+
+      document.getElementById('progress-title').textContent = 'Lỗi xử lý';
+      document.getElementById('progress-spinner').style.display = 'none';
+      document.getElementById('progress-eta').textContent = errorMessage;
+
+      submitBtn.innerHTML = '<i data-lucide="refresh-cw"></i><span>Thử lại</span>';
+      submitBtn.disabled = false;
+      submitBtn.style.background = '#EF4444';
+      lucide.createIcons();
+
+      addActivity(`Lỗi: ${errorMessage}`, 'warning');
+
+      // Reset for retry
+      isProcessingComplete = false;
+    }
+
+    // Simulate progress animation
+    async function simulateProgress(from, to, duration) {
+      const steps = 20;
+      const stepDuration = duration / steps;
+      const increment = (to - from) / steps;
+
+      for (let i = 0; i <= steps; i++) {
+        const progress = from + (increment * i);
+        document.getElementById('progress-fill').style.width = progress + '%';
+        document.getElementById('progress-percentage').textContent = Math.floor(progress) + '%';
+        await new Promise(resolve => setTimeout(resolve, stepDuration));
+      }
+    }
+  </script>
+</body>
+</html>

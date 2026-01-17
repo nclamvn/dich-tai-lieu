@@ -1,0 +1,105 @@
+/* core/pdf_renderer_v2/templates/css/literary/memoir-biography.css */
+
+/* Memoir/Biography - personal, readable, elegant */
+
+:root {
+    --font-serif: 'Noto Serif', Georgia, serif;
+    --font-sans: 'Noto Sans', Arial, sans-serif;
+    --text-base: 11pt;
+    --line-height: 1.7;
+}
+
+body {
+    font-family: var(--font-serif);
+}
+
+.document-header {
+    text-align: center;
+    margin-top: 3cm;
+    margin-bottom: 3cm;
+    border-bottom: none;
+}
+
+.doc-title {
+    font-size: 28pt;
+    font-weight: normal;
+    font-family: var(--font-sans);
+    margin-bottom: 0.5em;
+}
+
+.doc-author {
+    font-size: 16pt;
+    font-style: italic;
+}
+
+.doc-date {
+    font-size: 11pt;
+    margin-top: 1em;
+}
+
+/* Chapter headings */
+.content > h1 {
+    font-size: 20pt;
+    font-weight: normal;
+    font-family: var(--font-sans);
+    margin-top: 2cm;
+    margin-bottom: 1cm;
+    padding-bottom: 0.5em;
+    border-bottom: 1px solid #ccc;
+}
+
+/* Personal quotes - memoir style */
+blockquote {
+    margin: 1.5em 2em;
+    padding: 1em;
+    background-color: #f9f9f9;
+    border-left: 3px solid #999;
+    font-style: italic;
+}
+
+/* First paragraph after heading - no indent */
+p {
+    text-indent: 1.2em;
+}
+
+h1 + p, h2 + p, h3 + p,
+blockquote + p {
+    text-indent: 0;
+}
+
+/* Dates and locations in chapters */
+.content > h1 + p:first-of-type {
+    font-style: italic;
+    color: #666;
+    text-align: center;
+    margin-bottom: 1.5em;
+}
+
+/* Photo captions */
+figcaption {
+    font-style: italic;
+    font-size: 10pt;
+}
+
+/* Section breaks */
+hr {
+    border: none;
+    margin: 2em 0;
+    text-align: center;
+}
+
+hr::before {
+    content: "* * *";
+    color: #999;
+    letter-spacing: 0.5em;
+}
+
+@page {
+    margin: 2.5cm 2cm;
+
+    @bottom-center {
+        content: counter(page);
+        font-family: var(--font-sans);
+        font-size: 9pt;
+    }
+}

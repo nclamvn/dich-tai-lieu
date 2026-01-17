@@ -12,20 +12,21 @@ from pydantic import BaseModel, Field
 import uuid
 import shutil
 
-from core.author import AuthorEngine, Variation
-from core.author.advanced import VariationScorer, MemoryContextBuilder, ExportUtilities
-from core.author.book_export import BookExporter
-from core.author.document_parser import DocumentParser, ParsedDocument
-from core.author.memory_extractor import MemoryExtractor, ExtractionResult
-from core.author.consistency_checker import (
+from core_v2.agents.ghostwriter.ghostwriter_agent import GhostwriterAgent as AuthorEngine # Alias for compatibility
+from core_v2.agents.ghostwriter.models import Variation
+from core_v2.agents.ghostwriter.advanced import VariationScorer, MemoryContextBuilder, ExportUtilities
+from core_v2.agents.ghostwriter.book_export import BookExporter
+from core_v2.agents.ghostwriter.document_parser import DocumentParser, ParsedDocument
+from core_v2.agents.ghostwriter.memory_extractor import MemoryExtractor, ExtractionResult
+from core_v2.agents.ghostwriter.consistency_checker import (
     ConsistencyChecker,
     ConsistencyReport,
     ConsistencyIssue,
     SeverityLevel,
     IssueType
 )
-from core.author.memory_store import MemoryStore
-from core.author.llm_provider import create_llm_client
+from core_v2.agents.ghostwriter.memory_store import MemoryStore
+from core_v2.agents.ghostwriter.llm_provider import create_llm_client
 from config.logging_config import get_logger
 
 logger = get_logger(__name__)
@@ -49,6 +50,10 @@ class ProposeRequest(BaseModel):
         default=None,
         description="Custom style override"
     )
+    # Memory Context Fields (Phase 4.3)
+    project_id: Optional[str] = Field(default=None, description="Project ID for memory context")
+    author_id: Optional[str] = Field(default=None, description="Author ID for memory context")
+    current_chapter: Optional[int] = Field(default=None, description="Current chapter number")
 
 
 class ProposeResponse(BaseModel):
@@ -191,10 +196,28 @@ def get_engine() -> AuthorEngine:
     """Get or create AuthorEngine instance"""
     global _engine
     if _engine is None:
-        # Initialize without LLM provider for now
-        # TODO: Inject LLM provider from config/environment
+        # Configuration
+        from config.settings import settings
+        
+        # Determine provider info
+        provider_name = settings.provider  # 'openai' or 'anthropic'
+        api_key = settings.openai_api_key if provider_name == "openai" else settings.anthropic_api_key
+        
+        # Create LLM Client
+        try:
+            llm_client = create_llm_client(
+                provider=provider_name,
+                api_key=api_key if api_key else None, # allow env var fallback if empty string
+                model=settings.model
+            )
+            logger.info(f"Initialized Ghostwriter with {provider_name} ({settings.model})")
+        except Exception as e:
+            logger.error(f"Failed to initialize LLM client: {e}. Using placeholder.")
+            llm_client = create_llm_client(provider="placeholder")
+
         _engine = AuthorEngine(
-            llm_provider=None,  # Will be configured later
+            agent_id="ghostwriter_v1", 
+            llm_provider=llm_client, 
             data_path=Path("data/authors")
         )
     return _engine
@@ -221,7 +244,11 @@ async def propose_next_paragraph(request: ProposeRequest):
             style=request.style,
             target_length=request.target_length,
             n_variations=request.n_variations,
-            custom_style_instruction=request.custom_style_instruction
+            custom_style_instruction=request.custom_style_instruction,
+            # Memory Context
+            project_id=request.project_id,
+            author_id=request.author_id,
+            current_chapter=request.current_chapter
         )
 
         return ProposeResponse(
@@ -239,6 +266,42 @@ async def propose_next_paragraph(request: ProposeRequest):
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate proposals: {str(e)}")
+
+
+@router.post("/propose/stream")
+async def propose_next_paragraph_stream(request: ProposeRequest):
+    """
+    Stream next paragraph generation (Server-Sent Events)
+    """
+    from fastapi.responses import StreamingResponse
+    
+    try:
+        engine = get_engine()
+
+        async def generate_events():
+            async for chunk in engine.propose_next_paragraph_stream(
+                context=request.context,
+                instruction=request.instruction,
+                style=request.style,
+                target_length=request.target_length,
+                custom_style_instruction=request.custom_style_instruction,
+                project_id=request.project_id,
+                author_id=request.author_id,
+                current_chapter=request.current_chapter
+            ):
+                # SSE Format
+                if chunk:
+                    import json
+                    # Escape newlines for SSE data
+                    payload = json.dumps({"text": chunk})
+                    yield f"data: {payload}\n\n"
+            
+            yield "data: [DONE]\n\n"
+
+        return StreamingResponse(generate_events(), media_type="text/event-stream")
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to stream proposals: {str(e)}")
 
 
 # ==============================================================================

@@ -22,7 +22,9 @@ from docx.shared import Pt, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 from .docx_base import DocxExporterBase, ExportConfig
-from .docx_styles import AcademicStyles, StyleApplicator
+from .docx_styles import StyleManager, THEME_ACADEMIC
+from .docx_page_layout import _setup_page_layout
+from .docx_front_matter import FrontMatterGenerator
 from core.structure.semantic_model import DocNode, DocNodeType, DocNodeList
 from core.rendering import omml_converter
 from config.logging_config import get_logger
@@ -41,14 +43,14 @@ class AcademicExportConfig(ExportConfig):
     equation_rendering_mode: Literal["latex_text", "omml"] = "latex_text"
 
     # Professional styling (Phase 2.0.5)
+    theme: str = "academic"
     enable_theorem_boxes: bool = True
     enable_proof_indent: bool = True
     enable_advanced_equation_layout: bool = True
 
     # Override defaults for academic style
-    font_name: str = "Times New Roman"
-    font_size: int = 11
-    line_spacing: float = 1.15
+    font_name: Optional[str] = None # Defer to theme
+    font_size: Optional[int] = None # Defer to theme
 
 
 class AcademicDocxExporter(DocxExporterBase):
@@ -72,6 +74,33 @@ class AcademicDocxExporter(DocxExporterBase):
         """
         super().__init__(config or AcademicExportConfig())
         self.academic_config = self.config  # Type hint
+        
+        # Initialize StyleManager
+        self.style_manager = StyleManager(theme_name=self.academic_config.theme)
+    
+    def _setup_page_layout(self) -> None:
+        """Override page layout to use Page Architecture module."""
+        # We need a temporary config object that matches what _setup_page_layout expects
+        # Or we can pass self.academic_config if it has the fields
+        # Ideally, _setup_page_layout should accept a generic config with theme/margins
+        if self.doc:
+            # We can reuse the helper logic directly
+            from .config import AcademicLayoutConfig
+            # Adapt config
+            layout_config = AcademicLayoutConfig(theme=self.academic_config.theme)
+            _setup_page_layout(self.doc, layout_config, self.style_manager)
+            
+    def _setup_base_styles(self) -> None:
+        """Override base styles to use StyleManager."""
+        pass # StyleManager applies styles dynamically per element, or we can pre-set doc defaults here
+
+    def _add_front_matter(self, metadata: Dict[str, str]) -> None:
+        """Add Front Matter."""
+        if metadata:
+            fm_generator = FrontMatterGenerator(self.doc, self.style_manager)
+            fm_generator.generate_title_page(metadata)
+            fm_generator.generate_toc()
+
 
     def _add_content(self, content: DocNodeList) -> None:
         """
@@ -97,12 +126,14 @@ class AcademicDocxExporter(DocxExporterBase):
                 self._add_reference_entry(node)
             else:
                 # Default: add as paragraph
-                self.add_paragraph(node.text)
+                para = self.doc.add_paragraph(node.text)
+                self.style_manager.apply_body_style(para)
 
     def _add_heading_node(self, node: DocNode) -> None:
         """Add heading node."""
         level = node.level or 1
-        self.add_heading(node.text, level=level)
+        para = self.doc.add_heading(node.text, level=level)
+        self.style_manager.apply_heading_style(para, level)
 
     def _add_theorem_node(self, node: DocNode) -> None:
         """Add theorem-like block with styling."""
@@ -120,13 +151,16 @@ class AcademicDocxExporter(DocxExporterBase):
 
         para.add_run(text)
 
+
         # Apply theorem box styling if enabled
         if self.academic_config.enable_theorem_boxes:
             box_type = self._get_box_type(node.node_type)
             try:
-                StyleApplicator.apply_theorem_box(para, box_type)
+                self.style_manager.apply_theorem_box(para, box_type)
             except Exception as e:
                 logger.warning(f"Failed to apply theorem box: {e}")
+        else:
+             self.style_manager.apply_body_style(para)
 
     def _add_proof_node(self, node: DocNode) -> None:
         """Add proof block with styling."""
@@ -159,11 +193,10 @@ class AcademicDocxExporter(DocxExporterBase):
         para.add_run(text)
 
         # Apply proof styling if enabled
+        # Use simple indentation via paragraph format
+        self.style_manager.apply_body_style(para)
         if self.academic_config.enable_proof_indent:
-            try:
-                StyleApplicator.apply_proof_style(para)
-            except Exception as e:
-                logger.warning(f"Failed to apply proof style: {e}")
+            para.paragraph_format.left_indent = Pt(20)
 
     def _add_equation_node(self, node: DocNode) -> None:
         """Add equation block (LaTeX text or OMML)."""
@@ -171,11 +204,10 @@ class AcademicDocxExporter(DocxExporterBase):
         para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         # Apply equation styling if enabled
-        if self.academic_config.enable_advanced_equation_layout:
-            try:
-                StyleApplicator.apply_equation_style(para, centered=True, numbered=False)
-            except Exception as e:
-                logger.warning(f"Failed to apply equation style: {e}")
+        # Center align is handled above
+        self.style_manager.apply_body_style(para)
+        # Assuming body style might reset alignment, so re-center
+        para.alignment = WD_ALIGN_PARAGRAPH.CENTER
 
         # Try OMML rendering if enabled
         if self.academic_config.equation_rendering_mode == "omml":
@@ -225,6 +257,7 @@ class AcademicDocxExporter(DocxExporterBase):
     def _add_reference_entry(self, node: DocNode) -> None:
         """Add reference entry with hanging indent."""
         para = self.doc.add_paragraph(node.text)
+        self.style_manager.apply_body_style(para)
         para.paragraph_format.left_indent = Inches(0.5)
         para.paragraph_format.first_line_indent = Inches(-0.5)
 

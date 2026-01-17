@@ -1,0 +1,154 @@
+/* Editor Overlay - Full Screen "Studio" Mode */
+.editor-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: var(--bg-primary);
+    z-index: 2000;
+    /* Above everything */
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.editor-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+}
+
+/* Editor Header */
+.editor-header {
+    height: 64px;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+}
+
+.editor-title-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.editor-back-btn {
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+}
+
+.editor-back-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+/* Editor Body - Split Pane */
+.editor-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    background: var(--bg-secondary);
+    display: flex;
+    justify-content: center;
+}
+
+.editor-container {
+    max-width: 1200px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding-bottom: 4rem;
+}
+
+/* Segment Card */
+.segment-card {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    background: var(--bg-primary);
+    padding: 1.5rem;
+    border-radius: 1rem;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+    transition: border-color 0.2s;
+}
+
+.segment-card:focus-within {
+    border-color: var(--accent-light);
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.05);
+}
+
+.segment-source {
+    color: var(--text-secondary);
+    font-size: 1rem;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    padding: 0.5rem;
+}
+
+.segment-target-wrapper {
+    position: relative;
+}
+
+.segment-target-textarea {
+    width: 100%;
+    min-height: 100px;
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 1rem;
+    line-height: 1.6;
+    resize: vertical;
+    transition: all 0.2s;
+}
+
+.segment-target-textarea:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    background: var(--bg-primary);
+}
+
+.segment-meta {
+    grid-column: 1 / -1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border-color);
+    padding-top: 0.75rem;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-tertiary);
+}
+
+.segment-id {
+    font-family: monospace;
+    background: var(--bg-secondary);
+    padding: 0.1rem 0.4rem;
+    border-radius: 0.25rem;
+}
+
+.save-indicator {
+    color: var(--success);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.save-indicator.saved {
+    opacity: 1;
+}
