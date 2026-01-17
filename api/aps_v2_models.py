@@ -67,6 +67,14 @@ class PublishTextRequest(BaseModel):
     profile_id: str = Field(default="novel")
     output_formats: List[str] = Field(default=["docx"])
     filename: str = Field(default="document", description="Base filename for outputs")
+    docx_template: str = Field(
+        default="auto",
+        description="DOCX template: 'ebook', 'academic', 'business', or 'auto'"
+    )
+    pdf_template: str = Field(
+        default="auto",
+        description="PDF template: 'ebook', 'academic', 'business', or 'auto'"
+    )
 
 
 # ==================== RESPONSE MODELS ====================

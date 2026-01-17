@@ -48,6 +48,8 @@ async def publish_file(
     output_formats: str = Form(default="docx"),  # Comma-separated
     use_vision: bool = Form(default=True, description="Use Claude Vision for PDF reading (recommended)"),
     api_key: str = Form(default="", description="User API key (optional, overrides server config)"),
+    docx_template: str = Form(default="auto", description="DOCX template: 'ebook', 'academic', 'business', or 'auto'"),
+    pdf_template: str = Form(default="auto", description="PDF template: 'ebook', 'academic', 'business', or 'auto'"),
 ):
     """
     Upload a document and start the publishing pipeline.
@@ -71,6 +73,18 @@ async def publish_file(
     - `technical_doc` - Technical documentation
     - `api_doc` - API documentation
     - `user_manual` - User manuals
+
+    **DOCX Templates (docx_template):**
+    - `auto` - Auto-select based on document type (default)
+    - `ebook` - Professional book layout (Georgia font, trade paperback)
+    - `academic` - Academic paper format (Times New Roman, A4)
+    - `business` - Corporate report style (Calibri, clean layout)
+
+    **PDF Templates (pdf_template):**
+    - `auto` - Auto-select based on document type (default)
+    - `ebook` - Trade paperback size, serif fonts, elegant chapters
+    - `academic` - A4, formal styling, 1.5 line spacing, running headers
+    - `business` - A4 narrow margins, sans-serif, blue accents
     """
     service = get_v2_service()
 
@@ -123,6 +137,8 @@ async def publish_file(
             output_formats=formats,
             use_vision=use_vision,
             api_key=api_key if api_key else None,
+            docx_template=docx_template,
+            pdf_template=pdf_template,
         )
 
         return service.get_job_response(job)
@@ -173,6 +189,8 @@ async def publish_text(request: PublishTextRequest):
             target_language=request.target_language,
             profile_id=request.profile_id,
             output_formats=request.output_formats,
+            docx_template=request.docx_template,
+            pdf_template=request.pdf_template,
         )
 
         return service.get_job_response(job)

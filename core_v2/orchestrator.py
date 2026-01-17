@@ -297,6 +297,8 @@ class UniversalPublisher:
         output_format: str = "docx",
         progress_callback: Optional[Callable[[float, str], None]] = None,
         use_vision: bool = True,  # NEW: Use Claude Vision for PDF reading
+        docx_template: str = "auto",  # NEW: DOCX template (ebook/academic/business/auto)
+        pdf_template: str = "auto",  # NEW: PDF template (ebook/academic/business/auto)
     ) -> PublishingJob:
         """
         Main publishing pipeline.
@@ -309,6 +311,8 @@ class UniversalPublisher:
             output_format: Desired output format
             progress_callback: Optional callback for progress updates
             use_vision: Use Claude Vision for PDF reading (recommended)
+            docx_template: DOCX template ('ebook', 'academic', 'business', 'auto')
+            pdf_template: PDF template ('ebook', 'academic', 'business', 'auto')
 
         Returns:
             PublishingJob with results
@@ -397,6 +401,8 @@ class UniversalPublisher:
                 job.dna.author,
                 job.job_id,
                 dna=job.dna,  # Pass DNA for formula detection
+                docx_template=docx_template,  # Professional DOCX template
+                pdf_template=pdf_template,  # Professional PDF template
             )
 
             # Stage 6: Verify (98%)
@@ -619,6 +625,8 @@ class UniversalPublisher:
         author: str,
         job_id: str,
         dna: Optional[DocumentDNA] = None,
+        docx_template: str = "auto",
+        pdf_template: str = "auto",
     ) -> Path:
         """Convert to final output format."""
         format_enum = OutputFormat(output_format.lower())
@@ -637,6 +645,62 @@ class UniversalPublisher:
 
         if has_formulas:
             logger.info(f"Document has formulas - using LaTeX-aware conversion")
+
+        # Use professional DOCX rendering if template specified and format is docx
+        if format_enum == OutputFormat.DOCX and docx_template:
+            try:
+                # Auto-select template based on DNA genre if "auto"
+                template = docx_template
+                if template == "auto" and dna:
+                    genre = (dna.genre or "").lower()
+                    if any(kw in genre for kw in ["academic", "research", "paper", "thesis", "technical"]):
+                        template = "academic"
+                    elif any(kw in genre for kw in ["business", "report", "memo", "corporate"]):
+                        template = "business"
+                    else:
+                        template = "ebook"
+                    logger.info(f"Auto-selected DOCX template: {template} (genre: {dna.genre})")
+
+                result_path = await self.converter.convert_markdown_to_docx_professional(
+                    markdown_content=content,
+                    output_path=output_path,
+                    template=template,
+                    title=title,
+                    author=author or "Unknown",
+                )
+                logger.info(f"Professional DOCX created: {result_path}")
+                return result_path
+            except Exception as e:
+                logger.warning(f"Professional DOCX failed, falling back to pandoc: {e}")
+                # Fall through to standard conversion
+
+        # Use professional PDF rendering if template specified and format is pdf
+        if format_enum == OutputFormat.PDF and pdf_template:
+            try:
+                # Auto-select template based on DNA genre if "auto"
+                template = pdf_template
+                if template == "auto" and dna:
+                    genre = (dna.genre or "").lower()
+                    if any(kw in genre for kw in ["academic", "research", "paper", "thesis", "technical"]):
+                        template = "academic"
+                    elif any(kw in genre for kw in ["business", "report", "memo", "corporate"]):
+                        template = "business"
+                    else:
+                        template = "ebook"
+                    logger.info(f"Auto-selected PDF template: {template} (genre: {dna.genre})")
+
+                result_path = await self.converter.convert_markdown_to_pdf_professional(
+                    markdown_content=content,
+                    output_path=output_path,
+                    template=template,
+                    title=title,
+                    author=author or "Unknown",
+                )
+                logger.info(f"Professional PDF created: {result_path}")
+                return result_path
+            except Exception as e:
+                logger.warning(f"Professional PDF failed, falling back to pandoc: {e}")
+                # Fall through to standard conversion
 
         success = await self.converter.convert(
             content=content,
@@ -762,6 +826,7 @@ async def translate_document(
     llm_client: Any,
     profile: str = "essay",
     output_format: str = "docx",
+    docx_template: str = "auto",
 ) -> PublishingJob:
     """
     Convenience function for quick translation.
@@ -773,6 +838,7 @@ async def translate_document(
         llm_client: LLM client
         profile: Publishing profile ID
         output_format: Output format
+        docx_template: DOCX template ('ebook', 'academic', 'business', 'auto')
 
     Returns:
         PublishingJob with results
@@ -784,6 +850,7 @@ async def translate_document(
         target_lang=target_lang,
         profile_id=profile,
         output_format=output_format,
+        docx_template=docx_template,
     )
 
 

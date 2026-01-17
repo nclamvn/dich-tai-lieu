@@ -1507,6 +1507,24 @@
                 <option value="ja">日本語</option>
               </select>
             </div>
+            <div class="option-group">
+              <label class="option-label">Kiểu DOCX</label>
+              <select class="option-select" id="docx-template">
+                <option value="auto">Tự động chọn</option>
+                <option value="ebook">Ebook (Sách văn học)</option>
+                <option value="academic">Academic (Học thuật)</option>
+                <option value="business">Business (Doanh nghiệp)</option>
+              </select>
+            </div>
+            <div class="option-group">
+              <label class="option-label">Kiểu PDF</label>
+              <select class="option-select" id="pdf-template">
+                <option value="auto">Tự động chọn</option>
+                <option value="ebook">Ebook (14×21.5cm, Serif)</option>
+                <option value="academic">Academic (A4, 1.5 dòng)</option>
+                <option value="business">Business (A4, Sans-serif)</option>
+              </select>
+            </div>
           </div>
         </div>
       </section>
@@ -1967,7 +1985,7 @@
     }
 
     // Create translation job
-    async function createJob(filePath, sourceLang, targetLang, outputFormats) {
+    async function createJob(filePath, sourceLang, targetLang, outputFormats, docxTemplate, pdfTemplate) {
       // Generate output path based on input
       const inputFileName = filePath.split('/').pop();
       const baseName = inputFileName.replace(/\.[^/.]+$/, '');
@@ -1981,7 +1999,9 @@
         target_lang: targetLang,
         output_formats: outputFormats || ['docx', 'pdf', 'txt', 'md'],
         model: document.getElementById('model-select').value || 'gpt-4o-mini',
-        output_format: 'docx'
+        output_format: 'docx',
+        docx_template: docxTemplate || 'auto',  // Professional DOCX template
+        pdf_template: pdfTemplate || 'auto'  // Professional PDF template
       };
 
       try {
@@ -2188,8 +2208,10 @@
 
         const sourceLang = document.getElementById('source-lang').value;
         const targetLang = document.getElementById('target-lang').value;
+        const docxTemplate = document.getElementById('docx-template').value;
+        const pdfTemplate = document.getElementById('pdf-template').value;
 
-        currentJobId = await createJob(serverFilePath, sourceLang, targetLang, ['docx', 'pdf', 'txt', 'md']);
+        currentJobId = await createJob(serverFilePath, sourceLang, targetLang, ['docx', 'pdf', 'txt', 'md'], docxTemplate, pdfTemplate);
         addActivity(`Khởi tạo job: ${currentJobId.substring(0, 8)}...`, 'success');
 
         // Ensure batch processor is running

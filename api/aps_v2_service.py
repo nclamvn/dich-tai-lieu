@@ -189,6 +189,8 @@ class APSV2Service:
         output_formats: List[str],
         use_vision: bool = True,  # NEW: Use Claude Vision for PDF reading
         api_key: Optional[str] = None,  # User-provided API key
+        docx_template: str = "auto",  # DOCX template (ebook/academic/business/auto)
+        pdf_template: str = "auto",  # PDF template (ebook/academic/business/auto)
     ) -> Dict:
         """Create and start a new publishing job."""
 
@@ -210,6 +212,8 @@ class APSV2Service:
             "profile_id": profile_id,
             "output_formats": output_formats,
             "use_vision": use_vision,
+            "docx_template": docx_template,  # DOCX template (ebook/academic/business/auto)
+            "pdf_template": pdf_template,  # PDF template (ebook/academic/business/auto)
             "status": JobStatusV2.PENDING,
             "progress": 0.0,
             "current_stage": "",
@@ -241,14 +245,17 @@ class APSV2Service:
         self._jobs[job_id] = job_record
 
         # Start processing in background with Vision mode
-        task = asyncio.create_task(self._process_job(job_id, content, use_vision=use_vision, api_key=api_key))
+        task = asyncio.create_task(self._process_job(
+            job_id, content, use_vision=use_vision, api_key=api_key,
+            docx_template=docx_template, pdf_template=pdf_template
+        ))
         self._job_tasks[job_id] = task
 
-        logger.info(f"[{job_id}] Job created and saved to DB: {source_file} ({profile_id}) vision={use_vision}")
+        logger.info(f"[{job_id}] Job created and saved to DB: {source_file} ({profile_id}) vision={use_vision} docx={docx_template} pdf={pdf_template}")
 
         return job_record
 
-    async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None):
+    async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None, docx_template: str = "auto", pdf_template: str = "auto"):
         """Process job in background."""
         job = self._jobs.get(job_id)
         if not job:
@@ -298,6 +305,8 @@ class APSV2Service:
                 output_format=first_format,
                 progress_callback=progress_callback,
                 use_vision=use_vision,  # NEW: Pass Vision mode flag
+                docx_template=docx_template,  # Professional DOCX template
+                pdf_template=pdf_template,  # Professional PDF template
             )
 
             # Update job with results
@@ -419,7 +428,12 @@ class APSV2Service:
             # Restart job
             self._jobs[job_id] = job
             task = asyncio.create_task(
-                self._process_job(job_id, content, use_vision=job.get("use_vision", True))
+                self._process_job(
+                    job_id, content,
+                    use_vision=job.get("use_vision", True),
+                    docx_template=job.get("docx_template", "auto"),
+                    pdf_template=job.get("pdf_template", "auto")
+                )
             )
             self._job_tasks[job_id] = task
             resumed += 1

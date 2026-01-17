@@ -13,8 +13,14 @@ import tempfile
 import shutil
 import logging
 from pathlib import Path
-from typing import Optional, List, Dict
+from typing import Optional, List, Dict, Union
 from enum import Enum
+
+# Professional DOCX rendering
+from core.docx_engine import DocxRenderer, create_template
+
+# Professional PDF rendering
+from core.pdf_engine import PdfRenderer, create_pdf_template
 
 logger = logging.getLogger(__name__)
 
@@ -743,6 +749,230 @@ class OutputConverter:
             formats.append("latex")
 
         return formats
+
+    # =========================================================================
+    # Professional DOCX Rendering - Using DOCX Template Engine
+    # =========================================================================
+
+    async def convert_to_docx_professional(
+        self,
+        source_folder: Path,
+        output_path: Path,
+        template: str = "auto",
+        include_toc: bool = True,
+        include_glossary: bool = True,
+    ) -> Path:
+        """
+        Convert Agent 2 output folder to professional DOCX using Template Engine.
+
+        Args:
+            source_folder: Path to Agent 2 output (contains manifest.json, chapters/)
+            output_path: Target .docx file path
+            template: Template name ('ebook', 'academic', 'business') or 'auto'
+            include_toc: Whether to include table of contents
+            include_glossary: Whether to include glossary section
+
+        Returns:
+            Path to created DOCX file
+        """
+        source_folder = Path(source_folder)
+        output_path = Path(output_path)
+
+        # Auto-select template if needed
+        if template == "auto":
+            template = self._auto_select_template(source_folder)
+            logger.info(f"Auto-selected template: {template}")
+
+        # Create renderer with selected template
+        renderer = DocxRenderer(template=template)
+
+        # Render document
+        result_path = renderer.render(
+            source_folder=str(source_folder),
+            output_path=str(output_path),
+            include_toc=include_toc,
+            include_glossary=include_glossary,
+        )
+
+        logger.info(f"Professional DOCX created: {result_path}")
+        return result_path
+
+    def _auto_select_template(self, source_folder: Path) -> str:
+        """
+        Auto-select template based on document DNA from manifest.json.
+
+        Logic:
+        - novel/fiction → ebook
+        - academic/research/technical → academic
+        - business/report/memo → business
+        - default → ebook
+        """
+        import json
+
+        manifest_path = source_folder / "manifest.json"
+        if not manifest_path.exists():
+            return "ebook"  # Default
+
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
+            meta = manifest.get("meta", {})
+            dna = manifest.get("document_dna", {})
+
+            # Check genre
+            genre = dna.get("genre", "").lower()
+            tone = dna.get("tone", "").lower()
+
+            # Academic indicators
+            academic_keywords = ["academic", "research", "paper", "thesis", "dissertation",
+                               "journal", "scientific", "study", "analysis", "technical"]
+            if any(kw in genre for kw in academic_keywords) or any(kw in tone for kw in academic_keywords):
+                return "academic"
+
+            # Business indicators
+            business_keywords = ["business", "report", "memo", "proposal", "corporate",
+                               "executive", "presentation", "brief", "white paper"]
+            if any(kw in genre for kw in business_keywords) or any(kw in tone for kw in business_keywords):
+                return "business"
+
+            # Fiction/narrative indicators → ebook
+            fiction_keywords = ["novel", "fiction", "story", "narrative", "memoir",
+                              "biography", "autobiography", "essay", "literary"]
+            if any(kw in genre for kw in fiction_keywords) or any(kw in tone for kw in fiction_keywords):
+                return "ebook"
+
+            # Default to ebook (most versatile)
+            return "ebook"
+
+        except Exception as e:
+            logger.warning(f"Error reading manifest for template selection: {e}")
+            return "ebook"
+
+    async def convert_markdown_to_docx_professional(
+        self,
+        markdown_content: str,
+        output_path: Path,
+        template: str = "ebook",
+        title: str = "Untitled",
+        author: str = "Unknown",
+    ) -> Path:
+        """
+        Convert markdown content directly to professional DOCX.
+
+        Args:
+            markdown_content: Markdown text
+            output_path: Target .docx file path
+            template: Template name ('ebook', 'academic', 'business')
+            title: Document title
+            author: Document author
+
+        Returns:
+            Path to created DOCX file
+        """
+        output_path = Path(output_path)
+
+        # Create renderer with selected template
+        renderer = DocxRenderer(template=template)
+
+        # Render directly from markdown
+        result_path = renderer.render_markdown(
+            markdown_content=markdown_content,
+            output_path=str(output_path),
+            title=title,
+            author=author,
+        )
+
+        logger.info(f"Professional DOCX from markdown: {result_path}")
+        return result_path
+
+    # =========================================================================
+    # Professional PDF Rendering - Using PDF Template Engine
+    # =========================================================================
+
+    async def convert_to_pdf_professional(
+        self,
+        source_folder: Path,
+        output_path: Path,
+        template: str = "auto",
+        include_toc: bool = True,
+        include_glossary: bool = True,
+        progress_callback: Optional[callable] = None,
+    ) -> Path:
+        """
+        Convert Agent 2 output folder to professional PDF using Template Engine.
+
+        Uses ReportLab for portable PDF generation with Vietnamese support.
+
+        Args:
+            source_folder: Path to Agent 2 output (contains manifest.json, chapters/)
+            output_path: Target .pdf file path
+            template: Template name ('ebook', 'academic', 'business') or 'auto'
+            include_toc: Whether to include table of contents
+            include_glossary: Whether to include glossary section
+            progress_callback: Optional callback(current, total, message)
+
+        Returns:
+            Path to created PDF file
+        """
+        source_folder = Path(source_folder)
+        output_path = Path(output_path)
+
+        # Auto-select template if needed
+        if template == "auto":
+            template = self._auto_select_template(source_folder)
+            logger.info(f"Auto-selected PDF template: {template}")
+
+        # Create renderer with selected template
+        renderer = PdfRenderer(template=template)
+
+        # Render document
+        result_path = renderer.render_from_folder(
+            source_folder=str(source_folder),
+            output_path=str(output_path),
+            include_toc=include_toc,
+            include_glossary=include_glossary,
+            progress_callback=progress_callback,
+        )
+
+        logger.info(f"Professional PDF created: {result_path}")
+        return result_path
+
+    async def convert_markdown_to_pdf_professional(
+        self,
+        markdown_content: str,
+        output_path: Path,
+        template: str = "ebook",
+        title: str = "Untitled",
+        author: str = "Unknown",
+    ) -> Path:
+        """
+        Convert markdown content directly to professional PDF.
+
+        Args:
+            markdown_content: Markdown text
+            output_path: Target .pdf file path
+            template: Template name ('ebook', 'academic', 'business')
+            title: Document title
+            author: Document author
+
+        Returns:
+            Path to created PDF file
+        """
+        output_path = Path(output_path)
+
+        # Create renderer with selected template
+        renderer = PdfRenderer(template=template)
+
+        # Render directly from markdown
+        result_path = renderer.render_markdown(
+            markdown_content=markdown_content,
+            output_path=str(output_path),
+            title=title,
+            author=author,
+            include_toc=True,
+        )
+
+        logger.info(f"Professional PDF from markdown: {result_path}")
+        return result_path
 
     def cleanup(self):
         """Clean up temp files."""
