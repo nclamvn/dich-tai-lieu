@@ -14,6 +14,13 @@ from enum import Enum
 from pathlib import Path
 import json
 
+# Import smart title formatter
+try:
+    from core.utils.title_formatter import smart_title_only
+    HAS_TITLE_FORMATTER = True
+except ImportError:
+    HAS_TITLE_FORMATTER = False
+
 
 class JobStatus(Enum):
     """Job status states"""
@@ -134,7 +141,14 @@ class BatchJob:
 
     def __post_init__(self):
         if not self.name:
-            self.name = Path(self.input_path).stem if self.input_path else f"Job-{self.id}"
+            if self.input_path:
+                # Use smart title formatter if available
+                if HAS_TITLE_FORMATTER:
+                    self.name = smart_title_only(self.input_path)
+                else:
+                    self.name = Path(self.input_path).stem.replace('_', ' ').replace('-', ' ').title()
+            else:
+                self.name = f"Job-{self.id}"
         if not self.output_dir:
             self.output_dir = str(Path(self.input_path).parent / "output") if self.input_path else "./output"
 

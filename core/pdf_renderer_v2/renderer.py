@@ -28,12 +28,13 @@ class PDFRendererV2:
     """
 
     TEMPLATES = {
-        # Literary
+        # Literary - Book-style templates
         "classic-literature": "literary",
         "modern-novel": "literary",
         "poetry-collection": "literary",
         "children-book": "literary",
         "memoir-biography": "literary",
+        "commercial-novel": "literary",  # NEW: Commercial ebook (Dan Brown style)
         # Professional
         "business-report": "professional",
         "technical-manual": "professional",
@@ -42,6 +43,7 @@ class PDFRendererV2:
         "newsletter": "professional",
         "presentation-handout": "professional",
         "minimal-clean": "professional",
+        "claude-style": "professional",  # Claude-style clean rendering
     }
 
     def __init__(self, template: str = "minimal-clean"):
@@ -140,12 +142,19 @@ class PDFRendererV2:
         return template.render(
             content=html_body,
             title=metadata.get('title', 'Document'),
+            subtitle=metadata.get('subtitle', ''),
             author=metadata.get('author', ''),
             date=metadata.get('date', ''),
             language=metadata.get('language', 'vi'),
             template_name=self.template,
             template_css=css_path,
             custom_css=metadata.get('custom_css', ''),
+            # Front matter options (for book-style documents)
+            include_title_page=metadata.get('include_title_page', False),
+            include_copyright=metadata.get('include_copyright', False),
+            publisher=metadata.get('publisher', ''),
+            copyright_text=metadata.get('copyright_text', ''),
+            isbn=metadata.get('isbn', ''),
         )
 
     def _html_to_pdf(self, html: str, output_path: str):
