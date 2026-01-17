@@ -1,0 +1,418 @@
+/*
+ * Claude-Style PDF Template
+ *
+ * Design Philosophy:
+ * - Clean, minimalist, distraction-free
+ * - Professional typography hierarchy
+ * - Generous whitespace
+ * - No watermarks or branding
+ * - Commercial publishing quality
+ *
+ * Inspired by how Claude (Anthropic) renders text documents
+ */
+
+/* ============================================
+   CSS Variables - Claude Design System
+   ============================================ */
+:root {
+    /* Typography - Clean serif for body, elegant display for headings */
+    --font-body: 'Crimson Pro', 'Georgia', 'Times New Roman', serif;
+    --font-heading: 'Playfair Display', 'Georgia', serif;
+    --font-sans: 'Be Vietnam Pro', 'Helvetica Neue', Arial, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+
+    /* Font Sizes - Professional hierarchy */
+    --size-body: 11pt;
+    --size-h1: 28pt;
+    --size-h2: 18pt;
+    --size-h3: 14pt;
+    --size-h4: 12pt;
+    --size-small: 9pt;
+    --size-footnote: 8pt;
+
+    /* Line Heights */
+    --lh-body: 1.7;
+    --lh-heading: 1.2;
+
+    /* Colors - Monochrome, elegant */
+    --color-text: #1a1a1a;
+    --color-text-light: #4a4a4a;
+    --color-text-muted: #6b6b6b;
+    --color-border: #d0d0d0;
+    --color-border-light: #e8e8e8;
+    --color-bg-subtle: #f9f9f9;
+
+    /* Spacing */
+    --space-xs: 0.25em;
+    --space-sm: 0.5em;
+    --space-md: 1em;
+    --space-lg: 1.5em;
+    --space-xl: 2em;
+    --space-xxl: 3em;
+
+    /* Page Margins - Generous for readability */
+    --margin-top: 30mm;
+    --margin-bottom: 30mm;
+    --margin-inner: 28mm;  /* Binding side */
+    --margin-outer: 22mm;
+}
+
+/* ============================================
+   Page Setup - A5 Book Format
+   ============================================ */
+@page {
+    size: A5;
+    margin-top: var(--margin-top);
+    margin-bottom: var(--margin-bottom);
+    margin-left: var(--margin-outer);
+    margin-right: var(--margin-inner);
+
+    /* Clean page numbers only - NO branding */
+    @bottom-center {
+        content: counter(page);
+        font-family: var(--font-sans);
+        font-size: var(--size-small);
+        color: var(--color-text-muted);
+    }
+}
+
+/* Mirror margins for book binding */
+@page :right {
+    margin-left: var(--margin-inner);
+    margin-right: var(--margin-outer);
+}
+
+@page :left {
+    margin-left: var(--margin-outer);
+    margin-right: var(--margin-inner);
+}
+
+/* First page - no page number */
+@page :first {
+    @bottom-center {
+        content: none;
+    }
+}
+
+/* ============================================
+   Base Typography
+   ============================================ */
+body {
+    font-family: var(--font-body);
+    font-size: var(--size-body);
+    line-height: var(--lh-body);
+    color: var(--color-text);
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+    orphans: 3;
+    widows: 3;
+}
+
+/* ============================================
+   Headings - Elegant hierarchy
+   ============================================ */
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    color: var(--color-text);
+    line-height: var(--lh-heading);
+    page-break-after: avoid;
+    break-after: avoid;
+}
+
+/* Chapter Title (H1) */
+h1 {
+    font-size: var(--size-h1);
+    font-weight: 400;  /* Light weight for elegance */
+    text-align: center;
+    margin-top: var(--space-xxl);
+    margin-bottom: var(--space-xl);
+    padding-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-border);
+    letter-spacing: 0.02em;
+}
+
+/* Section (H2) */
+h2 {
+    font-size: var(--size-h2);
+    font-weight: 600;
+    margin-top: var(--space-xl);
+    margin-bottom: var(--space-md);
+    border-bottom: 1px solid var(--color-border-light);
+    padding-bottom: var(--space-xs);
+}
+
+/* Subsection (H3) */
+h3 {
+    font-size: var(--size-h3);
+    font-weight: 600;
+    font-style: italic;
+    margin-top: var(--space-lg);
+    margin-bottom: var(--space-sm);
+}
+
+/* Minor heading (H4) */
+h4 {
+    font-size: var(--size-h4);
+    font-weight: 600;
+    margin-top: var(--space-md);
+    margin-bottom: var(--space-sm);
+}
+
+/* ============================================
+   Paragraphs - Literary style
+   ============================================ */
+p {
+    margin: 0;
+    text-indent: 1.5em;
+}
+
+/* First paragraph after heading - no indent */
+h1 + p,
+h2 + p,
+h3 + p,
+h4 + p,
+.no-indent {
+    text-indent: 0;
+}
+
+/* Scene break marker */
+.scene-break,
+hr {
+    border: none;
+    text-align: center;
+    margin: var(--space-xl) 0;
+}
+
+.scene-break::before,
+hr::before {
+    content: "✦  ✦  ✦";
+    font-size: var(--size-small);
+    color: var(--color-text-muted);
+    letter-spacing: 0.5em;
+}
+
+/* ============================================
+   Drop Cap - First letter of chapter
+   ============================================ */
+.drop-cap::first-letter,
+h1 + p::first-letter {
+    float: left;
+    font-family: var(--font-heading);
+    font-size: 3.5em;
+    line-height: 0.8;
+    padding-right: 0.1em;
+    padding-top: 0.1em;
+    color: var(--color-text);
+}
+
+/* ============================================
+   Blockquotes - Elegant
+   ============================================ */
+blockquote {
+    font-family: var(--font-body);
+    font-style: italic;
+    font-size: calc(var(--size-body) - 0.5pt);
+    color: var(--color-text-light);
+    margin: var(--space-lg) var(--space-xl);
+    padding-left: var(--space-md);
+    border-left: 2px solid var(--color-border);
+}
+
+blockquote p {
+    text-indent: 0;
+}
+
+/* Epigraph style */
+.epigraph {
+    text-align: right;
+    margin: var(--space-xl) 0 var(--space-xxl) 30%;
+    font-style: italic;
+    color: var(--color-text-light);
+}
+
+.epigraph-author {
+    font-style: normal;
+    font-size: var(--size-small);
+    margin-top: var(--space-sm);
+}
+
+/* ============================================
+   Lists
+   ============================================ */
+ul, ol {
+    margin: var(--space-md) 0;
+    padding-left: var(--space-xl);
+}
+
+li {
+    margin-bottom: var(--space-sm);
+    text-indent: 0;
+}
+
+li p {
+    text-indent: 0;
+}
+
+/* ============================================
+   Code Blocks
+   ============================================ */
+code {
+    font-family: var(--font-mono);
+    font-size: calc(var(--size-body) - 1pt);
+    background-color: var(--color-bg-subtle);
+    padding: 0.1em 0.3em;
+    border-radius: 2px;
+}
+
+pre {
+    font-family: var(--font-mono);
+    font-size: var(--size-small);
+    background-color: var(--color-bg-subtle);
+    padding: var(--space-md);
+    border-radius: 4px;
+    overflow-x: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: var(--space-md) 0;
+    border: 1px solid var(--color-border-light);
+}
+
+pre code {
+    background: none;
+    padding: 0;
+}
+
+/* ============================================
+   Tables - Minimal, clean
+   ============================================ */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: var(--space-lg) 0;
+    font-family: var(--font-sans);
+    font-size: var(--size-small);
+}
+
+th, td {
+    padding: var(--space-sm) var(--space-md);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border-light);
+}
+
+th {
+    font-weight: 600;
+    border-bottom: 2px solid var(--color-border);
+}
+
+/* ============================================
+   Footnotes
+   ============================================ */
+.footnote,
+.footnotes {
+    font-size: var(--size-footnote);
+    color: var(--color-text-light);
+}
+
+.footnote-ref {
+    font-size: 0.75em;
+    vertical-align: super;
+}
+
+/* ============================================
+   Front Matter - Title Page
+   ============================================ */
+.title-page {
+    page-break-after: always;
+    text-align: center;
+    padding-top: 30%;
+}
+
+.title-page .title {
+    font-family: var(--font-heading);
+    font-size: 36pt;
+    font-weight: 400;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-md);
+}
+
+.title-page .subtitle {
+    font-family: var(--font-heading);
+    font-size: 16pt;
+    font-style: italic;
+    color: var(--color-text-light);
+    margin-bottom: var(--space-xxl);
+}
+
+.title-page .author {
+    font-family: var(--font-sans);
+    font-size: 14pt;
+    color: var(--color-text);
+    margin-bottom: var(--space-xxl);
+}
+
+.title-page .ornament {
+    font-size: 14pt;
+    color: var(--color-text-muted);
+    letter-spacing: 0.5em;
+}
+
+/* ============================================
+   Copyright Page
+   ============================================ */
+.copyright-page {
+    page-break-after: always;
+    font-size: var(--size-small);
+    color: var(--color-text-light);
+    padding-top: 60%;
+}
+
+.copyright-page p {
+    text-indent: 0;
+    text-align: center;
+    margin-bottom: var(--space-sm);
+}
+
+/* ============================================
+   Print Optimizations
+   ============================================ */
+@media print {
+    /* Ensure page breaks */
+    h1 {
+        page-break-before: always;
+    }
+
+    h1:first-of-type {
+        page-break-before: avoid;
+    }
+
+    /* Prevent breaks inside */
+    blockquote, pre, table, figure {
+        page-break-inside: avoid;
+    }
+
+    /* No decorations in print */
+    a {
+        color: var(--color-text);
+        text-decoration: none;
+    }
+}
+
+/* ============================================
+   Vietnamese Typography Support
+   ============================================ */
+:lang(vi) {
+    /* Vietnamese uses same font but may need adjustments */
+    font-feature-settings: "calt" 1, "liga" 1;
+}
+
+/* ============================================
+   Utilities
+   ============================================ */
+.text-center { text-align: center; }
+.text-right { text-align: right; }
+.text-small { font-size: var(--size-small); }
+.text-muted { color: var(--color-text-muted); }
+.mt-0 { margin-top: 0; }
+.mb-0 { margin-bottom: 0; }
+.page-break { page-break-after: always; }

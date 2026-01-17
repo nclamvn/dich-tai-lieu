@@ -301,64 +301,109 @@ class StyleManager:
 # ========== Document Analyzer ==========
 class DocumentAnalyzer:
     """Analyzes document structure for intelligent formatting"""
-    
+
+    # Vietnamese chapter/section patterns
+    VN_CHAPTER_PATTERNS = [
+        r'^(Chương|CHƯƠNG)\s+(\d+|[IVXLCDM]+)',  # Chương 1, CHƯƠNG I
+        r'^(Phần|PHẦN)\s+(\d+|[IVXLCDM]+)',       # Phần 1, PHẦN I
+        r'^(Hồi|HỒI)\s+(\d+|[IVXLCDM]+)',         # Hồi 1 (classic literature)
+        r'^(Mục|MỤC)\s+(\d+|[IVXLCDM]+)',         # Mục 1
+    ]
+
+    VN_SECTION_PATTERNS = [
+        r'^(I{1,3}|IV|V|VI{0,3}|IX|X)\.',         # I., II., III., IV.
+        r'^\d{1,2}\.',                             # 1., 2., etc.
+    ]
+
+    # Scene break patterns
+    SCENE_BREAK_PATTERNS = [
+        r'^[\*\s]{3,}$',         # ***
+        r'^[-\s]{3,}$',          # ---
+        r'^[•\s]{3,}$',          # •••
+        r'^\.{3,}$',             # ...
+        r'^\s*\*\s*\*\s*\*\s*$', # * * *
+    ]
+
     @staticmethod
     def detect_structure(text: str) -> List[Dict]:
-        """Detect document structure (headings, paragraphs, lists, etc.)"""
+        """Detect document structure (headings, paragraphs, lists, etc.)
+
+        Enhanced for Vietnamese literature with better chapter/scene detection.
+        """
         lines = text.split('\n')
         structured_content = []
-        
+
         for i, line in enumerate(lines):
-            line = line.strip()
-            if not line:
+            line_stripped = line.strip()
+            if not line_stripped:
                 continue
-            
-            element = {'text': line, 'type': 'paragraph'}
-            
-            # Detect headings
-            if re.match(r'^#{1,3}\s+', line):
-                level = len(re.match(r'^(#{1,3})', line).group(1))
+
+            element = {'text': line_stripped, 'type': 'paragraph'}
+
+            # 1. Markdown headings (highest priority)
+            if re.match(r'^#{1,3}\s+', line_stripped):
+                level = len(re.match(r'^(#{1,3})', line_stripped).group(1))
                 element['type'] = f'heading{level}'
-                element['text'] = re.sub(r'^#{1,3}\s+', '', line)
-            
-            # Detect chapter/section markers
-            elif re.match(r'^(Chapter|Section|Part)\s+\d+', line, re.IGNORECASE):
+                element['text'] = re.sub(r'^#{1,3}\s+', '', line_stripped)
+
+            # 2. Vietnamese chapter patterns
+            elif any(re.match(p, line_stripped, re.IGNORECASE) for p in DocumentAnalyzer.VN_CHAPTER_PATTERNS):
                 element['type'] = 'heading1'
-            
-            # Detect numbered headings
-            elif re.match(r'^\d+\.(\d+\.)*\s+[A-Z]', line):
-                depth = line.count('.')
+
+            # 3. English chapter/section patterns
+            elif re.match(r'^(Chapter|Section|Part)\s+(\d+|[IVXLCDM]+)', line_stripped, re.IGNORECASE):
+                element['type'] = 'heading1'
+
+            # 4. Scene breaks (convert to horizontal rule)
+            elif any(re.match(p, line_stripped) for p in DocumentAnalyzer.SCENE_BREAK_PATTERNS):
+                element['type'] = 'scene_break'
+                element['text'] = '* * *'
+
+            # 5. Numbered headings (1.1, 1.2.3, etc.)
+            elif re.match(r'^\d+\.(\d+\.)*\s+[A-Z]', line_stripped):
+                depth = line_stripped.count('.')
                 element['type'] = f'heading{min(depth + 1, 3)}'
-            
-            # Detect lists
-            elif re.match(r'^[\*\-\+]\s+', line):
+
+            # 6. Lists
+            elif re.match(r'^[\*\-\+]\s+', line_stripped):
                 element['type'] = 'bullet'
-                element['text'] = re.sub(r'^[\*\-\+]\s+', '', line)
-            elif re.match(r'^\d+\.\s+', line):
-                element['type'] = 'numbered'
-                element['text'] = re.sub(r'^\d+\.\s+', '', line)
-            
-            # Detect quotes
-            elif line.startswith('"') and line.endswith('"'):
+                element['text'] = re.sub(r'^[\*\-\+]\s+', '', line_stripped)
+            elif re.match(r'^\d+\.\s+\w', line_stripped):
+                # Numbered list (but not section headers)
+                if len(line_stripped) > 60:  # Likely list item, not heading
+                    element['type'] = 'numbered'
+                    element['text'] = re.sub(r'^\d+\.\s+', '', line_stripped)
+
+            # 7. Blockquotes (dialogue or quoted text)
+            elif re.match(r'^["\u201c\u201d\u2018\u2019«»「」]', line_stripped):
+                # Starts with quote character
+                element['type'] = 'dialogue'
+
+            elif line_stripped.startswith('>'):
                 element['type'] = 'quote'
-            
-            # Detect code blocks
-            elif line.startswith('```'):
+                element['text'] = line_stripped[1:].strip()
+
+            # 8. Code blocks
+            elif line_stripped.startswith('```'):
                 element['type'] = 'code_marker'
-            
-            # Detect tables (simple)
-            elif '|' in line and line.count('|') > 2:
+
+            # 9. Tables
+            elif '|' in line_stripped and line_stripped.count('|') > 2:
                 element['type'] = 'table_row'
-            
-            # Length-based heading detection
-            elif len(line) < 50 and line[0].isupper() and not line.endswith('.'):
-                # Short lines starting with capital might be headings
-                next_line = lines[i + 1] if i + 1 < len(lines) else ""
-                if not next_line or len(next_line) > 100:
-                    element['type'] = 'heading3'
-            
+
+            # 10. Short all-caps lines are likely headings
+            elif len(line_stripped) < 60 and line_stripped.isupper() and len(line_stripped.split()) <= 6:
+                element['type'] = 'heading2'
+
+            # 11. Short lines that look like titles (followed by longer text)
+            elif len(line_stripped) < 50 and not line_stripped.endswith(('.', ',', ';', ':')):
+                if line_stripped[0].isupper() if line_stripped else False:
+                    next_line = lines[i + 1].strip() if i + 1 < len(lines) else ""
+                    if not next_line or (len(next_line) > 100 and not re.match(r'^["\u201c]', next_line)):
+                        element['type'] = 'heading3'
+
             structured_content.append(element)
-        
+
         return structured_content
 
 # ========== DOCX Exporter ==========
@@ -430,25 +475,35 @@ class DocxExporter:
         
         section = self.doc.sections[0]
         
-        # Header
+        # Header - Clean, elegant, no artifacts
         if self.config.add_header:
+            # Clean the title from artifacts like "Translate *.pdf"
+            try:
+                from core.utils.title_formatter import clean_header_text, format_running_header
+                header_text = clean_header_text(self.config.title)
+                header_text = format_running_header(header_text, max_length=50)
+            except ImportError:
+                header_text = self.config.title.replace('.pdf', '').replace('Translate ', '')
+
             header = section.header
             header_para = header.paragraphs[0]
-            header_para.text = self.config.title
+            header_para.text = header_text
             header_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
-            header_para.style.font.size = Pt(10)
-            header_para.style.font.color.rgb = RGBColor(128, 128, 128)
+            header_para.style.font.size = Pt(9)
+            header_para.style.font.italic = True  # Italic for elegance
+            header_para.style.font.color.rgb = RGBColor(100, 100, 100)
         
-        # Footer
+        # Footer - Clean page number only (no branding)
         if self.config.add_footer:
             footer = section.footer
             footer_para = footer.paragraphs[0]
             if self.config.add_page_numbers:
-                footer_para.text = f"{self.config.author} | Page "
-                # Add page number field (complex - requires XML manipulation)
+                # Clean page number only - no branding
+                footer_para.text = ""
                 self._add_page_number_field(footer_para)
             else:
-                footer_para.text = f"{self.config.author} | {datetime.now().strftime('%Y-%m-%d')}"
+                # Empty footer if no page numbers
+                footer_para.text = ""
             footer_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
             footer_para.style.font.size = Pt(9)
     
@@ -644,44 +699,40 @@ class PdfExporter:
     def _create_header_footer(self, canvas, doc):
         """Create header and footer for each page"""
         canvas.saveState()
-        
-        # Header
-        if self.config.add_header:
-            canvas.setFont('Times-Roman', 9)
-            canvas.setFillGray(0.5)
+
+        # Header - Clean, elegant, no line (Claude style)
+        if self.config.add_header and doc.page > 1:  # Skip header on first page
+            # Clean the title from artifacts
+            try:
+                from core.utils.title_formatter import clean_header_text, format_running_header
+                header_text = clean_header_text(self.config.title)
+                header_text = format_running_header(header_text, max_length=50)
+            except ImportError:
+                header_text = self.config.title.replace('.pdf', '').replace('Translate ', '')
+
+            canvas.setFont('Times-Italic', 9)  # Italic for elegance
+            canvas.setFillGray(0.45)
             canvas.drawCentredString(
                 doc.pagesize[0] / 2,
                 doc.pagesize[1] - 0.5 * inch,
-                self.config.title
+                header_text
             )
-            canvas.line(
-                doc.leftMargin,
-                doc.pagesize[1] - 0.6 * inch,
-                doc.pagesize[0] - doc.rightMargin,
-                doc.pagesize[1] - 0.6 * inch
-            )
+            # NO horizontal line - cleaner look
         
-        # Footer
-        if self.config.add_footer:
+        # Footer - Clean page number only (no branding)
+        if self.config.add_footer and self.config.add_page_numbers:
             canvas.setFont('Times-Roman', 9)
-            canvas.setFillGray(0.5)
-            
-            footer_text = f"{self.config.author}"
-            if self.config.add_page_numbers:
-                footer_text += f" | Page {doc.page}"
-            footer_text += f" | {datetime.now().strftime('%Y-%m-%d')}"
-            
+            canvas.setFillGray(0.4)
+
+            # Clean page number only - no branding or date
+            footer_text = str(doc.page)
+
             canvas.drawCentredString(
                 doc.pagesize[0] / 2,
                 0.5 * inch,
                 footer_text
             )
-            canvas.line(
-                doc.leftMargin,
-                0.6 * inch,
-                doc.pagesize[0] - doc.rightMargin,
-                0.6 * inch
-            )
+            # Removed footer line for cleaner look
         
         # Watermark
         if self.config.add_watermark:
@@ -695,14 +746,75 @@ class PdfExporter:
         
         canvas.restoreState()
     
-    def add_content(self, text: str, structured: bool = True):
+    def add_title_page(self, title: str, author: str = ""):
+        """Add professional title page to PDF - minimalist design."""
+        # Spacer to push content down ~30%
+        self.story.append(Spacer(1, 2.5 * inch))
+
+        # Title - large, centered, uppercase with letter spacing
+        title_style = ParagraphStyle(
+            'BookTitle',
+            fontName='Times-Bold',
+            fontSize=28,
+            alignment=TA_CENTER,
+            spaceAfter=24,
+            leading=34,
+        )
+        # Add letter spacing effect using spaces
+        spaced_title = '  '.join(title.upper())
+        self.story.append(Paragraph(spaced_title, title_style))
+
+        # Author
+        if author:
+            author_style = ParagraphStyle(
+                'BookAuthor',
+                fontName='Times-Roman',
+                fontSize=16,
+                alignment=TA_CENTER,
+                spaceBefore=30,
+            )
+            self.story.append(Paragraph(author, author_style))
+
+        # Page break after title page
+        self.story.append(PageBreak())
+
+    def add_content(self, text: str, structured: bool = True, include_title_page: bool = False):
         """Add content to PDF story"""
+        # Try to extract title/author from content first
+        detected_title = None
+        detected_author = None
+        cleaned_text = text
+
+        try:
+            from core.export.commercial_book import CommercialBookExporter
+            temp_exporter = CommercialBookExporter()
+            detected_title, detected_author, cleaned_text = temp_exporter._extract_title_from_first_line(text)
+        except Exception:
+            pass
+
+        # Update config if title/author detected
+        if detected_title:
+            self.config.title = detected_title
+        if detected_author:
+            if not hasattr(self.config, 'author'):
+                self.config.author = detected_author
+            else:
+                self.config.author = detected_author
+
+        # Add title page if we have a title
+        if include_title_page or detected_title:
+            title = detected_title or self.config.title
+            author = detected_author or getattr(self.config, 'author', '')
+            if title and title != "Translation Document":
+                self.add_title_page(title, author)
+
+        # Add content
         if structured and self.config.detect_headers:
-            elements = DocumentAnalyzer.detect_structure(text)
+            elements = DocumentAnalyzer.detect_structure(cleaned_text)
             self._add_structured_content(elements)
         else:
             # Add as simple paragraphs
-            paragraphs = text.split('\n\n')
+            paragraphs = cleaned_text.split('\n\n')
             for para_text in paragraphs:
                 if para_text.strip():
                     # Escape HTML/XML special characters to prevent parsing errors
@@ -823,11 +935,41 @@ class PdfExporter:
 # ========== Universal Exporter ==========
 class UniversalExporter:
     """Main exporter class supporting multiple formats"""
-    
+
+    # Vietnamese literary work patterns
+    VIETNAMESE_LITERARY_PATTERNS = [
+        r'Chí Phèo', r'Nam Cao', r'Nguyễn Du', r'Truyện Kiều',
+        r'Vũ Trọng Phụng', r'Số Đỏ', r'Ngô Tất Tố', r'Tắt Đèn',
+        r'Bảo Ninh', r'Nỗi Buồn Chiến Tranh',
+        r'Chương\s+\d+', r'Hồi\s+\d+', r'Phần\s+\d+',
+    ]
+
     def __init__(self, config: Optional[ExportConfig] = None):
         self.config = config or ExportConfig()
         self.supported_formats = self._detect_supported_formats()
-    
+
+    def _detect_literary_content(self, text: str) -> bool:
+        """Detect if content appears to be literary work (novel, story)."""
+        # Check for Vietnamese literary patterns
+        for pattern in self.VIETNAMESE_LITERARY_PATTERNS:
+            if re.search(pattern, text[:500], re.IGNORECASE):
+                return True
+
+        # Check for Chapter/Scene patterns
+        if re.search(r'^(Chapter|CHAPTER)\s+\d+', text, re.MULTILINE):
+            return True
+
+        # Check for scene breaks (common in novels)
+        if re.search(r'^\s*\*\s*\*\s*\*\s*$', text, re.MULTILINE):
+            return True
+
+        # Check for dialogue-heavy content (quotes)
+        quote_count = text.count('"') + text.count('"') + text.count('"')
+        if quote_count > 10:
+            return True
+
+        return False
+
     def _detect_supported_formats(self) -> List[str]:
         """Detect available export formats"""
         formats = ['txt', 'md', 'html']  # Always available
@@ -890,7 +1032,25 @@ class UniversalExporter:
         if not DOCX_AVAILABLE:
             print("DOCX export not available. Install python-docx.")
             return self._fallback_export(text, output_path, 'docx')
-        
+
+        # Check if content looks like literary work (has title/author pattern)
+        # Use commercial book format for better quality
+        try:
+            from core.export.commercial_book import CommercialBookExporter, BookConfig
+
+            book_config = BookConfig(
+                title=self.config.title,
+                author=self.config.author if hasattr(self.config, 'author') else "",
+                include_title_page=True,
+                drop_cap_enabled=True,
+            )
+            book_exporter = CommercialBookExporter(book_config)
+            book_exporter.export(text, output_path)
+            return True
+        except Exception as e:
+            # Fallback to standard exporter if commercial book fails
+            print(f"Commercial book export failed, using standard: {e}")
+
         exporter = DocxExporter(self.config)
         exporter.add_content(text, structured=True)
         exporter.save(output_path)
@@ -898,13 +1058,51 @@ class UniversalExporter:
     
     def _export_pdf(self, text: str, output_path: str) -> bool:
         """Export to PDF format"""
+        # Try WeasyPrint (PDF Renderer V2) for high-quality output
+        try:
+            from core.pdf_renderer_v2.renderer import PDFRendererV2
+
+            # Detect if content looks like literary work
+            is_literary = self._detect_literary_content(text)
+            template = "commercial-novel" if is_literary else "claude-style"
+
+            # Extract title/author from content
+            title = self.config.title
+            author = getattr(self.config, 'author', '')
+
+            try:
+                from core.export.commercial_book import CommercialBookExporter
+                temp_exporter = CommercialBookExporter()
+                detected_title, detected_author, _ = temp_exporter._extract_title_from_first_line(text)
+                if detected_title:
+                    title = detected_title
+                if detected_author:
+                    author = detected_author
+            except Exception:
+                pass
+
+            renderer = PDFRendererV2(template=template)
+            renderer.render(
+                markdown_content=text,
+                output_path=output_path,
+                metadata={
+                    'title': title,
+                    'author': author,
+                    'include_title_page': True,
+                }
+            )
+            return True
+        except Exception as e:
+            print(f"WeasyPrint PDF export failed: {e}")
+
         if REPORTLAB_AVAILABLE:
-            # Use ReportLab for direct PDF generation
+            # Fallback to ReportLab for direct PDF generation
             exporter = PdfExporter(self.config)
-            exporter.add_content(text, structured=True)
+            # Enable title page for literary content
+            exporter.add_content(text, structured=True, include_title_page=True)
             exporter.save(output_path)
             return True
-        
+
         elif DOCX_AVAILABLE and DOCX2PDF_AVAILABLE:
             # Fallback: Create DOCX then convert to PDF
             temp_docx = output_path.replace('.pdf', '_temp.docx')

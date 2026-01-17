@@ -146,9 +146,22 @@ def translate_pdf(
     # Step 2: Create translation job
     print("📝 Creating translation job...")
 
+    # Smart title extraction for professional output
+    try:
+        from core.utils.title_formatter import format_document_title, smart_title_only, smart_author
+        job_title = format_document_title(pdf_file.name)
+        doc_title = smart_title_only(pdf_file.name)
+        doc_author = smart_author(pdf_file.name)
+    except ImportError:
+        job_title = pdf_file.stem.replace('_', ' ').replace('-', ' ').title()
+        doc_title = job_title
+        doc_author = None
+
     try:
         job_data = {
-            'job_name': f"Translate {pdf_file.name}",
+            'job_name': job_title,
+            'document_title': doc_title,  # Clean title for header
+            'document_author': doc_author,  # Author if detected
             'input_file': server_path,
             'output_file': f"/tmp/output_{pdf_file.stem}.docx",
             'source_lang': 'en',

@@ -9,12 +9,42 @@
     </style>
 </head>
 <body class="template-{{ template_name }}">
+    {% if include_title_page and title %}
+    <!-- Title Page - Minimalist Design -->
+    <div class="title-page">
+        <h1 class="book-title">
+            <span class="book-title-main">{{ title }}</span>
+        </h1>
+        {% if subtitle %}
+        <p class="subtitle">{{ subtitle }}</p>
+        {% endif %}
+        {% if author %}<p class="author">{{ author }}</p>{% endif %}
+        {% if publisher %}<p class="publisher">{{ publisher }}</p>{% endif %}
+    </div>
+
+    {% if include_copyright %}
+    <!-- Copyright Page -->
+    <div class="copyright-page">
+        <p>{{ title }}</p>
+        {% if author %}<p>{{ author }}</p>{% endif %}
+        {% if copyright_text %}
+        <p>{{ copyright_text }}</p>
+        {% else %}
+        <p>All rights reserved.</p>
+        {% endif %}
+        {% if isbn %}<p>ISBN: {{ isbn }}</p>{% endif %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Simple Header (non-book documents) -->
     {% if title or author or date %}
     <header class="document-header">
         {% if title %}<h1 class="doc-title">{{ title }}</h1>{% endif %}
         {% if author %}<p class="doc-author">{{ author }}</p>{% endif %}
         {% if date %}<p class="doc-date">{{ date }}</p>{% endif %}
     </header>
+    {% endif %}
     {% endif %}
 
     <main class="content">

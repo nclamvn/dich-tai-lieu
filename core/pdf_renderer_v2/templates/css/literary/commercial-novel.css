@@ -1,0 +1,394 @@
+/*
+ * Commercial Novel Template
+ * =========================
+ *
+ * Professional book layout matching major publishers:
+ * - Penguin Random House, Simon & Schuster, Doubleday style
+ * - Clean title page with elegant typography
+ * - Proper chapter headings with letter-spacing
+ * - Drop caps for chapter openings
+ * - First-line indent for paragraphs
+ * - Italic emphasis for thoughts/foreign words
+ *
+ * Reference: Dan Brown's "The Secret of Secrets" layout
+ */
+
+/* ============================================
+   Page Setup - Trade Paperback Size
+   ============================================ */
+@page {
+    size: 140mm 215mm;  /* Trade paperback (5.5" x 8.5") */
+    margin-top: 22mm;
+    margin-bottom: 22mm;
+    margin-left: 18mm;
+    margin-right: 18mm;
+
+    /* Clean page number - bottom center */
+    @bottom-center {
+        content: counter(page);
+        font-family: 'Crimson Pro', Georgia, serif;
+        font-size: 10pt;
+        color: #333;
+    }
+}
+
+/* First page of chapter - no page number */
+@page chapter-first {
+    @bottom-center {
+        content: none;
+    }
+}
+
+/* Mirror margins for book binding */
+@page :right {
+    margin-left: 22mm;  /* Inner (binding) margin */
+    margin-right: 15mm;
+}
+
+@page :left {
+    margin-left: 15mm;
+    margin-right: 22mm;  /* Inner (binding) margin */
+}
+
+/* ============================================
+   Base Typography
+   ============================================ */
+:root {
+    --font-body: 'Crimson Pro', 'Georgia', 'Times New Roman', serif;
+    --font-display: 'Playfair Display', 'Georgia', serif;
+    --font-chapter: 'Playfair Display SC', 'Georgia', serif;
+
+    --text-body: 11pt;
+    --text-chapter: 14pt;
+    --text-dropcap: 58pt;
+
+    --line-height: 1.65;
+    --indent: 1.5em;
+
+    --color-text: #1a1a1a;
+    --color-chapter: #000;
+}
+
+body {
+    font-family: var(--font-body);
+    font-size: var(--text-body);
+    line-height: var(--line-height);
+    color: var(--color-text);
+    text-align: justify;
+    hyphens: auto;
+    -webkit-hyphens: auto;
+}
+
+/* ============================================
+   Title Page - Publisher Style
+   ============================================ */
+.title-page {
+    page: chapter-first;
+    page-break-after: always;
+    text-align: center;
+    padding-top: 25%;
+}
+
+.title-page .book-title {
+    font-family: var(--font-display);
+    font-size: 28pt;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    line-height: 1.3;
+    margin-bottom: 0.3em;
+}
+
+.title-page .book-title-main {
+    font-size: 36pt;
+    display: block;
+    margin: 0.2em 0;
+}
+
+.title-page .subtitle {
+    font-family: var(--font-body);
+    font-size: 11pt;
+    font-style: normal;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--color-text);
+    margin: 1.5em 0;
+}
+
+.title-page .subtitle::before,
+.title-page .subtitle::after {
+    content: "—•—";
+    margin: 0 0.5em;
+    font-size: 10pt;
+}
+
+.title-page .author {
+    font-family: var(--font-display);
+    font-size: 18pt;
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 2em;
+}
+
+.title-page .publisher {
+    position: absolute;
+    bottom: 15%;
+    left: 0;
+    right: 0;
+    font-family: var(--font-body);
+    font-size: 9pt;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+}
+
+/* ============================================
+   Chapter Heading - Commercial Style
+   ============================================ */
+.chapter-heading,
+h1 {
+    page: chapter-first;
+    page-break-before: always;
+    text-align: center;
+    font-family: var(--font-display);
+    font-size: var(--text-chapter);
+    font-weight: 400;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    margin-top: 30%;
+    margin-bottom: 3em;
+    color: var(--color-chapter);
+}
+
+/* "CHAPTER" word styling */
+.chapter-label {
+    display: block;
+    font-size: 11pt;
+    letter-spacing: 0.35em;
+    margin-bottom: 0.5em;
+}
+
+/* Chapter number styling */
+.chapter-number {
+    display: block;
+    font-size: 32pt;
+    font-weight: 300;
+    letter-spacing: 0;
+    margin-top: 0.3em;
+}
+
+/* Fallback for simple h1 */
+h1:first-of-type {
+    page-break-before: avoid;
+}
+
+/* ============================================
+   Drop Cap - First Letter of Chapter
+   ============================================ */
+.chapter-content > p:first-of-type::first-letter,
+h1 + p::first-letter,
+.drop-cap::first-letter {
+    float: left;
+    font-family: var(--font-display);
+    font-size: var(--text-dropcap);
+    font-weight: 400;
+    line-height: 0.8;
+    padding-right: 0.08em;
+    padding-top: 0.05em;
+    color: var(--color-text);
+}
+
+/* First paragraph after chapter - no indent */
+.chapter-content > p:first-of-type,
+h1 + p {
+    text-indent: 0;
+}
+
+/* ============================================
+   Paragraphs - First Line Indent
+   ============================================ */
+p {
+    margin: 0;
+    text-indent: var(--indent);
+    orphans: 3;
+    widows: 3;
+}
+
+/* No indent after headings, blockquotes, lists */
+h1 + p,
+h2 + p,
+h3 + p,
+blockquote + p,
+ul + p,
+ol + p,
+.no-indent {
+    text-indent: 0;
+}
+
+/* ============================================
+   Emphasis & Italics
+   ============================================ */
+em, i,
+.thought,
+.foreign-word,
+.book-title-inline {
+    font-style: italic;
+}
+
+strong, b {
+    font-weight: 600;
+}
+
+/* ============================================
+   Dialogue
+   ============================================ */
+.dialogue {
+    /* Dialogue uses same paragraph styling */
+}
+
+/* ============================================
+   Scene Break
+   ============================================ */
+hr,
+.scene-break {
+    border: none;
+    text-align: center;
+    margin: 2em 0;
+    page-break-inside: avoid;
+}
+
+hr::before,
+.scene-break::before {
+    content: "• • •";
+    font-size: 10pt;
+    letter-spacing: 0.5em;
+    color: #666;
+}
+
+/* Alternative scene break styles */
+.scene-break-ornament::before {
+    content: "❧";
+    font-size: 14pt;
+}
+
+.scene-break-line::before {
+    content: "";
+    display: inline-block;
+    width: 30%;
+    height: 1px;
+    background: #ccc;
+}
+
+/* ============================================
+   Blockquote / Epigraph
+   ============================================ */
+blockquote {
+    font-style: italic;
+    font-size: 10.5pt;
+    margin: 1.5em 2em;
+    text-indent: 0;
+    color: #333;
+}
+
+blockquote p {
+    text-indent: 0;
+}
+
+.epigraph {
+    font-style: italic;
+    text-align: right;
+    margin: 2em 0 3em 30%;
+    font-size: 10pt;
+}
+
+.epigraph-source {
+    font-style: normal;
+    margin-top: 0.5em;
+    font-size: 9pt;
+}
+
+/* ============================================
+   Section Headings (H2, H3)
+   ============================================ */
+h2 {
+    font-family: var(--font-display);
+    font-size: 13pt;
+    font-weight: 600;
+    font-style: italic;
+    text-align: center;
+    margin: 2em 0 1em;
+    page-break-after: avoid;
+}
+
+h3 {
+    font-family: var(--font-body);
+    font-size: 11pt;
+    font-weight: 600;
+    margin: 1.5em 0 0.5em;
+    page-break-after: avoid;
+}
+
+/* ============================================
+   Lists
+   ============================================ */
+ul, ol {
+    margin: 1em 0;
+    padding-left: 2em;
+}
+
+li {
+    margin-bottom: 0.3em;
+    text-indent: 0;
+}
+
+/* ============================================
+   Footnotes
+   ============================================ */
+.footnote {
+    font-size: 8.5pt;
+    line-height: 1.4;
+}
+
+.footnote-ref {
+    font-size: 0.7em;
+    vertical-align: super;
+}
+
+/* ============================================
+   Copyright Page
+   ============================================ */
+.copyright-page {
+    page-break-after: always;
+    font-size: 8pt;
+    line-height: 1.5;
+    text-align: center;
+    padding-top: 70%;
+}
+
+.copyright-page p {
+    text-indent: 0;
+    margin-bottom: 0.3em;
+}
+
+/* ============================================
+   Print Optimizations
+   ============================================ */
+@media print {
+    body {
+        orphans: 3;
+        widows: 3;
+    }
+
+    h1, h2, h3 {
+        page-break-after: avoid;
+    }
+
+    blockquote, pre, figure, table {
+        page-break-inside: avoid;
+    }
+
+    a {
+        color: inherit;
+        text-decoration: none;
+    }
+}

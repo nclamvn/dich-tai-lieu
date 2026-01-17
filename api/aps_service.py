@@ -33,6 +33,13 @@ try:
 except ImportError:
     HAS_ADN = False
 
+# Import smart title formatter
+try:
+    from core.utils.title_formatter import format_document_title, smart_title_only
+    HAS_TITLE_FORMATTER = True
+except ImportError:
+    HAS_TITLE_FORMATTER = False
+
 # Import cache manager (PERF-004)
 try:
     from core.cache import get_cache_manager, APSCacheManager
@@ -278,9 +285,14 @@ class APSService:
         base_name = Path(job.source_file).stem
         output_file = job_output_dir / f"{base_name}_translated.docx"
 
-        # Create TranslationJob via JobQueue
+        # Create TranslationJob via JobQueue with smart title
+        if HAS_TITLE_FORMATTER:
+            smart_job_name = format_document_title(job.source_file)
+        else:
+            smart_job_name = Path(job.source_file).stem.replace('_', ' ').replace('-', ' ').title()
+
         translation_job = self.job_queue.create_job(
-            job_name=f"APS: {job.source_file}",
+            job_name=smart_job_name,
             input_file=str(job.source_path),
             output_file=str(output_file),
             source_lang=job.source_lang if job.source_lang != "auto" else "en",
@@ -667,8 +679,14 @@ class APSService:
             unresolved_count=0,
         )
 
+        # Smart title for LayoutIntentPackage
+        if HAS_TITLE_FORMATTER:
+            package_title = smart_title_only(job.source_file)
+        else:
+            package_title = Path(job.source_file).stem.replace('_', ' ').replace('-', ' ').title()
+
         return LayoutIntentPackage(
-            title=Path(job.source_file).stem,
+            title=package_title,
             template=job.template,
             blocks=blocks,
             sections=sections,

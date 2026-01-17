@@ -1905,8 +1905,18 @@ class BatchProcessor:
                         )
 
                     exporter = UniversalExporter()
+
+                    # Smart title extraction for literary content
+                    smart_title = job.job_name
+                    try:
+                        from core.utils.title_formatter import format_document_title
+                        if hasattr(job, 'input_path') and job.input_path:
+                            smart_title = format_document_title(job.input_path)
+                    except ImportError:
+                        pass
+
                     metadata = {
-                        'title': job.job_name,
+                        'title': smart_title,
                         'source_lang': job.source_lang,
                         'target_lang': job.target_lang,
                         'domain': job.domain or "general"

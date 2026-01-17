@@ -59,6 +59,13 @@ from .docx_academic_builder import (
     build_academic_docx,
 )
 
+# Commercial book exporter (literary/novel format)
+from .commercial_book import (
+    CommercialBookExporter,
+    BookConfig,
+    export_commercial_book,
+)
+
 __all__ = [
     # Base
     'DocxExporterBase',
@@ -91,4 +98,9 @@ __all__ = [
     # Backward compatibility
     'AcademicLayoutConfig',
     'build_academic_docx',
+
+    # Commercial book exporter
+    'CommercialBookExporter',
+    'BookConfig',
+    'export_commercial_book',
 ]
