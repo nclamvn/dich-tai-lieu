@@ -341,13 +341,17 @@ class TranslationMemory:
             query += " AND domain = ?"
             params.append(domain)
 
-        # Use FTS for initial filtering
-        query += " AND id IN (SELECT rowid FROM segments_fts WHERE segments_fts MATCH ?)"
-
         # Extract keywords for FTS
         keywords = self._extract_keywords(source)
-        fts_query = " OR ".join(keywords[:5])  # Use top 5 keywords
-        params.append(fts_query)
+
+        # Use FTS for initial filtering only if we have keywords
+        if keywords:
+            query += " AND id IN (SELECT rowid FROM segments_fts WHERE segments_fts MATCH ?)"
+            fts_query = " OR ".join(keywords[:5])  # Use top 5 keywords
+            params.append(fts_query)
+        else:
+            # No keywords extracted, return empty (can't do meaningful fuzzy match)
+            return []
 
         query += " ORDER BY quality_score DESC, use_count DESC LIMIT ?"
         params.append(max_results * 3)  # Get more candidates for filtering

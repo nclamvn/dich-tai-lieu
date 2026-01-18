@@ -27,7 +27,7 @@ export default defineConfig({
   // Shared settings for all projects
   use: {
     // Base URL for the application
-    baseURL: process.env.BASE_URL || 'http://localhost:3001',
+    baseURL: process.env.BASE_URL || 'http://localhost:3000',
 
     // Collect trace when retrying the failed test
     trace: 'on-first-retry',
@@ -81,8 +81,8 @@ export default defineConfig({
 
   // Local dev server configuration
   webServer: {
-    command: 'cd .. && uvicorn api.main:app --host 0.0.0.0 --port 3001',
-    url: 'http://localhost:3001/health',
+    command: 'cd .. && uvicorn api.main:app --host 0.0.0.0 --port 3000',
+    url: 'http://localhost:3000/health',
     reuseExistingServer: !process.env.CI,
     timeout: 120000,
   },

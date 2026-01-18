@@ -1,6 +1,7 @@
 /**
  * E2E Test Helpers
  * Common utilities for Playwright tests
+ * Updated for Claude-style UI (2026)
  */
 
 /**
@@ -10,11 +11,11 @@
 export async function waitForAppReady(page) {
   // Wait for Lucide icons to be initialized
   await page.waitForFunction(() => {
-    return typeof lucide !== 'undefined' && document.querySelector('[data-lucide]');
-  });
+    return typeof lucide !== 'undefined';
+  }, { timeout: 10000 });
 
-  // Wait for any loading states to complete
-  await page.waitForSelector('.workflow-header', { state: 'visible' });
+  // Wait for main content to be visible
+  await page.waitForSelector('.main-content', { state: 'visible', timeout: 10000 });
 }
 
 /**
@@ -34,8 +35,6 @@ export async function uploadFile(page, filePath) {
  * @param {string} filename - File name
  */
 export async function uploadTestContent(page, content, filename = 'test.txt') {
-  const buffer = Buffer.from(content, 'utf-8');
-
   const dataTransfer = await page.evaluateHandle((data) => {
     const dt = new DataTransfer();
     const file = new File([data.content], data.filename, { type: 'text/plain' });
@@ -43,7 +42,7 @@ export async function uploadTestContent(page, content, filename = 'test.txt') {
     return dt;
   }, { content, filename });
 
-  const dropzone = page.locator('#dropzone');
+  const dropzone = page.locator('#upload-zone');
   await dropzone.dispatchEvent('drop', { dataTransfer });
 }
 
@@ -55,7 +54,7 @@ export async function uploadTestContent(page, content, filename = 'test.txt') {
 export async function waitForJobCompletion(page, timeout = 120000) {
   await page.waitForFunction(
     () => {
-      const progressText = document.querySelector('#progress-text');
+      const progressText = document.querySelector('#progress-percentage');
       return progressText && progressText.textContent === '100%';
     },
     { timeout }
@@ -63,33 +62,32 @@ export async function waitForJobCompletion(page, timeout = 120000) {
 }
 
 /**
- * Get current agent status
+ * Get current step status
  * @param {import('@playwright/test').Page} page
- * @param {string} agentId - Agent element ID
+ * @param {number} stepNum - Step number (1, 2, or 3)
  */
-export async function getAgentStatus(page, agentId) {
-  const agent = page.locator(`#${agentId}`);
-  return agent.getAttribute('data-status');
+export async function getStepStatus(page, stepNum) {
+  const step = page.locator(`#step-${stepNum}`);
+  return step.getAttribute('class');
 }
 
 /**
- * Wait for specific agent to activate
+ * Wait for specific step to be active
  * @param {import('@playwright/test').Page} page
- * @param {string} agentId - Agent element ID
+ * @param {number} stepNum - Step number (1, 2, or 3)
  */
-export async function waitForAgentActive(page, agentId) {
-  await page.waitForSelector(`#${agentId}[data-status="active"]`, { timeout: 30000 });
+export async function waitForStepActive(page, stepNum) {
+  await page.waitForSelector(`#step-${stepNum}.active`, { timeout: 30000 });
 }
 
 /**
- * Switch to a specific tab
+ * Switch to a specific preview tab
  * @param {import('@playwright/test').Page} page
- * @param {string} tabName - Tab name (preview, dna, progress, downloads)
+ * @param {string} tabName - Tab name
  */
-export async function switchTab(page, tabName) {
-  const tabButton = page.locator(`[data-tab="${tabName}"]`);
+export async function switchPreviewTab(page, tabName) {
+  const tabButton = page.locator(`.preview-tab:has-text("${tabName}")`);
   await tabButton.click();
-  await page.waitForSelector(`#tab-${tabName}.active`, { state: 'visible' });
 }
 
 /**
@@ -97,8 +95,7 @@ export async function switchTab(page, tabName) {
  * @param {import('@playwright/test').Page} page
  */
 export async function getDownloadLinks(page) {
-  await switchTab(page, 'downloads');
-  const links = await page.locator('#downloads-grid a').all();
+  const links = await page.locator('#download-section .download-card a').all();
   return Promise.all(links.map(link => link.getAttribute('href')));
 }
 

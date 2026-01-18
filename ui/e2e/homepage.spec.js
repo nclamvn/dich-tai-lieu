@@ -1,6 +1,7 @@
 /**
  * E2E Tests: Homepage & Navigation
  * Tests basic page load, UI elements, and navigation
+ * Updated for Claude-style UI (2026)
  */
 
 import { test, expect } from '@playwright/test';
@@ -14,135 +15,195 @@ test.describe('Homepage', () => {
 
   test('should load the main application', async ({ page }) => {
     // Check page title
-    await expect(page).toHaveTitle(/Xưởng Xuất Bản/);
+    await expect(page).toHaveTitle(/AI Publisher Pro/);
 
-    // Check main header is visible
-    const header = page.locator('.workflow-header h1');
-    await expect(header).toBeVisible();
-    await expect(header).toContainText('Xưởng Xuất Bản');
+    // Check main content is visible
+    const mainContent = page.locator('.main-content');
+    await expect(mainContent).toBeVisible();
   });
 
-  test('should display three agent cards', async ({ page }) => {
-    // Editor agent
-    const editorAgent = page.locator('#agent-editor');
-    await expect(editorAgent).toBeVisible();
-    await expect(editorAgent.locator('h3')).toContainText('Biên Tập Viên');
+  test('should display hero section', async ({ page }) => {
+    // Hero title
+    const heroTitle = page.locator('.hero-title');
+    await expect(heroTitle).toBeVisible();
 
-    // Translator agent
-    const translatorAgent = page.locator('#agent-translator');
-    await expect(translatorAgent).toBeVisible();
-    await expect(translatorAgent.locator('h3')).toContainText('Dịch Giả');
-
-    // Publisher agent
-    const publisherAgent = page.locator('#agent-publisher');
-    await expect(publisherAgent).toBeVisible();
-    await expect(publisherAgent.locator('h3')).toContainText('Nhà Xuất Bản');
+    // Hero subtitle
+    const heroSubtitle = page.locator('.hero-subtitle');
+    await expect(heroSubtitle).toBeVisible();
   });
 
-  test('should have all agents in idle status initially', async ({ page }) => {
-    const agents = ['agent-editor', 'agent-translator', 'agent-publisher'];
-
-    for (const agentId of agents) {
-      const agent = page.locator(`#${agentId}`);
-      await expect(agent).toHaveAttribute('data-status', 'idle');
-    }
+  test('should display upload zone', async ({ page }) => {
+    const uploadZone = page.locator('#upload-zone');
+    await expect(uploadZone).toBeVisible();
   });
 
-  test('should display dropzone for file upload', async ({ page }) => {
-    const dropzone = page.locator('#dropzone');
-    await expect(dropzone).toBeVisible();
-    await expect(dropzone).toContainText('Kéo thả tài liệu vào đây');
+  test('should have file input', async ({ page }) => {
+    const fileInput = page.locator('#file-input');
+    await expect(fileInput).toBeAttached();
   });
 
-  test('should have start button disabled initially', async ({ page }) => {
-    const startButton = page.locator('#btn-start');
-    await expect(startButton).toBeVisible();
-    await expect(startButton).toBeDisabled();
+  test('should have language selectors', async ({ page }) => {
+    // Source language - may be in options panel
+    const sourceLang = page.locator('#source-lang');
+    await expect(sourceLang).toBeAttached();
+
+    // Target language
+    const targetLang = page.locator('#target-lang');
+    await expect(targetLang).toBeAttached();
   });
 
-  test('should display all preview tabs', async ({ page }) => {
-    const tabs = [
-      { name: 'preview', text: 'Xem Trước' },
-      { name: 'dna', text: 'DNA' },
-      { name: 'progress', text: 'Tiến Trình' },
-      { name: 'downloads', text: 'Tải Xuống' }
-    ];
-
-    for (const tab of tabs) {
-      const tabBtn = page.locator(`[data-tab="${tab.name}"]`);
-      await expect(tabBtn).toBeVisible();
-      await expect(tabBtn).toContainText(tab.text);
-    }
+  test('should have submit button', async ({ page }) => {
+    const submitBtn = page.locator('#submit-btn');
+    await expect(submitBtn).toBeVisible();
   });
 
-  test('should switch between tabs', async ({ page }) => {
-    // Click progress tab
-    await page.locator('[data-tab="progress"]').click();
-    await expect(page.locator('#tab-progress')).toHaveClass(/active/);
+  test('should have progress steps in DOM', async ({ page }) => {
+    // Step 1 - Analysis
+    const step1 = page.locator('#step-1');
+    await expect(step1).toBeAttached();
 
-    // Click downloads tab
-    await page.locator('[data-tab="downloads"]').click();
-    await expect(page.locator('#tab-downloads')).toHaveClass(/active/);
+    // Step 2 - Translation
+    const step2 = page.locator('#step-2');
+    await expect(step2).toBeAttached();
 
-    // Click preview tab
-    await page.locator('[data-tab="preview"]').click();
-    await expect(page.locator('#tab-preview')).toHaveClass(/active/);
+    // Step 3 - Export
+    const step3 = page.locator('#step-3');
+    await expect(step3).toBeAttached();
   });
 
-  test('should display AI provider selector', async ({ page }) => {
-    const providerCard = page.locator('#ai-provider-card');
-    await expect(providerCard).toBeVisible();
-
-    const providerName = providerCard.locator('.provider-name');
-    await expect(providerName).toBeVisible();
-  });
-
-  test('should have profile selector visible', async ({ page }) => {
-    const profileSelector = page.locator('#profile-selector');
-    await expect(profileSelector).toBeVisible();
-
-    const profileSelected = page.locator('#profile-selected');
-    await expect(profileSelected).toBeVisible();
+  test('should have preview tabs in DOM', async ({ page }) => {
+    const previewTabs = page.locator('.preview-tabs');
+    await expect(previewTabs).toBeAttached();
   });
 });
 
 test.describe('Theme', () => {
-  test('should start with dark theme', async ({ page }) => {
+  test('should have theme toggle in settings', async ({ page }) => {
     await page.goto('/ui');
+    await waitForAppReady(page);
 
-    const html = page.locator('html');
-    const theme = await html.getAttribute('data-theme');
-    expect(theme).toBe('dark');
+    // Open settings panel
+    const settingsBtn = page.locator('#settings-btn');
+    await settingsBtn.click();
+
+    // Check theme toggle exists
+    const themeToggle = page.locator('#theme-toggle');
+    await expect(themeToggle).toBeVisible();
   });
 
   test('should persist theme in localStorage', async ({ page }) => {
     await page.goto('/ui');
 
-    const theme = await page.evaluate(() => localStorage.getItem('theme'));
-    // Theme should be set or null (defaults to system preference)
-    expect(theme === null || theme === 'dark' || theme === 'light').toBeTruthy();
+    // Check localStorage has theme key (or will be set)
+    const theme = await page.evaluate(() => {
+      return localStorage.getItem('theme') || 'system';
+    });
+
+    expect(['light', 'dark', 'system']).toContain(theme);
   });
 });
 
-test.describe('Mode Toggle', () => {
-  test('should display mode toggle buttons', async ({ page }) => {
+test.describe('Settings Panel', () => {
+  test.beforeEach(async ({ page }) => {
     await page.goto('/ui');
     await waitForAppReady(page);
-
-    const singleModeBtn = page.locator('[data-mode="single"]');
-    await expect(singleModeBtn).toBeVisible();
-    await expect(singleModeBtn).toContainText('Một File');
-
-    const batchLink = page.locator('.mode-toggle a[href="/ui/batch-upload.html"]');
-    await expect(batchLink).toBeVisible();
-    await expect(batchLink).toContainText('Hàng Loạt');
   });
 
-  test('should have single mode active by default', async ({ page }) => {
+  test('should open settings panel', async ({ page }) => {
+    const settingsBtn = page.locator('#settings-btn');
+    await settingsBtn.click();
+
+    const settingsPanel = page.locator('#settings-panel');
+    await expect(settingsPanel).toBeVisible();
+  });
+
+  test('should close settings panel', async ({ page }) => {
+    // Open settings
+    await page.locator('#settings-btn').click();
+    const settingsPanel = page.locator('#settings-panel');
+    await expect(settingsPanel).toBeVisible();
+
+    // Close settings via overlay click or close button
+    const closeBtn = page.locator('#settings-close');
+    await closeBtn.click();
+
+    // Wait for panel to close (may have animation)
+    await page.waitForTimeout(300);
+
+    // Panel should be hidden (check class or hidden state)
+    const isHidden = await settingsPanel.evaluate(el => {
+      return !el.classList.contains('active') ||
+             window.getComputedStyle(el).display === 'none' ||
+             !el.offsetParent;
+    });
+    expect(isHidden).toBeTruthy();
+  });
+
+  test('should have API key input', async ({ page }) => {
+    await page.locator('#settings-btn').click();
+
+    const apiKeyInput = page.locator('#api-key-input');
+    await expect(apiKeyInput).toBeVisible();
+  });
+});
+
+test.describe('History Panel', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto('/ui');
+    await waitForAppReady(page);
+  });
+
+  test('should open history panel', async ({ page }) => {
+    const historyBtn = page.locator('#history-btn');
+    await historyBtn.click();
+
+    const historyPanel = page.locator('#history-panel');
+    await expect(historyPanel).toBeVisible();
+  });
+
+  test('should close history panel', async ({ page }) => {
+    // Open history
+    await page.locator('#history-btn').click();
+    const historyPanel = page.locator('#history-panel');
+    await expect(historyPanel).toBeVisible();
+
+    // Close history
+    await page.locator('#history-close').click();
+
+    // Wait for panel to close (may have animation)
+    await page.waitForTimeout(300);
+
+    // Panel should be hidden
+    const isHidden = await historyPanel.evaluate(el => {
+      return !el.classList.contains('active') ||
+             window.getComputedStyle(el).display === 'none' ||
+             !el.offsetParent;
+    });
+    expect(isHidden).toBeTruthy();
+  });
+
+  test('should show empty state initially', async ({ page }) => {
+    await page.locator('#history-btn').click();
+
+    const emptyState = page.locator('#history-empty');
+    await expect(emptyState).toBeVisible();
+  });
+});
+
+test.describe('Model Selection', () => {
+  test('should have model selector in DOM', async ({ page }) => {
     await page.goto('/ui');
     await waitForAppReady(page);
 
-    const singleModeBtn = page.locator('[data-mode="single"]');
-    await expect(singleModeBtn).toHaveClass(/active/);
+    const modelSelect = page.locator('#model-select');
+    await expect(modelSelect).toBeAttached();
+  });
+
+  test('should have model options', async ({ page }) => {
+    await page.goto('/ui');
+    await waitForAppReady(page);
+
+    const options = await page.locator('#model-select option').count();
+    expect(options).toBeGreaterThan(0);
   });
 });
