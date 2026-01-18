@@ -459,6 +459,156 @@
       box-shadow: var(--shadow-focus);
     }
 
+    /* Full width option group */
+    .option-group-full {
+      grid-column: 1 / -1;
+    }
+
+    /* Cover Image Upload Zone */
+    .cover-upload-zone {
+      border: 1px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      padding: var(--space-4);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      background: var(--bg-secondary);
+      position: relative;
+    }
+
+    .cover-upload-zone:hover {
+      border-color: var(--accent-primary);
+      background: var(--accent-light);
+    }
+
+    .cover-upload-zone.drag-over {
+      border-color: var(--accent-primary);
+      background: var(--accent-light);
+    }
+
+    .cover-upload-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-2);
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+    }
+
+    .cover-upload-content i {
+      width: 24px;
+      height: 24px;
+      color: var(--text-tertiary);
+    }
+
+    .cover-upload-content small {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+    }
+
+    /* Cover Preview */
+    .cover-preview {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .cover-preview img {
+      width: 48px;
+      height: 64px;
+      object-fit: cover;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border-light);
+    }
+
+    .cover-preview-info {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .cover-filename {
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .cover-dimensions {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+    }
+
+    .cover-remove-btn {
+      width: 28px;
+      height: 28px;
+      border: none;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      transition: var(--transition-fast);
+    }
+
+    .cover-remove-btn:hover {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    .cover-remove-btn i {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* Toggle Option */
+    .toggle-option {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-3) var(--space-4);
+      background: var(--bg-secondary);
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-light);
+    }
+
+    .toggle-label {
+      font-size: var(--font-size-sm);
+      color: var(--text-secondary);
+    }
+
+    .toggle-btn {
+      width: 44px;
+      height: 24px;
+      border: none;
+      border-radius: var(--radius-full);
+      background: var(--border-medium);
+      cursor: pointer;
+      position: relative;
+      transition: var(--transition-fast);
+    }
+
+    .toggle-btn.active {
+      background: var(--accent-primary);
+    }
+
+    .toggle-slider {
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 20px;
+      height: 20px;
+      background: white;
+      border-radius: 50%;
+      transition: var(--transition-fast);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .toggle-btn.active .toggle-slider {
+      left: 22px;
+    }
+
     /* =============================================
        PRIMARY BUTTON
        ============================================= */
@@ -1327,25 +1477,770 @@
     }
 
     /* =============================================
-       DARK MODE
+       THEME SYSTEM - Light & Dark
        ============================================= */
 
+    /* Light Theme (Default) - High Contrast */
+    [data-theme="light"] {
+      --bg-primary: #FFFFFF;
+      --bg-secondary: #F3F4F6;
+      --bg-tertiary: #E5E7EB;
+      --bg-hover: #E8EAED;
+      --text-primary: #111827;
+      --text-secondary: #4B5563;
+      --text-tertiary: #6B7280;
+      --text-inverse: #FFFFFF;
+      --border-light: #D1D5DB;
+      --border-medium: #9CA3AF;
+      --accent-light: #FEF2EE;
+      --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    /* Dark Theme */
+    [data-theme="dark"] {
+      --bg-primary: #1A1A1A;
+      --bg-secondary: #242424;
+      --bg-tertiary: #2E2E2E;
+      --bg-hover: #333333;
+      --text-primary: #FAFAFA;
+      --text-secondary: #A1A1A1;
+      --text-tertiary: #737373;
+      --text-inverse: #1A1A1A;
+      --border-light: #333333;
+      --border-medium: #444444;
+      --accent-light: rgba(217, 119, 87, 0.15);
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+      --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+      --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    /* System preference fallback */
     @media (prefers-color-scheme: dark) {
-      :root {
+      :root:not([data-theme]) {
         --bg-primary: #1A1A1A;
         --bg-secondary: #242424;
         --bg-tertiary: #2E2E2E;
         --bg-hover: #333333;
-
         --text-primary: #FAFAFA;
         --text-secondary: #A1A1A1;
         --text-tertiary: #737373;
-
         --border-light: #333333;
         --border-medium: #444444;
-
         --accent-light: rgba(217, 119, 87, 0.15);
       }
+    }
+
+    /* =============================================
+       SLIDE PANEL (History & Settings)
+       ============================================= */
+
+    .slide-panel-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      visibility: hidden;
+      transition: var(--transition-normal);
+      z-index: 200;
+    }
+
+    .slide-panel-overlay.show {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .slide-panel {
+      position: fixed;
+      top: 0;
+      right: -400px;
+      width: 400px;
+      max-width: 100vw;
+      height: 100vh;
+      background: var(--bg-primary);
+      box-shadow: var(--shadow-lg);
+      transition: right 0.3s ease;
+      z-index: 201;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .slide-panel.show {
+      right: 0;
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4) var(--space-6);
+      border-bottom: 1px solid var(--border-light);
+    }
+
+    .panel-title {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .panel-close {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-fast);
+    }
+
+    .panel-close:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+    }
+
+    .panel-close svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .panel-content {
+      flex: 1;
+      overflow-y: auto;
+      padding: var(--space-4);
+    }
+
+    /* =============================================
+       HISTORY PANEL
+       ============================================= */
+
+    .history-empty {
+      text-align: center;
+      padding: var(--space-12) var(--space-6);
+      color: var(--text-tertiary);
+    }
+
+    .history-empty svg {
+      width: 48px;
+      height: 48px;
+      margin-bottom: var(--space-4);
+      opacity: 0.5;
+    }
+
+    .history-empty-title {
+      font-size: var(--font-size-base);
+      font-weight: 500;
+      color: var(--text-secondary);
+      margin-bottom: var(--space-2);
+    }
+
+    .history-empty-text {
+      font-size: var(--font-size-sm);
+    }
+
+    .history-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--space-3);
+      padding: var(--space-4);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-3);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .history-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .history-item-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--accent-light);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-primary);
+      flex-shrink: 0;
+    }
+
+    .history-item-icon.success {
+      background: #D1FAE5;
+      color: #059669;
+    }
+
+    .history-item-icon.failed {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    .history-item-icon.pending {
+      background: #FEF3C7;
+      color: #D97706;
+    }
+
+    .history-item-icon svg {
+      width: 20px;
+      height: 20px;
+    }
+
+    .history-item-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .history-item-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: var(--space-1);
+    }
+
+    .history-item-meta {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .history-item-status {
+      padding: var(--space-1) var(--space-2);
+      border-radius: var(--radius-sm);
+      font-size: var(--font-size-xs);
+      font-weight: 500;
+    }
+
+    .history-item-status.success {
+      background: #D1FAE5;
+      color: #059669;
+    }
+
+    .history-item-status.failed {
+      background: #FEE2E2;
+      color: #DC2626;
+    }
+
+    .history-item-status.pending {
+      background: #FEF3C7;
+      color: #D97706;
+    }
+
+    .history-clear {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: var(--space-2);
+      width: 100%;
+      padding: var(--space-3);
+      margin-top: var(--space-4);
+      background: transparent;
+      border: 1px dashed var(--border-medium);
+      border-radius: var(--radius-md);
+      color: var(--text-tertiary);
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .history-clear:hover {
+      background: var(--bg-hover);
+      color: var(--text-secondary);
+      border-color: var(--text-tertiary);
+    }
+
+    .history-clear svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    /* =============================================
+       SETTINGS PANEL
+       ============================================= */
+
+    .settings-section {
+      margin-bottom: var(--space-6);
+    }
+
+    .settings-section-title {
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+      color: var(--text-tertiary);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: var(--space-3);
+      padding: 0 var(--space-2);
+    }
+
+    .settings-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      margin-bottom: var(--space-2);
+    }
+
+    .settings-item-info {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    .settings-item-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+    }
+
+    .settings-item-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .settings-item-label {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: var(--space-1);
+    }
+
+    .settings-item-desc {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+    }
+
+    /* Theme Toggle Switch */
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+      padding: var(--space-1);
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+    }
+
+    .theme-option {
+      width: 36px;
+      height: 36px;
+      border: none;
+      background: transparent;
+      border-radius: var(--radius-full);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-tertiary);
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .theme-option:hover {
+      color: var(--text-secondary);
+    }
+
+    .theme-option.active {
+      background: var(--bg-primary);
+      color: var(--accent-primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .theme-option svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Toggle Switch */
+    .toggle-switch {
+      position: relative;
+      width: 48px;
+      height: 28px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: var(--transition-normal);
+    }
+
+    .toggle-switch.active {
+      background: var(--accent-primary);
+    }
+
+    .toggle-switch::after {
+      content: '';
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 22px;
+      height: 22px;
+      background: var(--bg-primary);
+      border-radius: var(--radius-full);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition-normal);
+    }
+
+    .toggle-switch.active::after {
+      left: 23px;
+    }
+
+    /* API Key Input */
+    .settings-input-group {
+      margin-top: var(--space-3);
+    }
+
+    .settings-input {
+      width: 100%;
+      padding: var(--space-3) var(--space-4);
+      background: var(--bg-primary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      color: var(--text-primary);
+      transition: var(--transition-fast);
+    }
+
+    .settings-input:focus {
+      outline: none;
+      border-color: var(--accent-primary);
+      box-shadow: var(--shadow-focus);
+    }
+
+    .settings-input::placeholder {
+      color: var(--text-tertiary);
+    }
+
+    .settings-save-btn {
+      margin-top: var(--space-2);
+      padding: var(--space-2) var(--space-4);
+      background: var(--accent-primary);
+      color: white;
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      cursor: pointer;
+      transition: var(--transition-fast);
+    }
+
+    .settings-save-btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .settings-save-btn:disabled {
+      background: var(--border-medium);
+      cursor: not-allowed;
+    }
+
+    /* Version Info */
+    .settings-version {
+      text-align: center;
+      padding: var(--space-6);
+      border-top: 1px solid var(--border-light);
+      margin-top: auto;
+    }
+
+    .settings-version-text {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+    }
+
+    .settings-version-link {
+      color: var(--accent-primary);
+      text-decoration: none;
+    }
+
+    .settings-version-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Mobile Panel */
+    @media (max-width: 480px) {
+      .slide-panel {
+        width: 100vw;
+        right: -100vw;
+      }
+    }
+
+    /* =============================================
+       BATCH FILE QUEUE
+       ============================================= */
+
+    .file-queue {
+      display: none;
+      width: 100%;
+      max-width: var(--max-width);
+      margin-top: var(--space-6);
+    }
+
+    .file-queue.show {
+      display: block;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .file-queue-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: var(--space-4);
+    }
+
+    .file-queue-title {
+      font-size: var(--font-size-base);
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .file-queue-title svg {
+      width: 18px;
+      height: 18px;
+      color: var(--accent-primary);
+    }
+
+    .file-queue-count {
+      padding: var(--space-1) var(--space-3);
+      background: var(--accent-light);
+      color: var(--accent-primary);
+      border-radius: var(--radius-full);
+      font-size: var(--font-size-xs);
+      font-weight: 600;
+    }
+
+    .file-queue-actions {
+      display: flex;
+      gap: var(--space-2);
+    }
+
+    .queue-action-btn {
+      padding: var(--space-2) var(--space-3);
+      background: transparent;
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      color: var(--text-secondary);
+      font-size: var(--font-size-sm);
+      cursor: pointer;
+      transition: var(--transition-fast);
+      display: flex;
+      align-items: center;
+      gap: var(--space-1);
+    }
+
+    .queue-action-btn:hover {
+      background: var(--bg-hover);
+      color: var(--text-primary);
+      border-color: var(--border-medium);
+    }
+
+    .queue-action-btn svg {
+      width: 14px;
+      height: 14px;
+    }
+
+    .file-queue-list {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .queue-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      transition: var(--transition-fast);
+    }
+
+    .queue-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .queue-item.processing {
+      border-color: var(--accent-primary);
+      background: var(--accent-light);
+    }
+
+    .queue-item.completed {
+      border-color: #10B981;
+      background: #F0FDF4;
+    }
+
+    .queue-item.failed {
+      border-color: #EF4444;
+      background: #FEF2F2;
+    }
+
+    .queue-item-icon {
+      width: 36px;
+      height: 36px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+
+    .queue-item.processing .queue-item-icon {
+      background: var(--accent-primary);
+      color: white;
+    }
+
+    .queue-item.completed .queue-item-icon {
+      background: #10B981;
+      color: white;
+    }
+
+    .queue-item.failed .queue-item-icon {
+      background: #EF4444;
+      color: white;
+    }
+
+    .queue-item-icon svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .queue-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .queue-item-name {
+      font-size: var(--font-size-sm);
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .queue-item-meta {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+      margin-top: var(--space-1);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .queue-item-progress {
+      flex: 0 0 100px;
+    }
+
+    .queue-item-progress-bar {
+      height: 4px;
+      background: var(--bg-tertiary);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+    }
+
+    .queue-item-progress-fill {
+      height: 100%;
+      background: var(--accent-primary);
+      border-radius: var(--radius-full);
+      transition: width 0.3s ease;
+    }
+
+    .queue-item.completed .queue-item-progress-fill {
+      background: #10B981;
+    }
+
+    .queue-item-progress-text {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+      text-align: right;
+      margin-top: var(--space-1);
+    }
+
+    .queue-item-remove {
+      width: 28px;
+      height: 28px;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-sm);
+      color: var(--text-tertiary);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: var(--transition-fast);
+    }
+
+    .queue-item-remove:hover {
+      background: var(--bg-hover);
+      color: #EF4444;
+    }
+
+    .queue-item-remove svg {
+      width: 16px;
+      height: 16px;
+    }
+
+    .queue-item.processing .queue-item-remove,
+    .queue-item.completed .queue-item-remove {
+      display: none;
+    }
+
+    /* Batch Summary */
+    .batch-summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: var(--space-4);
+      padding: var(--space-4);
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-lg);
+    }
+
+    .batch-summary-stats {
+      display: flex;
+      gap: var(--space-6);
+    }
+
+    .batch-stat {
+      text-align: center;
+    }
+
+    .batch-stat-value {
+      font-size: var(--font-size-lg);
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    .batch-stat-label {
+      font-size: var(--font-size-xs);
+      color: var(--text-tertiary);
+      margin-top: var(--space-1);
+    }
+
+    .batch-stat-value.success {
+      color: #10B981;
+    }
+
+    .batch-stat-value.failed {
+      color: #EF4444;
     }
 
     /* =============================================
@@ -1386,6 +2281,165 @@
         flex-direction: column;
         gap: var(--space-4);
       }
+
+      .header {
+        padding: 0 var(--space-4);
+      }
+
+      .hero {
+        margin-bottom: var(--space-8);
+      }
+
+      .hero-subtitle {
+        font-size: var(--font-size-sm);
+      }
+
+      .preview-section {
+        margin-top: var(--space-6);
+      }
+
+      .options-section {
+        padding: var(--space-4);
+      }
+    }
+
+    @media (max-width: 480px) {
+      .main-content {
+        padding: var(--space-6) var(--space-3);
+      }
+
+      .hero-title {
+        font-size: var(--font-size-xl);
+      }
+
+      .hero-badge {
+        font-size: var(--font-size-xs);
+      }
+
+      .upload-zone {
+        padding: var(--space-8) var(--space-3);
+      }
+
+      .upload-icon {
+        width: 40px;
+        height: 40px;
+      }
+
+      .upload-title {
+        font-size: var(--font-size-base);
+      }
+
+      .upload-subtitle {
+        font-size: var(--font-size-xs);
+      }
+
+      .file-preview {
+        padding: var(--space-4);
+      }
+
+      .preview-tabs {
+        flex-wrap: wrap;
+        gap: var(--space-2);
+      }
+
+      .preview-tab {
+        font-size: var(--font-size-xs);
+        padding: var(--space-2) var(--space-3);
+      }
+
+      .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: var(--space-2);
+      }
+
+      .stat-card {
+        padding: var(--space-3);
+      }
+
+      .stat-value {
+        font-size: var(--font-size-lg);
+      }
+
+      .submit-btn {
+        padding: var(--space-4) var(--space-6);
+        font-size: var(--font-size-base);
+      }
+
+      .download-header h2 {
+        font-size: var(--font-size-lg);
+      }
+
+      .format-card {
+        padding: var(--space-3);
+      }
+
+      .format-card-name {
+        font-size: var(--font-size-sm);
+      }
+    }
+
+    /* =============================================
+       DARK MODE ENHANCEMENTS
+       ============================================= */
+
+    /* Ensure all inputs/selects work in dark mode */
+    [data-theme="dark"] .option-select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A1A1A1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+    }
+
+    [data-theme="dark"] .settings-input {
+      background: var(--bg-tertiary);
+    }
+
+    [data-theme="dark"] .slide-panel-overlay {
+      background: rgba(0, 0, 0, 0.6);
+    }
+
+    [data-theme="dark"] .upload-zone:hover {
+      background: var(--bg-tertiary);
+    }
+
+    [data-theme="dark"] .file-preview {
+      background: var(--bg-secondary);
+    }
+
+    [data-theme="dark"] .preview-section {
+      background: var(--bg-secondary);
+    }
+
+    [data-theme="dark"] .format-card:hover {
+      background: var(--bg-tertiary);
+    }
+
+    [data-theme="dark"] .activity-section {
+      background: var(--bg-secondary);
+    }
+
+    [data-theme="dark"] .chunk-badge {
+      background: var(--bg-tertiary);
+    }
+
+    [data-theme="dark"] .toast {
+      background: var(--bg-tertiary);
+      border-color: var(--border-medium);
+    }
+
+    /* System dark mode fallback */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme]) .option-select {
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23A1A1A1' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      }
+
+      :root:not([data-theme]) .slide-panel-overlay {
+        background: rgba(0, 0, 0, 0.6);
+      }
+
+      :root:not([data-theme]) .upload-zone:hover,
+      :root:not([data-theme]) .file-preview,
+      :root:not([data-theme]) .preview-section,
+      :root:not([data-theme]) .activity-section {
+        background: var(--bg-secondary);
+      }
     }
   </style>
 </head>
@@ -1398,14 +2452,129 @@
         <span>AI Publisher</span>
       </a>
       <div class="header-actions">
-        <button class="header-btn" title="History">
+        <button class="header-btn" id="history-btn" title="Lịch sử">
           <i data-lucide="clock"></i>
         </button>
-        <button class="header-btn" title="Settings">
+        <button class="header-btn" id="settings-btn" title="Cài đặt">
           <i data-lucide="settings"></i>
         </button>
       </div>
     </header>
+
+    <!-- History Panel -->
+    <div class="slide-panel-overlay" id="history-overlay"></div>
+    <div class="slide-panel" id="history-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Lịch sử</h2>
+        <button class="panel-close" id="history-close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="panel-content" id="history-content">
+        <div class="history-empty" id="history-empty">
+          <i data-lucide="inbox"></i>
+          <div class="history-empty-title">Chưa có lịch sử</div>
+          <div class="history-empty-text">Các tài liệu đã xử lý sẽ hiển thị ở đây</div>
+        </div>
+        <div id="history-list"></div>
+      </div>
+    </div>
+
+    <!-- Settings Panel -->
+    <div class="slide-panel-overlay" id="settings-overlay"></div>
+    <div class="slide-panel" id="settings-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Cài đặt</h2>
+        <button class="panel-close" id="settings-close">
+          <i data-lucide="x"></i>
+        </button>
+      </div>
+      <div class="panel-content">
+        <!-- Appearance Section -->
+        <div class="settings-section">
+          <div class="settings-section-title">Giao diện</div>
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="settings-item-icon">
+                <i data-lucide="palette"></i>
+              </div>
+              <div>
+                <div class="settings-item-label">Chủ đề</div>
+                <div class="settings-item-desc">Chọn giao diện sáng hoặc tối</div>
+              </div>
+            </div>
+            <div class="theme-toggle" id="theme-toggle">
+              <button class="theme-option" data-theme="light" title="Sáng">
+                <i data-lucide="sun"></i>
+              </button>
+              <button class="theme-option" data-theme="dark" title="Tối">
+                <i data-lucide="moon"></i>
+              </button>
+              <button class="theme-option" data-theme="system" title="Hệ thống">
+                <i data-lucide="monitor"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- API Section -->
+        <div class="settings-section">
+          <div class="settings-section-title">API</div>
+          <div class="settings-item" style="flex-direction: column; align-items: stretch;">
+            <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3);">
+              <div class="settings-item-icon">
+                <i data-lucide="key"></i>
+              </div>
+              <div>
+                <div class="settings-item-label">OpenAI API Key</div>
+                <div class="settings-item-desc">Sử dụng API key riêng của bạn</div>
+              </div>
+            </div>
+            <div class="settings-input-group">
+              <input type="password" class="settings-input" id="api-key-input" placeholder="sk-...">
+              <button class="settings-save-btn" id="save-api-key">Lưu</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Preferences Section -->
+        <div class="settings-section">
+          <div class="settings-section-title">Tùy chọn</div>
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="settings-item-icon">
+                <i data-lucide="bell"></i>
+              </div>
+              <div>
+                <div class="settings-item-label">Thông báo</div>
+                <div class="settings-item-desc">Nhận thông báo khi hoàn thành</div>
+              </div>
+            </div>
+            <div class="toggle-switch" id="notification-toggle"></div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="settings-item-icon">
+                <i data-lucide="save"></i>
+              </div>
+              <div>
+                <div class="settings-item-label">Tự động lưu</div>
+                <div class="settings-item-desc">Lưu cài đặt vào trình duyệt</div>
+              </div>
+            </div>
+            <div class="toggle-switch active" id="autosave-toggle"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Version -->
+      <div class="settings-version">
+        <div class="settings-version-text">
+          AI Publisher Pro v2.8.0<br>
+          <a href="https://github.com/nclamvn/ai-translator-pro" class="settings-version-link" target="_blank">GitHub</a>
+        </div>
+      </div>
+    </div>
 
     <!-- Main Content -->
     <main class="main-content">
@@ -1442,11 +2611,51 @@
             </div>
           </div>
           <input type="file" class="upload-input" id="file-input"
-                 accept=".pdf,.docx,.txt,.md,.tex">
+                 accept=".pdf,.docx,.txt,.md,.tex" multiple>
         </div>
       </div>
 
-      <!-- File Preview (Hidden by default) -->
+      <!-- File Queue (for batch processing) -->
+      <div class="file-queue" id="file-queue">
+        <div class="file-queue-header">
+          <div class="file-queue-title">
+            <i data-lucide="layers"></i>
+            <span>Hàng đợi xử lý</span>
+            <span class="file-queue-count" id="queue-count">0 tệp</span>
+          </div>
+          <div class="file-queue-actions">
+            <button class="queue-action-btn" id="add-more-files" title="Thêm tệp">
+              <i data-lucide="plus"></i>
+              <span>Thêm</span>
+            </button>
+            <button class="queue-action-btn" id="clear-queue" title="Xóa tất cả">
+              <i data-lucide="trash-2"></i>
+              <span>Xóa hết</span>
+            </button>
+          </div>
+        </div>
+        <div class="file-queue-list" id="queue-list">
+          <!-- Queue items will be added here dynamically -->
+        </div>
+        <div class="batch-summary" id="batch-summary" style="display: none;">
+          <div class="batch-summary-stats">
+            <div class="batch-stat">
+              <div class="batch-stat-value" id="batch-total">0</div>
+              <div class="batch-stat-label">Tổng</div>
+            </div>
+            <div class="batch-stat">
+              <div class="batch-stat-value success" id="batch-completed">0</div>
+              <div class="batch-stat-label">Hoàn thành</div>
+            </div>
+            <div class="batch-stat">
+              <div class="batch-stat-value failed" id="batch-failed">0</div>
+              <div class="batch-stat-label">Thất bại</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- File Preview (Hidden by default - for single file mode) -->
       <div class="file-preview" id="file-preview">
         <div class="file-info">
           <div class="file-icon">
@@ -1524,6 +2733,46 @@
                 <option value="academic">Academic (A4, 1.5 dòng)</option>
                 <option value="business">Business (A4, Sans-serif)</option>
               </select>
+            </div>
+
+            <!-- Cover Image Upload (NEW) -->
+            <div class="option-group option-group-full">
+              <label class="option-label">
+                <i data-lucide="image" style="width: 14px; height: 14px; margin-right: 6px;"></i>
+                Ảnh bìa (Tùy chọn)
+              </label>
+              <div class="cover-upload-zone" id="cover-upload-zone">
+                <input type="file" id="cover-file-input" accept="image/png,image/jpeg,image/webp" hidden>
+                <div class="cover-upload-content" id="cover-upload-content">
+                  <i data-lucide="image-plus"></i>
+                  <span>Kéo thả hoặc click để chọn ảnh bìa</span>
+                  <small>PNG, JPG, WebP • Tối đa 5MB</small>
+                </div>
+                <div class="cover-preview" id="cover-preview" style="display: none;">
+                  <img id="cover-preview-img" alt="Cover preview">
+                  <div class="cover-preview-info">
+                    <span class="cover-filename" id="cover-filename">cover.jpg</span>
+                    <span class="cover-dimensions" id="cover-dimensions">1200×1800</span>
+                  </div>
+                  <button class="cover-remove-btn" id="cover-remove-btn" type="button">
+                    <i data-lucide="x"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Include Images Toggle (NEW) -->
+            <div class="option-group option-group-full">
+              <label class="option-label">
+                <i data-lucide="images" style="width: 14px; height: 14px; margin-right: 6px;"></i>
+                Trích xuất ảnh từ PDF
+              </label>
+              <div class="toggle-option">
+                <span class="toggle-label">Giữ lại ảnh minh họa trong tài liệu gốc</span>
+                <button class="toggle-btn active" id="include-images-toggle" type="button">
+                  <span class="toggle-slider"></span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -1741,6 +2990,22 @@
     let currentPreviewTab = 'translated';
     let downloadedFormats = new Set();
 
+    // Cover Image State (NEW)
+    let coverImageFile = null;
+    let coverImageBase64 = null;
+    let includeImages = true; // Default: extract images from PDF
+
+    // Cover Image DOM Elements (NEW)
+    const coverUploadZone = document.getElementById('cover-upload-zone');
+    const coverFileInput = document.getElementById('cover-file-input');
+    const coverUploadContent = document.getElementById('cover-upload-content');
+    const coverPreview = document.getElementById('cover-preview');
+    const coverPreviewImg = document.getElementById('cover-preview-img');
+    const coverFilename = document.getElementById('cover-filename');
+    const coverDimensions = document.getElementById('cover-dimensions');
+    const coverRemoveBtn = document.getElementById('cover-remove-btn');
+    const includeImagesToggle = document.getElementById('include-images-toggle');
+
     // Tips data for rotating display
     const tips = [
       { title: 'Bạn có biết?', text: 'AI Publisher Pro sử dụng mô hình ngôn ngữ tiên tiến để dịch chính xác thuật ngữ chuyên ngành.' },
@@ -1780,38 +3045,295 @@
       uploadZone.classList.remove('drag-over');
       const files = e.dataTransfer.files;
       if (files.length > 0) {
-        handleFile(files[0]);
+        handleFiles(Array.from(files));
       }
     });
 
     // File Input Change
     fileInput.addEventListener('change', (e) => {
       if (e.target.files.length > 0) {
-        handleFile(e.target.files[0]);
+        handleFiles(Array.from(e.target.files));
       }
     });
 
-    // Handle File Selection
-    function handleFile(file) {
-      selectedFile = file;
+    // =============================================
+    // COVER IMAGE UPLOAD (NEW)
+    // =============================================
 
-      // Update preview
-      fileName.textContent = file.name;
-      const sizeInMB = (file.size / (1024 * 1024)).toFixed(2);
-      const extension = file.name.split('.').pop().toUpperCase();
-      fileMeta.textContent = `${sizeInMB} MB • ${extension} Document`;
+    // Cover Upload Zone Click
+    if (coverUploadZone) {
+      coverUploadZone.addEventListener('click', (e) => {
+        if (e.target !== coverRemoveBtn && !coverRemoveBtn?.contains(e.target)) {
+          coverFileInput?.click();
+        }
+      });
 
-      // Show preview, hide upload zone
-      uploadZone.style.display = 'none';
-      filePreview.classList.add('show');
+      // Drag & Drop for cover
+      coverUploadZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        coverUploadZone.classList.add('drag-over');
+      });
 
-      // Enable submit button
-      submitBtn.disabled = false;
+      coverUploadZone.addEventListener('dragleave', () => {
+        coverUploadZone.classList.remove('drag-over');
+      });
+
+      coverUploadZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        coverUploadZone.classList.remove('drag-over');
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+          handleCoverFile(files[0]);
+        }
+      });
     }
 
-    // Remove File
+    // Cover File Input Change
+    if (coverFileInput) {
+      coverFileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          handleCoverFile(e.target.files[0]);
+        }
+      });
+    }
+
+    // Cover Remove Button
+    if (coverRemoveBtn) {
+      coverRemoveBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        removeCoverImage();
+      });
+    }
+
+    // Include Images Toggle
+    if (includeImagesToggle) {
+      includeImagesToggle.addEventListener('click', () => {
+        includeImagesToggle.classList.toggle('active');
+        includeImages = includeImagesToggle.classList.contains('active');
+      });
+    }
+
+    // Handle Cover File Selection
+    function handleCoverFile(file) {
+      // Validate file type
+      const validTypes = ['image/png', 'image/jpeg', 'image/webp'];
+      if (!validTypes.includes(file.type)) {
+        showToast('Chỉ hỗ trợ PNG, JPG, WebP', 'error');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      const maxSize = 5 * 1024 * 1024;
+      if (file.size > maxSize) {
+        showToast('Ảnh bìa tối đa 5MB', 'error');
+        return;
+      }
+
+      coverImageFile = file;
+
+      // Read as base64 for preview and upload
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        coverImageBase64 = e.target.result;
+
+        // Create image to get dimensions
+        const img = new Image();
+        img.onload = () => {
+          // Show preview
+          if (coverUploadContent) coverUploadContent.style.display = 'none';
+          if (coverPreview) coverPreview.style.display = 'flex';
+          if (coverPreviewImg) coverPreviewImg.src = coverImageBase64;
+          if (coverFilename) coverFilename.textContent = file.name;
+          if (coverDimensions) coverDimensions.textContent = `${img.width}×${img.height} • ${formatFileSize(file.size)}`;
+
+          lucide.createIcons();
+        };
+        img.src = coverImageBase64;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Remove Cover Image
+    function removeCoverImage() {
+      coverImageFile = null;
+      coverImageBase64 = null;
+
+      if (coverUploadContent) coverUploadContent.style.display = 'flex';
+      if (coverPreview) coverPreview.style.display = 'none';
+      if (coverFileInput) coverFileInput.value = '';
+
+      lucide.createIcons();
+    }
+
+    // =============================================
+    // BATCH FILE QUEUE MANAGEMENT
+    // =============================================
+
+    let fileQueue = []; // Array of {id, file, status, progress, jobId}
+    let batchProcessing = false;
+
+    const fileQueueEl = document.getElementById('file-queue');
+    const queueListEl = document.getElementById('queue-list');
+    const queueCountEl = document.getElementById('queue-count');
+    const addMoreFilesBtn = document.getElementById('add-more-files');
+    const clearQueueBtn = document.getElementById('clear-queue');
+    const batchSummaryEl = document.getElementById('batch-summary');
+
+    // Handle multiple files
+    function handleFiles(files) {
+      files.forEach(file => {
+        // Check if file already in queue
+        if (fileQueue.find(q => q.file.name === file.name && q.file.size === file.size)) {
+          return; // Skip duplicate
+        }
+
+        fileQueue.push({
+          id: Date.now() + Math.random().toString(36).substr(2, 9),
+          file: file,
+          status: 'pending', // pending, processing, completed, failed
+          progress: 0,
+          jobId: null,
+          error: null
+        });
+      });
+
+      // If only 1 file, use single file mode
+      if (fileQueue.length === 1) {
+        selectedFile = fileQueue[0].file;
+        fileName.textContent = selectedFile.name;
+        const sizeInMB = (selectedFile.size / (1024 * 1024)).toFixed(2);
+        const extension = selectedFile.name.split('.').pop().toUpperCase();
+        fileMeta.textContent = `${sizeInMB} MB • ${extension} Document`;
+        uploadZone.style.display = 'none';
+        filePreview.classList.add('show');
+        fileQueueEl.classList.remove('show');
+      } else {
+        // Multiple files - show queue
+        selectedFile = null;
+        filePreview.classList.remove('show');
+        uploadZone.style.display = 'none';
+        fileQueueEl.classList.add('show');
+        renderQueue();
+      }
+
+      submitBtn.disabled = false;
+      updateSubmitButton();
+    }
+
+    // Render file queue
+    function renderQueue() {
+      queueListEl.innerHTML = fileQueue.map(item => {
+        const sizeInMB = (item.file.size / (1024 * 1024)).toFixed(2);
+        const ext = item.file.name.split('.').pop().toUpperCase();
+        const statusIcon = item.status === 'completed' ? 'check-circle' :
+                          item.status === 'failed' ? 'x-circle' :
+                          item.status === 'processing' ? 'loader' : 'file-text';
+
+        return `
+          <div class="queue-item ${item.status}" data-id="${item.id}">
+            <div class="queue-item-icon">
+              <i data-lucide="${statusIcon}"></i>
+            </div>
+            <div class="queue-item-info">
+              <div class="queue-item-name">${item.file.name}</div>
+              <div class="queue-item-meta">
+                <span>${sizeInMB} MB</span>
+                <span>•</span>
+                <span>${ext}</span>
+                ${item.error ? `<span style="color: #EF4444;">• ${item.error}</span>` : ''}
+              </div>
+            </div>
+            <div class="queue-item-progress">
+              <div class="queue-item-progress-bar">
+                <div class="queue-item-progress-fill" style="width: ${item.progress}%"></div>
+              </div>
+              <div class="queue-item-progress-text">${item.progress}%</div>
+            </div>
+            <button class="queue-item-remove" onclick="removeFromQueue('${item.id}')" title="Xóa">
+              <i data-lucide="x"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      queueCountEl.textContent = `${fileQueue.length} tệp`;
+      lucide.createIcons();
+
+      // Show batch summary if processing started
+      if (fileQueue.some(f => f.status !== 'pending')) {
+        updateBatchSummary();
+      }
+    }
+
+    // Update batch summary stats
+    function updateBatchSummary() {
+      const total = fileQueue.length;
+      const completed = fileQueue.filter(f => f.status === 'completed').length;
+      const failed = fileQueue.filter(f => f.status === 'failed').length;
+
+      document.getElementById('batch-total').textContent = total;
+      document.getElementById('batch-completed').textContent = completed;
+      document.getElementById('batch-failed').textContent = failed;
+
+      batchSummaryEl.style.display = 'flex';
+    }
+
+    // Remove file from queue
+    window.removeFromQueue = function(id) {
+      fileQueue = fileQueue.filter(f => f.id !== id);
+
+      if (fileQueue.length === 0) {
+        // Reset to initial state
+        fileQueueEl.classList.remove('show');
+        uploadZone.style.display = 'block';
+        submitBtn.disabled = true;
+        batchSummaryEl.style.display = 'none';
+      } else if (fileQueue.length === 1) {
+        // Switch to single file mode
+        const remainingFile = fileQueue[0].file;
+        fileQueue = [];
+        fileQueueEl.classList.remove('show');
+        handleFiles([remainingFile]);
+      } else {
+        renderQueue();
+      }
+      updateSubmitButton();
+    };
+
+    // Clear all files from queue
+    clearQueueBtn.addEventListener('click', () => {
+      fileQueue = [];
+      fileQueueEl.classList.remove('show');
+      uploadZone.style.display = 'block';
+      submitBtn.disabled = true;
+      batchSummaryEl.style.display = 'none';
+      fileInput.value = '';
+    });
+
+    // Add more files
+    addMoreFilesBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
+
+    // Update submit button text based on queue
+    function updateSubmitButton() {
+      if (fileQueue.length > 1) {
+        submitBtn.innerHTML = `<i data-lucide="sparkles"></i><span>Xử lý ${fileQueue.length} tệp</span>`;
+      } else {
+        submitBtn.innerHTML = '<i data-lucide="sparkles"></i><span>Bắt đầu xử lý</span>';
+      }
+      lucide.createIcons();
+    }
+
+    // Handle single file for backward compatibility
+    function handleFile(file) {
+      handleFiles([file]);
+    }
+
+    // Remove File (single file mode)
     fileRemove.addEventListener('click', () => {
       selectedFile = null;
+      fileQueue = [];
       fileInput.value = '';
       filePreview.classList.remove('show');
       uploadZone.style.display = 'block';
@@ -2146,6 +3668,199 @@
     };
 
     // =============================================
+    // BATCH PROCESSING
+    // =============================================
+
+    async function processBatchFiles() {
+      if (batchProcessing) return;
+      batchProcessing = true;
+
+      // Setup UI for batch processing
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner"></span><span>Đang xử lý hàng loạt...</span>';
+      progressSection.classList.add('show');
+      downloadSection.classList.remove('show');
+
+      // Start timer
+      startTime = Date.now();
+      timerInterval = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - startTime) / 1000);
+        document.getElementById('stat-time').textContent = formatTime(elapsed);
+      }, 1000);
+
+      const sourceLang = document.getElementById('source-lang').value;
+      const targetLang = document.getElementById('target-lang').value;
+      const docxTemplate = document.getElementById('docx-template').value;
+      const pdfTemplate = document.getElementById('pdf-template').value;
+
+      addActivity(`Bắt đầu xử lý ${fileQueue.length} tệp`, 'success');
+      document.getElementById('progress-subtitle').textContent = `Đang xử lý ${fileQueue.length} tệp...`;
+
+      // Process files sequentially
+      for (let i = 0; i < fileQueue.length; i++) {
+        const item = fileQueue[i];
+
+        // Skip if already completed or failed
+        if (item.status === 'completed' || item.status === 'failed') continue;
+
+        // Update status to processing
+        item.status = 'processing';
+        item.progress = 0;
+        renderQueue();
+
+        addActivity(`[${i+1}/${fileQueue.length}] Đang xử lý: ${item.file.name}`);
+        document.getElementById('progress-subtitle').textContent = `[${i+1}/${fileQueue.length}] ${item.file.name}`;
+
+        try {
+          // Upload file
+          const filePath = await uploadFile(item.file);
+          item.progress = 20;
+          renderQueue();
+
+          // Create job
+          const jobId = await createJob(filePath, sourceLang, targetLang, ['docx', 'pdf', 'txt', 'md'], docxTemplate, pdfTemplate);
+          item.jobId = jobId;
+          item.progress = 30;
+          renderQueue();
+
+          // Ensure processor is running
+          await ensureProcessorRunning();
+
+          // Poll until complete
+          await pollBatchItemProgress(item, i, fileQueue.length);
+
+          // Success
+          item.status = 'completed';
+          item.progress = 100;
+          addActivity(`Hoàn thành: ${item.file.name}`, 'success');
+
+          // Add to history
+          addToHistory({
+            id: item.jobId,
+            name: item.file.name,
+            status: 'completed'
+          });
+
+        } catch (error) {
+          item.status = 'failed';
+          item.error = error.message || 'Lỗi không xác định';
+          addActivity(`Thất bại: ${item.file.name} - ${item.error}`, 'error');
+
+          // Add to history
+          addToHistory({
+            id: item.jobId || 'unknown',
+            name: item.file.name,
+            status: 'failed'
+          });
+        }
+
+        renderQueue();
+        updateBatchSummary();
+
+        // Update overall progress
+        const overallProgress = ((i + 1) / fileQueue.length) * 100;
+        document.getElementById('progress-fill').style.width = `${overallProgress}%`;
+        document.getElementById('progress-percentage').textContent = `${Math.floor(overallProgress)}%`;
+      }
+
+      // Batch complete
+      batchProcessing = false;
+      clearInterval(timerInterval);
+
+      const completed = fileQueue.filter(f => f.status === 'completed').length;
+      const failed = fileQueue.filter(f => f.status === 'failed').length;
+
+      addActivity(`Hoàn thành hàng loạt: ${completed} thành công, ${failed} thất bại`, completed > 0 ? 'success' : 'error');
+      document.getElementById('progress-subtitle').textContent = `Hoàn thành ${completed}/${fileQueue.length} tệp`;
+
+      submitBtn.disabled = false;
+      submitBtn.innerHTML = '<i data-lucide="download"></i><span>Tải xuống tất cả</span>';
+      lucide.createIcons();
+
+      // Show download section with batch downloads
+      showBatchDownloads();
+    }
+
+    // Poll progress for a single batch item
+    async function pollBatchItemProgress(item, index, total) {
+      return new Promise((resolve, reject) => {
+        const pollInterval = setInterval(async () => {
+          try {
+            const progress = await pollProgress(item.jobId);
+
+            if (!progress) return;
+
+            const percent = typeof progress.progress_percent === 'number' ? progress.progress_percent :
+                           (typeof progress.progress === 'number' ? progress.progress : 0);
+
+            item.progress = 30 + (percent * 0.7); // Scale 30-100
+            renderQueue();
+
+            // Update stats
+            const chunksCompleted = progress.chunks_completed || progress.completed_chunks || 0;
+            const totalChunks = progress.total_chunks || progress.chunks_total || 0;
+            if (totalChunks > 0) {
+              document.getElementById('stat-chunks').textContent = `${chunksCompleted}/${totalChunks}`;
+            }
+
+            // Check if complete
+            const status = progress.status || '';
+            if (status === 'complete' || status === 'completed' || percent >= 100) {
+              clearInterval(pollInterval);
+              resolve();
+            } else if (status === 'failed' || status === 'error') {
+              clearInterval(pollInterval);
+              reject(new Error(progress.error || 'Job failed'));
+            }
+          } catch (error) {
+            clearInterval(pollInterval);
+            reject(error);
+          }
+        }, 2000);
+
+        // Timeout after 30 minutes per file
+        setTimeout(() => {
+          clearInterval(pollInterval);
+          reject(new Error('Timeout'));
+        }, 30 * 60 * 1000);
+      });
+    }
+
+    // Show batch download options
+    function showBatchDownloads() {
+      downloadSection.classList.add('show');
+
+      // Update download section for batch mode
+      const completedItems = fileQueue.filter(f => f.status === 'completed');
+
+      if (completedItems.length === 0) {
+        document.getElementById('download-title').textContent = 'Không có tệp hoàn thành';
+        return;
+      }
+
+      document.getElementById('download-title').textContent = `Tải xuống ${completedItems.length} tệp`;
+
+      // Add batch download functionality
+      document.querySelectorAll('.format-card').forEach(card => {
+        card.onclick = async () => {
+          const format = card.dataset.format;
+          card.classList.add('downloading');
+
+          for (const item of completedItems) {
+            try {
+              await downloadFile(item.jobId, format);
+            } catch (e) {
+              console.error(`Failed to download ${item.file.name}:`, e);
+            }
+          }
+
+          card.classList.remove('downloading');
+          card.classList.add('downloaded');
+        };
+      });
+    }
+
+    // =============================================
     // MAIN SUBMIT HANDLER
     // =============================================
 
@@ -2156,7 +3871,18 @@
         return;
       }
 
-      if (!selectedFile) return;
+      // Check if batch mode (multiple files in queue)
+      if (fileQueue.length > 1) {
+        await processBatchFiles();
+        return;
+      }
+
+      if (!selectedFile && fileQueue.length === 0) return;
+
+      // Use file from queue if selectedFile not set
+      if (!selectedFile && fileQueue.length === 1) {
+        selectedFile = fileQueue[0].file;
+      }
 
       // Reset state for new processing
       previewData = [];
@@ -2417,6 +4143,324 @@
         await new Promise(resolve => setTimeout(resolve, stepDuration));
       }
     }
+
+    // =============================================
+    // THEME SYSTEM
+    // =============================================
+
+    const STORAGE_KEY_THEME = 'ai-publisher-theme';
+    const STORAGE_KEY_HISTORY = 'ai-publisher-history';
+    const STORAGE_KEY_SETTINGS = 'ai-publisher-settings';
+
+    // Get system theme preference
+    function getSystemTheme() {
+      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+
+    // Apply theme to document
+    function applyTheme(theme) {
+      if (theme === 'system') {
+        document.documentElement.removeAttribute('data-theme');
+      } else {
+        document.documentElement.setAttribute('data-theme', theme);
+      }
+      updateThemeToggleUI(theme);
+    }
+
+    // Update theme toggle UI
+    function updateThemeToggleUI(theme) {
+      document.querySelectorAll('.theme-option').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === theme);
+      });
+    }
+
+    // Initialize theme
+    function initTheme() {
+      const savedTheme = localStorage.getItem(STORAGE_KEY_THEME) || 'system';
+      applyTheme(savedTheme);
+
+      // Listen for system theme changes
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+        const currentTheme = localStorage.getItem(STORAGE_KEY_THEME);
+        if (currentTheme === 'system' || !currentTheme) {
+          applyTheme('system');
+        }
+      });
+    }
+
+    // Theme toggle click handler
+    document.getElementById('theme-toggle').addEventListener('click', (e) => {
+      const btn = e.target.closest('.theme-option');
+      if (!btn) return;
+
+      const theme = btn.dataset.theme;
+      localStorage.setItem(STORAGE_KEY_THEME, theme);
+      applyTheme(theme);
+    });
+
+    // =============================================
+    // HISTORY PANEL
+    // =============================================
+
+    const historyBtn = document.getElementById('history-btn');
+    const historyPanel = document.getElementById('history-panel');
+    const historyOverlay = document.getElementById('history-overlay');
+    const historyClose = document.getElementById('history-close');
+    const historyList = document.getElementById('history-list');
+    const historyEmpty = document.getElementById('history-empty');
+
+    // Open history panel
+    function openHistoryPanel() {
+      historyPanel.classList.add('show');
+      historyOverlay.classList.add('show');
+      renderHistory();
+    }
+
+    // Close history panel
+    function closeHistoryPanel() {
+      historyPanel.classList.remove('show');
+      historyOverlay.classList.remove('show');
+    }
+
+    // Get history from localStorage
+    function getHistory() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY_HISTORY)) || [];
+      } catch {
+        return [];
+      }
+    }
+
+    // Save history to localStorage
+    function saveHistory(history) {
+      localStorage.setItem(STORAGE_KEY_HISTORY, JSON.stringify(history.slice(0, 20))); // Keep last 20
+    }
+
+    // Add job to history
+    function addToHistory(job) {
+      const history = getHistory();
+      const newItem = {
+        id: job.id || currentJobId,
+        name: job.name || selectedFile?.name || 'Document',
+        status: job.status || 'completed',
+        date: new Date().toISOString(),
+        sourceLang: job.sourceLang || document.getElementById('source-lang').value,
+        targetLang: job.targetLang || document.getElementById('target-lang').value
+      };
+      history.unshift(newItem);
+      saveHistory(history);
+    }
+
+    // Render history list
+    function renderHistory() {
+      const history = getHistory();
+
+      if (history.length === 0) {
+        historyEmpty.style.display = 'block';
+        historyList.innerHTML = '';
+        return;
+      }
+
+      historyEmpty.style.display = 'none';
+
+      historyList.innerHTML = history.map(item => {
+        const date = new Date(item.date);
+        const timeAgo = getTimeAgo(date);
+        const statusClass = item.status === 'completed' ? 'success' :
+                          item.status === 'failed' ? 'failed' : 'pending';
+        const statusIcon = item.status === 'completed' ? 'check-circle' :
+                          item.status === 'failed' ? 'x-circle' : 'clock';
+        const statusText = item.status === 'completed' ? 'Hoàn thành' :
+                          item.status === 'failed' ? 'Thất bại' : 'Đang xử lý';
+
+        return `
+          <div class="history-item" data-job-id="${item.id}">
+            <div class="history-item-icon ${statusClass}">
+              <i data-lucide="${statusIcon}"></i>
+            </div>
+            <div class="history-item-content">
+              <div class="history-item-name">${item.name}</div>
+              <div class="history-item-meta">
+                <span>${item.sourceLang?.toUpperCase() || 'EN'} → ${item.targetLang?.toUpperCase() || 'VI'}</span>
+                <span>•</span>
+                <span>${timeAgo}</span>
+              </div>
+            </div>
+            <span class="history-item-status ${statusClass}">${statusText}</span>
+          </div>
+        `;
+      }).join('');
+
+      // Add clear button
+      historyList.innerHTML += `
+        <button class="history-clear" onclick="clearHistory()">
+          <i data-lucide="trash-2"></i>
+          <span>Xóa lịch sử</span>
+        </button>
+      `;
+
+      lucide.createIcons();
+    }
+
+    // Get time ago string
+    function getTimeAgo(date) {
+      const seconds = Math.floor((new Date() - date) / 1000);
+      if (seconds < 60) return 'Vừa xong';
+      const minutes = Math.floor(seconds / 60);
+      if (minutes < 60) return `${minutes} phút trước`;
+      const hours = Math.floor(minutes / 60);
+      if (hours < 24) return `${hours} giờ trước`;
+      const days = Math.floor(hours / 24);
+      if (days < 7) return `${days} ngày trước`;
+      return date.toLocaleDateString('vi-VN');
+    }
+
+    // Clear history
+    window.clearHistory = function() {
+      localStorage.removeItem(STORAGE_KEY_HISTORY);
+      renderHistory();
+    };
+
+    // History panel event listeners
+    historyBtn.addEventListener('click', openHistoryPanel);
+    historyClose.addEventListener('click', closeHistoryPanel);
+    historyOverlay.addEventListener('click', closeHistoryPanel);
+
+    // =============================================
+    // SETTINGS PANEL
+    // =============================================
+
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsOverlay = document.getElementById('settings-overlay');
+    const settingsClose = document.getElementById('settings-close');
+    const notificationToggle = document.getElementById('notification-toggle');
+    const autosaveToggle = document.getElementById('autosave-toggle');
+    const apiKeyInput = document.getElementById('api-key-input');
+    const saveApiKeyBtn = document.getElementById('save-api-key');
+
+    // Open settings panel
+    function openSettingsPanel() {
+      settingsPanel.classList.add('show');
+      settingsOverlay.classList.add('show');
+      loadSettings();
+    }
+
+    // Close settings panel
+    function closeSettingsPanel() {
+      settingsPanel.classList.remove('show');
+      settingsOverlay.classList.remove('show');
+    }
+
+    // Get settings from localStorage
+    function getSettings() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS)) || {
+          notifications: false,
+          autosave: true,
+          apiKey: ''
+        };
+      } catch {
+        return { notifications: false, autosave: true, apiKey: '' };
+      }
+    }
+
+    // Save settings to localStorage
+    function saveSettings(settings) {
+      localStorage.setItem(STORAGE_KEY_SETTINGS, JSON.stringify(settings));
+    }
+
+    // Load settings into UI
+    function loadSettings() {
+      const settings = getSettings();
+      notificationToggle.classList.toggle('active', settings.notifications);
+      autosaveToggle.classList.toggle('active', settings.autosave);
+      if (settings.apiKey) {
+        apiKeyInput.value = settings.apiKey;
+      }
+    }
+
+    // Toggle switch click handler
+    function setupToggle(toggleEl, key) {
+      toggleEl.addEventListener('click', () => {
+        toggleEl.classList.toggle('active');
+        const settings = getSettings();
+        settings[key] = toggleEl.classList.contains('active');
+        saveSettings(settings);
+
+        // Request notification permission if enabled
+        if (key === 'notifications' && settings.notifications) {
+          if ('Notification' in window && Notification.permission !== 'granted') {
+            Notification.requestPermission();
+          }
+        }
+      });
+    }
+
+    setupToggle(notificationToggle, 'notifications');
+    setupToggle(autosaveToggle, 'autosave');
+
+    // Save API key
+    saveApiKeyBtn.addEventListener('click', () => {
+      const settings = getSettings();
+      settings.apiKey = apiKeyInput.value;
+      saveSettings(settings);
+      saveApiKeyBtn.textContent = 'Đã lưu!';
+      saveApiKeyBtn.style.background = '#10B981';
+      setTimeout(() => {
+        saveApiKeyBtn.textContent = 'Lưu';
+        saveApiKeyBtn.style.background = '';
+      }, 2000);
+    });
+
+    // Settings panel event listeners
+    settingsBtn.addEventListener('click', openSettingsPanel);
+    settingsClose.addEventListener('click', closeSettingsPanel);
+    settingsOverlay.addEventListener('click', closeSettingsPanel);
+
+    // Close panels with Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeHistoryPanel();
+        closeSettingsPanel();
+      }
+    });
+
+    // =============================================
+    // UPDATE PROCESSING COMPLETE TO SAVE HISTORY
+    // =============================================
+
+    // Wrap original onProcessingComplete to add history
+    const originalOnProcessingComplete = onProcessingComplete;
+    onProcessingComplete = async function(tipsInterval) {
+      // Add to history
+      addToHistory({
+        id: currentJobId,
+        name: selectedFile?.name,
+        status: 'completed'
+      });
+      // Call original function
+      await originalOnProcessingComplete(tipsInterval);
+    };
+
+    // Wrap original onProcessingError to add history
+    const originalOnProcessingError = onProcessingError;
+    onProcessingError = function(errorMessage, tipsInterval) {
+      // Add to history
+      addToHistory({
+        id: currentJobId,
+        name: selectedFile?.name,
+        status: 'failed'
+      });
+      // Call original function
+      originalOnProcessingError(errorMessage, tipsInterval);
+    };
+
+    // =============================================
+    // INITIALIZE
+    // =============================================
+
+    initTheme();
   </script>
 </body>
 </html>

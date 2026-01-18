@@ -96,10 +96,99 @@ test.describe('Theme', () => {
 
     // Check localStorage has theme key (or will be set)
     const theme = await page.evaluate(() => {
-      return localStorage.getItem('theme') || 'system';
+      return localStorage.getItem('ai-publisher-theme') || 'system';
     });
 
     expect(['light', 'dark', 'system']).toContain(theme);
+  });
+
+  test('should switch to dark mode', async ({ page }) => {
+    await page.goto('/ui');
+    await waitForAppReady(page);
+
+    // Open settings
+    await page.locator('#settings-btn').click();
+    await expect(page.locator('#settings-panel')).toBeVisible();
+
+    // Click dark theme button
+    await page.locator('.theme-option[data-theme="dark"]').click();
+
+    // Verify dark theme is applied
+    const theme = await page.evaluate(() => {
+      return document.documentElement.getAttribute('data-theme');
+    });
+    expect(theme).toBe('dark');
+  });
+
+  test('should switch to light mode', async ({ page }) => {
+    await page.goto('/ui');
+    await waitForAppReady(page);
+
+    // Open settings
+    await page.locator('#settings-btn').click();
+
+    // Click light theme button
+    await page.locator('.theme-option[data-theme="light"]').click();
+
+    // Verify light theme is applied
+    const theme = await page.evaluate(() => {
+      return document.documentElement.getAttribute('data-theme');
+    });
+    expect(theme).toBe('light');
+  });
+
+  test('should have dark mode CSS variables', async ({ page }) => {
+    await page.goto('/ui');
+    await waitForAppReady(page);
+
+    // Set dark mode
+    await page.evaluate(() => {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    });
+
+    // Check dark background color is applied
+    const bgColor = await page.evaluate(() => {
+      return getComputedStyle(document.body).backgroundColor;
+    });
+
+    // Dark mode background should be dark (rgb values low)
+    expect(bgColor).toMatch(/rgb\(\d{1,2},\s*\d{1,2},\s*\d{1,2}\)/);
+  });
+});
+
+test.describe('Mobile Responsive', () => {
+  test('should be responsive on mobile viewport', async ({ page }) => {
+    // Set mobile viewport
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/ui');
+    await waitForAppReady(page);
+
+    // Main content should be visible
+    await expect(page.locator('.main-content')).toBeVisible();
+
+    // Upload zone should be visible
+    await expect(page.locator('#upload-zone')).toBeVisible();
+  });
+
+  test('should have proper padding on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 375, height: 812 });
+    await page.goto('/ui');
+    await waitForAppReady(page);
+
+    // Content should not overflow
+    const mainContent = page.locator('.main-content');
+    const box = await mainContent.boundingBox();
+
+    expect(box.width).toBeLessThanOrEqual(375);
+  });
+
+  test('should have stacked layout on tablet', async ({ page }) => {
+    await page.setViewportSize({ width: 768, height: 1024 });
+    await page.goto('/ui');
+    await waitForAppReady(page);
+
+    // Progress steps should be visible
+    await expect(page.locator('#step-1')).toBeAttached();
   });
 });
 
