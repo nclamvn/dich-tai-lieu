@@ -125,9 +125,12 @@ Cmd+Shift+R (Mac) / Ctrl+Shift+R (Windows)
 ## Known Issues / TODO
 
 1. **Tailwind CDN Warning** - Production nên build Tailwind locally
-2. **Mobile Responsive** - Cần test thêm trên mobile
-3. **Dark Mode** - Chưa implement (hiện tại chỉ Light theme)
+2. ~~**Mobile Responsive** - Cần test thêm trên mobile~~ ✅ DONE (2026-01-18)
+3. ~~**Dark Mode** - Chưa implement (hiện tại chỉ Light theme)~~ ✅ DONE (2026-01-18)
 4. **Accessibility** - Cần review ARIA labels
+
+> **Update 2026-01-18:** Mobile Responsive và Dark Mode đã được implement.
+> Xem chi tiết: `docs/HANDOVER_2026_01_18.md`
 
 ---
 
