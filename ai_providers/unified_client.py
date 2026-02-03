@@ -176,6 +176,9 @@ class UnifiedLLMClient:
     # Provider priority order (will try in this order)
     PROVIDER_ORDER = ["openai", "anthropic", "deepseek"]
 
+    # Vision provider priority (Claude Vision first, then OpenAI Vision)
+    VISION_PROVIDER_ORDER = ["anthropic", "openai"]
+
     # Provider configurations
     PROVIDER_CONFIG = {
         "openai": {
@@ -456,11 +459,26 @@ class UnifiedLLMClient:
         Returns:
             Response object with .content attribute
         """
-        # Auto-validate on first call
-        if not self._validated:
-            await self.auto_select_provider()
-
         has_vision = self._has_vision_content(messages)
+
+        # For vision requests, use VISION_PROVIDER_ORDER (Claude first, then OpenAI)
+        if has_vision:
+            provider_order = self.VISION_PROVIDER_ORDER
+            # Auto-select first available vision provider
+            if not self._current_provider or self._current_provider not in provider_order:
+                for p in provider_order:
+                    if p not in self._failed_providers:
+                        api_key = self._get_api_key(p)
+                        if api_key and self.PROVIDER_CONFIG[p].get("vision_model"):
+                            self._current_provider = p
+                            logger.info(f"🔍 Vision request: using {p} (priority: Claude → OpenAI)")
+                            break
+        else:
+            provider_order = self.PROVIDER_ORDER
+            # Auto-validate on first call for text requests
+            if not self._validated:
+                await self.auto_select_provider()
+
         providers_tried = []
         last_error = None
 
@@ -480,15 +498,18 @@ class UnifiedLLMClient:
                 if self._is_retryable_error(status):
                     self._failed_providers.add(self._current_provider)
 
-                    # Find next available provider
+                    # Find next available provider (use vision order for vision requests)
                     next_provider = None
-                    for p in self.PROVIDER_ORDER:
+                    search_order = self.VISION_PROVIDER_ORDER if has_vision else self.PROVIDER_ORDER
+                    for p in search_order:
                         if p not in self._failed_providers:
                             # For vision, skip providers that don't support it
                             if has_vision and not self.PROVIDER_CONFIG[p].get("vision_model"):
                                 continue
-                            next_provider = p
-                            break
+                            # Check if API key is available
+                            if self._get_api_key(p):
+                                next_provider = p
+                                break
 
                     if next_provider:
                         logger.warning(f"🔄 Switching from {self._current_provider} to {next_provider}")
@@ -648,9 +669,20 @@ class UnifiedLLMClient:
         available = [p for p, h in statuses.items() if h.status == ProviderStatus.AVAILABLE]
         no_credit = [p for p, h in statuses.items() if h.status == ProviderStatus.NO_CREDIT]
 
+        # Check vision-capable providers
+        vision_available = [
+            p for p in available
+            if self.PROVIDER_CONFIG[p].get("vision_model")
+        ]
+
         result = {
             "current_provider": self._current_provider,
             "available_providers": available,
+            "vision_providers": {
+                "available": vision_available,
+                "priority_order": self.VISION_PROVIDER_ORDER,
+                "note": "Claude Vision (priority) → OpenAI Vision (fallback)"
+            },
             "unavailable_providers": {
                 p: {"status": h.status.value, "error": h.error}
                 for p, h in statuses.items() if h.status != ProviderStatus.AVAILABLE
@@ -663,6 +695,12 @@ class UnifiedLLMClient:
             result["recommendation"] = f"⚠️ Only {available[0]} is available. Add backup API keys."
         else:
             result["recommendation"] = f"✅ {len(available)} providers available. Auto-fallback enabled."
+
+        # Vision-specific recommendation
+        if not vision_available:
+            result["vision_warning"] = "⚠️ No Vision providers available! STEM documents with formula images cannot be processed."
+        elif len(vision_available) == 1:
+            result["vision_note"] = f"Vision: Using {vision_available[0]}. Add {'OpenAI' if vision_available[0] == 'anthropic' else 'Anthropic'} API key for fallback."
 
         if no_credit:
             result["billing_issues"] = no_credit

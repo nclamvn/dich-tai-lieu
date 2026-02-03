@@ -6,6 +6,7 @@ Khi quay lại dự án, chỉ cần nói: **"continue"** hoặc **"tiếp tục
 Claude sẽ tự động đọc HANDOVER document và tiếp tục công việc.
 
 ### Handover Files:
+- **Vision Fallback 2026-02-03:** `docs/HANDOVER_2026-02-03.md` (Latest)
 - **UI Redesign 2026:** `docs/HANDOVER_UI_2026.md`
 - **General:** `docs/HANDOVER_v2.7.md`
 
@@ -19,15 +20,16 @@ Then open: http://localhost:3000/ui
 ## Project Type
 FastAPI web server for AI-powered document translation (PDF, DOCX, TXT).
 
-## Current Status (2026-01-16)
-- Server: Working (port 3000)
-- Version: 2.8.0-ui-redesign
+## Current Status (2026-02-03)
+- Server: Working (port 8000)
+- Version: 2.8.1
 - Score: 9.7/10 (Production Ready)
 - Translation: Smart Extraction + Parallel (10x faster)
+- **Vision Fallback:** Claude Vision → OpenAI Vision (for STEM docs)
 - Academic: arXiv/formula detection fixed
 - Performance: 598 pages in ~28 min (was 4.5 hours)
 - Codebase: 75MB (↓78% from 340MB)
-- Tests: 862 collected, 233+ passed
+- Tests: 883+ (incl. 21 vision fallback tests)
 - Git: Pushed to nclamvn/ai-translator-pro
 
 ## Key Modules (2025-12-22)
@@ -46,8 +48,8 @@ core_v2/
 └── ...
 
 ai_providers/
-├── unified_client.py      # Auto-fallback: OpenAI → Anthropic → DeepSeek
-└── ...
+├── unified_client.py      # Auto-fallback + Vision: Claude → OpenAI
+└── ...                    # Text: OpenAI → Anthropic → DeepSeek
 ```
 
 ## Key Files
