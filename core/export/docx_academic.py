@@ -95,9 +95,20 @@ class AcademicDocxExporter(DocxExporterBase):
         pass # StyleManager applies styles dynamically per element, or we can pre-set doc defaults here
 
     def _add_front_matter(self, metadata: Dict[str, str]) -> None:
-        """Add Front Matter."""
+        """Add Front Matter.
+
+        Args:
+            metadata: Document metadata (title, author, etc.)
+        """
+        fm_generator = FrontMatterGenerator(self.doc, self.style_manager)
+
+        # Phase 2026-01: Add cover page first (if provided in metadata)
+        cover_image = metadata.get('cover_image') if metadata else None
+        if cover_image:
+            fm_generator.generate_cover_page(cover_image)
+
+        # Add title page and TOC
         if metadata:
-            fm_generator = FrontMatterGenerator(self.doc, self.style_manager)
             fm_generator.generate_title_page(metadata)
             fm_generator.generate_toc()
 

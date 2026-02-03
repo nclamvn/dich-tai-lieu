@@ -87,10 +87,16 @@ def build_academic_docx(
     _setup_page_layout(doc, config, style_manager)
 
     # Phase 9.4: Front Matter
+    fm_generator = FrontMatterGenerator(doc, style_manager)
+
+    # Phase 2026-01: Add cover page first (if provided in metadata)
+    cover_image = metadata.get('cover_image') if metadata else None
+    if cover_image:
+        fm_generator.generate_cover_page(cover_image)
+
     if metadata:
-        fm_generator = FrontMatterGenerator(doc, style_manager)
         fm_generator.generate_title_page(metadata)
-        
+
         # Optionally generate TOC (configurable)
         # For now, always include if metadata provided for premium feel
         fm_generator.generate_toc()

@@ -6,12 +6,14 @@ Complete pipeline for translating business documents
 while preserving tables, columns, and layout.
 
 Philosophy: LLM does extraction + translation, simple rendering.
+
+Updated 2026-01: Added image embedding support
 """
 
 import asyncio
 from pathlib import Path
-from typing import Optional, List, Callable
-from dataclasses import dataclass
+from typing import Optional, List, Callable, TYPE_CHECKING
+from dataclasses import dataclass, field
 from datetime import datetime
 
 from .document_analyzer import (
@@ -22,6 +24,14 @@ from .document_analyzer import (
     LLMProvider
 )
 from .document_renderer import DocumentRenderer
+
+# Image embedding support
+try:
+    from core.image_embedding import ImageExtractor, ImageBlock, DocxImageEmbedder
+    IMAGE_EMBEDDING_AVAILABLE = True
+except ImportError:
+    IMAGE_EMBEDDING_AVAILABLE = False
+    ImageBlock = None  # Type hint fallback
 
 
 @dataclass
@@ -40,6 +50,10 @@ class TranslationResult:
     vision_tokens: int = 0
     translation_tokens: int = 0
     estimated_cost: float = 0.0
+
+    # Image embedding (NEW)
+    image_blocks: List = field(default_factory=list)  # List[ImageBlock]
+    total_images: int = 0
 
 
 @dataclass
@@ -62,6 +76,15 @@ class PipelineConfig:
 
     # Processing
     parallel_pages: int = 5  # Concurrent page processing
+
+    # Translation Engine (Phase 2026-01)
+    # Options: "auto", "translategemma_4b", "cloud_api_auto"
+    # "auto" will prefer local TranslateGemma if available, fallback to cloud
+    translation_engine: str = "auto"
+
+    # Image embedding (NEW)
+    include_images: bool = True  # Extract and embed images from source PDF
+    min_image_size: int = 50  # Minimum image size in pixels (skip small icons)
 
 
 class LayoutPreservingPipeline:
@@ -91,6 +114,17 @@ class LayoutPreservingPipeline:
         # Initialize renderer
         self.renderer = DocumentRenderer()
 
+        # Initialize image extractor (NEW)
+        self.image_extractor = None
+        if self.config.include_images and IMAGE_EMBEDDING_AVAILABLE:
+            from core.image_embedding import ImageExtractor, ExtractionConfig
+            extraction_config = ExtractionConfig(
+                min_width=self.config.min_image_size,
+                min_height=self.config.min_image_size,
+                skip_duplicates=True
+            )
+            self.image_extractor = ImageExtractor(extraction_config)
+
     async def translate_document(
         self,
         input_path: str,
@@ -118,6 +152,19 @@ class LayoutPreservingPipeline:
 
         image_paths = await self._prepare_images(input_path)
         total_pages = len(image_paths)
+
+        # Step 1.5: Extract images from PDF (NEW)
+        image_blocks = []
+        if self.image_extractor and input_path.suffix.lower() == ".pdf":
+            if on_progress:
+                on_progress(5, 100, "Extracting images from PDF...")
+            try:
+                image_blocks = self.image_extractor.extract_from_pdf(input_path)
+                if on_progress:
+                    on_progress(8, 100, f"Found {len(image_blocks)} images")
+            except Exception as e:
+                print(f"Warning: Image extraction failed: {e}")
+                image_blocks = []
 
         # Step 2: Process pages (extract + translate)
         original_pages = []
@@ -166,7 +213,8 @@ class LayoutPreservingPipeline:
 
         output_path = self._render_output(
             translated_doc,
-            input_path.stem if not output_name else output_name
+            input_path.stem if not output_name else output_name,
+            image_blocks=image_blocks  # NEW: pass images to renderer
         )
 
         # Calculate stats
@@ -188,7 +236,9 @@ class LayoutPreservingPipeline:
             total_pages=total_pages,
             total_tables=total_tables,
             processing_time=processing_time,
-            estimated_cost=vision_cost + translation_cost
+            estimated_cost=vision_cost + translation_cost,
+            image_blocks=image_blocks,  # NEW
+            total_images=len(image_blocks)  # NEW
         )
 
     async def _prepare_images(self, input_path: Path) -> List[str]:
@@ -242,16 +292,40 @@ class LayoutPreservingPipeline:
         """Process a single page"""
         return await self.analyzer.process_page(image_path, page_number)
 
-    def _render_output(self, document: StructuredDocument, name: str) -> str:
-        """Render document to output format"""
+    def _render_output(
+        self,
+        document: StructuredDocument,
+        name: str,
+        image_blocks: List = None
+    ) -> str:
+        """Render document to output format with optional images"""
         output_dir = Path(self.config.output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
 
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        image_blocks = image_blocks or []
 
         if self.config.output_format == "docx":
             output_path = output_dir / f"{name}_{timestamp}.docx"
-            return self.renderer.render_docx(document, str(output_path), name)
+            rendered_path = self.renderer.render_docx(document, str(output_path), name)
+
+            # Embed images if available (NEW)
+            if image_blocks and IMAGE_EMBEDDING_AVAILABLE:
+                try:
+                    from docx import Document as DocxDocument
+                    from core.image_embedding import DocxImageEmbedder
+
+                    doc = DocxDocument(rendered_path)
+                    doc.add_page_break()
+                    doc.add_heading("Hình ảnh", level=1)
+
+                    embedder = DocxImageEmbedder()
+                    embedder.embed_images(doc, image_blocks, with_captions=True)
+                    doc.save(rendered_path)
+                except Exception as e:
+                    print(f"Warning: Failed to embed images: {e}")
+
+            return rendered_path
 
         elif self.config.output_format == "md":
             output_path = output_dir / f"{name}_{timestamp}.md"

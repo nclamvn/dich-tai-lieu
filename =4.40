@@ -1,0 +1,42 @@
+Collecting transformers
+  Downloading transformers-4.57.6-py3-none-any.whl.metadata (43 kB)
+Collecting accelerate
+  Downloading accelerate-1.12.0-py3-none-any.whl.metadata (19 kB)
+Requirement already satisfied: filelock in /opt/miniconda3/lib/python3.13/site-packages (from transformers) (3.20.0)
+Collecting huggingface-hub<1.0,>=0.34.0 (from transformers)
+  Downloading huggingface_hub-0.36.0-py3-none-any.whl.metadata (14 kB)
+Requirement already satisfied: numpy>=1.17 in /opt/miniconda3/lib/python3.13/site-packages (from transformers) (2.2.6)
+Requirement already satisfied: packaging>=20.0 in /opt/miniconda3/lib/python3.13/site-packages (from transformers) (25.0)
+Requirement already satisfied: pyyaml>=5.1 in /opt/miniconda3/lib/python3.13/site-packages (from transformers) (6.0.2)
+Requirement already satisfied: regex!=2019.12.17 in /opt/miniconda3/lib/python3.13/site-packages (from transformers) (2025.11.3)
+Requirement already satisfied: requests in /opt/miniconda3/lib/python3.13/site-packages (from transformers) (2.31.0)
+Requirement already satisfied: tokenizers<=0.23.0,>=0.22.0 in /opt/miniconda3/lib/python3.13/site-packages (from transformers) (0.22.1)
+Requirement already satisfied: safetensors>=0.4.3 in /opt/miniconda3/lib/python3.13/site-packages (from transformers) (0.7.0)
+Requirement already satisfied: tqdm>=4.27 in /opt/miniconda3/lib/python3.13/site-packages (from transformers) (4.67.1)
+Requirement already satisfied: fsspec>=2023.5.0 in /opt/miniconda3/lib/python3.13/site-packages (from huggingface-hub<1.0,>=0.34.0->transformers) (2025.12.0)
+Requirement already satisfied: typing-extensions>=3.7.4.3 in /opt/miniconda3/lib/python3.13/site-packages (from huggingface-hub<1.0,>=0.34.0->transformers) (4.15.0)
+Requirement already satisfied: hf-xet<2.0.0,>=1.1.3 in /opt/miniconda3/lib/python3.13/site-packages (from huggingface-hub<1.0,>=0.34.0->transformers) (1.2.0)
+Requirement already satisfied: psutil in /opt/miniconda3/lib/python3.13/site-packages (from accelerate) (7.1.3)
+Requirement already satisfied: torch>=2.0.0 in /opt/miniconda3/lib/python3.13/site-packages (from accelerate) (2.9.1)
+Requirement already satisfied: setuptools in /opt/miniconda3/lib/python3.13/site-packages (from torch>=2.0.0->accelerate) (78.1.1)
+Requirement already satisfied: sympy>=1.13.3 in /opt/miniconda3/lib/python3.13/site-packages (from torch>=2.0.0->accelerate) (1.14.0)
+Requirement already satisfied: networkx>=2.5.1 in /opt/miniconda3/lib/python3.13/site-packages (from torch>=2.0.0->accelerate) (3.6.1)
+Requirement already satisfied: jinja2 in /opt/miniconda3/lib/python3.13/site-packages (from torch>=2.0.0->accelerate) (3.1.6)
+Requirement already satisfied: mpmath<1.4,>=1.1.0 in /opt/miniconda3/lib/python3.13/site-packages (from sympy>=1.13.3->torch>=2.0.0->accelerate) (1.3.0)
+Requirement already satisfied: MarkupSafe>=2.0 in /opt/miniconda3/lib/python3.13/site-packages (from jinja2->torch>=2.0.0->accelerate) (3.0.3)
+Requirement already satisfied: charset-normalizer<4,>=2 in /opt/miniconda3/lib/python3.13/site-packages (from requests->transformers) (3.3.2)
+Requirement already satisfied: idna<4,>=2.5 in /opt/miniconda3/lib/python3.13/site-packages (from requests->transformers) (3.7)
+Requirement already satisfied: urllib3<3,>=1.21.1 in /opt/miniconda3/lib/python3.13/site-packages (from requests->transformers) (2.3.0)
+Requirement already satisfied: certifi>=2017.4.17 in /opt/miniconda3/lib/python3.13/site-packages (from requests->transformers) (2025.8.3)
+Downloading transformers-4.57.6-py3-none-any.whl (12.0 MB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.0/12.0 MB 11.8 MB/s eta 0:00:00
+Downloading huggingface_hub-0.36.0-py3-none-any.whl (566 kB)
+   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 566.1/566.1 kB 21.4 MB/s eta 0:00:00
+Downloading accelerate-1.12.0-py3-none-any.whl (380 kB)
+Installing collected packages: huggingface-hub, accelerate, transformers
+  Attempting uninstall: huggingface-hub
+    Found existing installation: huggingface_hub 1.2.3
+    Uninstalling huggingface_hub-1.2.3:
+      Successfully uninstalled huggingface_hub-1.2.3
+
+Successfully installed accelerate-1.12.0 huggingface-hub-0.36.0 transformers-4.57.6

@@ -1,9 +1,16 @@
 
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, Union
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, Inches, Cm
 from core.export.docx_styles import StyleManager, ThemeConfig
+
+# Cover image support (Phase 2026-01)
+try:
+    from core.image_embedding import CoverEmbedder
+    COVER_EMBEDDER_AVAILABLE = True
+except ImportError:
+    COVER_EMBEDDER_AVAILABLE = False
 
 class FrontMatterGenerator:
     """
@@ -16,6 +23,36 @@ class FrontMatterGenerator:
         self.doc = doc
         self.style_manager = style_manager
         self.theme = style_manager.theme
+
+    def generate_cover_page(
+        self,
+        cover_image: Union[str, bytes],
+        is_base64: bool = True
+    ) -> bool:
+        """
+        Generate Cover Page (Page 1) with full-page image.
+
+        Args:
+            cover_image: Base64 string, data URI, or image bytes
+            is_base64: True if cover_image is base64/data URI format
+
+        Returns:
+            True if cover was added successfully
+        """
+        if not COVER_EMBEDDER_AVAILABLE:
+            print("Warning: CoverEmbedder not available, skipping cover page")
+            return False
+
+        if not cover_image:
+            return False
+
+        try:
+            embedder = CoverEmbedder()
+            embedder.add_cover_to_docx(self.doc, cover_image, is_base64)
+            return True
+        except Exception as e:
+            print(f"Warning: Failed to add cover page: {e}")
+            return False
 
     def generate_title_page(self, metadata: Dict[str, str]):
         """

@@ -76,6 +76,7 @@ from core.batch_processor import BatchProcessor, read_document
 # from core.ocr_deepseek import DeepseekOCR, OCRResult
 from core.post_formatting.heading_detector import HeadingDetector
 from core.cache.chunk_cache import ChunkCache
+from core.translation import get_engine_manager
 import re
 import math
 from docx import Document as DocxDocument
@@ -155,6 +156,13 @@ class JobCreate(BaseModel):
     # MathPix credentials (optional per-job overrides, uses server .env defaults if not provided)
     mathpix_app_id: Optional[str] = Field(default=None, description="MathPix App ID (optional, overrides server default)")
     mathpix_app_key: Optional[str] = Field(default=None, description="MathPix App Key (optional, overrides server default)")
+
+    # Image Embedding (Phase 2026-01)
+    cover_image: Optional[str] = Field(default=None, description="Cover image as base64 string or data URI. Will be placed as Page 1 before title page.")
+    include_images: bool = Field(default=True, description="Extract and embed images from source PDF into output document")
+
+    # Translation Engine (Phase 2026-01)
+    engine: str = Field(default="auto", description="Translation engine: 'auto', 'translategemma_4b', 'cloud_api_auto'")
 
 
 class JobUpdate(BaseModel):
@@ -735,7 +743,10 @@ async def create_job(
         'cache_enabled': cache_enabled,
         'enable_book_layout': enable_book_layout,
         'output_formats_requested': output_formats_requested,
-        'ui_layout_mode': job_data.ui_layout_mode  # Track original UI choice
+        'ui_layout_mode': job_data.ui_layout_mode,  # Track original UI choice
+        # Phase 2026-01: Image Embedding
+        'cover_image': job_data.cover_image,  # Base64 cover image (Page 1)
+        'include_images': job_data.include_images,  # Extract/embed images from source
     }
     logger.debug(f"Creating job with metadata: {metadata_dict}")
 
@@ -1554,6 +1565,33 @@ async def get_system_info():
             cancelled=stats.get(JobStatus.CANCELLED, 0)
         )
     )
+
+
+@app.get("/api/engines")
+async def get_available_engines():
+    """
+    Get list of available translation engines.
+
+    Returns list of engines with their status and capabilities.
+    Used by UI to populate engine selector dropdown.
+    """
+    try:
+        manager = get_engine_manager()
+        return manager.get_available_engines()
+    except Exception as e:
+        logger.error(f"Failed to get engines: {e}")
+        # Return default fallback if engine manager fails
+        return [
+            {
+                "id": "cloud_api_auto",
+                "name": "Cloud API (Auto)",
+                "available": True,
+                "status": "available",
+                "languages_count": 55,
+                "offline": False,
+                "cost_per_token": 0.001
+            }
+        ]
 
 
 @app.get("/api/system/status")

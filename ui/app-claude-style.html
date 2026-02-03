@@ -1966,6 +1966,118 @@
       text-decoration: underline;
     }
 
+    /* Engine Selector Styles */
+    .engine-selector {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .engine-status {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+      margin-top: var(--space-2);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--text-tertiary);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.available {
+      background: #22c55e;
+      animation: none;
+    }
+
+    .status-dot.unavailable {
+      background: #ef4444;
+      animation: none;
+    }
+
+    .status-dot.loading {
+      background: #f59e0b;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.5; }
+    }
+
+    /* Engine Info Panel */
+    .engine-info-panel {
+      margin-top: var(--space-3);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: var(--bg-secondary);
+    }
+
+    .engine-info-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: var(--space-2) var(--space-3);
+      cursor: pointer;
+      font-size: var(--font-size-xs);
+      color: var(--text-secondary);
+    }
+
+    .engine-info-header:hover {
+      background: var(--bg-hover);
+    }
+
+    .engine-info-content {
+      padding: var(--space-3);
+      border-top: 1px solid var(--border-light);
+      font-size: var(--font-size-xs);
+    }
+
+    .engine-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-2);
+    }
+
+    .engine-stat {
+      display: flex;
+      justify-content: space-between;
+      padding: var(--space-1) 0;
+    }
+
+    .engine-stat-label {
+      color: var(--text-secondary);
+    }
+
+    .engine-stat-value {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .engine-stat-value.free {
+      color: #22c55e;
+    }
+
+    /* Dark mode support for engine selector */
+    [data-theme="dark"] .engine-info-panel {
+      background: var(--bg-tertiary);
+      border-color: var(--border-medium);
+    }
+
+    [data-theme="dark"] .engine-info-header:hover {
+      background: var(--bg-hover);
+    }
+
+    [data-theme="dark"] .engine-info-content {
+      border-color: var(--border-medium);
+    }
+
     /* Mobile Panel */
     @media (max-width: 480px) {
       .slide-panel {
@@ -2537,6 +2649,45 @@
           </div>
         </div>
 
+        <!-- Translation Engine Section -->
+        <div class="settings-section">
+          <div class="settings-section-title">Translation Engine</div>
+          <div class="settings-item" style="flex-direction: column; align-items: stretch;">
+            <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3);">
+              <div class="settings-item-icon">
+                <i data-lucide="cpu"></i>
+              </div>
+              <div>
+                <div class="settings-item-label">Engine</div>
+                <div class="settings-item-desc">Chọn engine dịch thuật</div>
+              </div>
+            </div>
+            <div class="engine-selector">
+              <select id="translation-engine" class="settings-input" style="width: 100%;">
+                <option value="auto">🤖 Auto (Best Available)</option>
+                <option value="translategemma_4b">🏠 TranslateGemma 4B (Local/Free)</option>
+                <option value="cloud_api_auto">☁️ Cloud API (GPT/Claude)</option>
+              </select>
+              <div id="engine-status" class="engine-status">
+                <span class="status-dot"></span>
+                <span class="status-text">Checking...</span>
+              </div>
+            </div>
+          </div>
+          <!-- Engine Info Panel -->
+          <div class="engine-info-panel" id="engine-info-panel">
+            <div class="engine-info-header" onclick="toggleEngineInfo()">
+              <span>ℹ️ Engine Details</span>
+              <span class="chevron">▼</span>
+            </div>
+            <div class="engine-info-content" id="engine-info-content" style="display: none;">
+              <div class="engine-stats" id="engine-stats">
+                <!-- Populated by JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- Preferences Section -->
         <div class="settings-section">
           <div class="settings-section-title">Tùy chọn</div>
@@ -2994,6 +3145,10 @@
     let coverImageFile = null;
     let coverImageBase64 = null;
     let includeImages = true; // Default: extract images from PDF
+
+    // Translation Engine State
+    let availableEngines = [];
+    let selectedEngine = 'auto';
 
     // Cover Image DOM Elements (NEW)
     const coverUploadZone = document.getElementById('cover-upload-zone');
@@ -3482,6 +3637,190 @@
       return String(error);
     }
 
+    // ============================================================
+    // TRANSLATION ENGINE MANAGEMENT
+    // ============================================================
+
+    // Fetch available engines from API
+    async function fetchAvailableEngines() {
+      try {
+        const response = await fetch(`${API_BASE}/api/engines`);
+        if (response.ok) {
+          availableEngines = await response.json();
+          updateEngineSelector();
+          updateEngineStatus();
+        }
+      } catch (error) {
+        console.error('Failed to fetch engines:', error);
+        updateEngineStatus('error', 'Could not load engines');
+      }
+    }
+
+    // Update engine selector dropdown
+    function updateEngineSelector() {
+      const select = document.getElementById('translation-engine');
+      if (!select || !availableEngines.length) return;
+
+      // Clear existing options except first (auto)
+      while (select.options.length > 1) {
+        select.remove(1);
+      }
+
+      // Add available engines
+      availableEngines.forEach(engine => {
+        const option = document.createElement('option');
+        option.value = engine.id;
+
+        const icon = engine.offline ? '🏠' : '☁️';
+        const status = engine.available ? '' : ' (Unavailable)';
+        option.textContent = `${icon} ${engine.name}${status}`;
+        option.disabled = !engine.available;
+
+        select.appendChild(option);
+      });
+    }
+
+    // Update engine status indicator
+    function updateEngineStatus(status, text) {
+      const statusDot = document.querySelector('.status-dot');
+      const statusText = document.querySelector('.status-text');
+
+      if (!statusDot || !statusText) return;
+
+      if (status && text) {
+        statusDot.className = `status-dot ${status}`;
+        statusText.textContent = text;
+        return;
+      }
+
+      // Auto-detect status based on selected engine
+      const engineId = document.getElementById('translation-engine')?.value || 'auto';
+
+      if (engineId === 'auto') {
+        const localEngine = availableEngines.find(e => e.id.includes('translategemma') && e.available);
+        if (localEngine) {
+          statusDot.className = 'status-dot available';
+          statusText.textContent = `Will use: ${localEngine.name} (Free)`;
+        } else {
+          statusDot.className = 'status-dot available';
+          statusText.textContent = 'Will use: Cloud API';
+        }
+      } else {
+        const engine = availableEngines.find(e => e.id === engineId);
+        if (engine?.available) {
+          statusDot.className = 'status-dot available';
+          const cost = engine.cost_per_token === 0 ? 'Free' : 'Pay per use';
+          statusText.textContent = `Ready (${cost})`;
+        } else {
+          statusDot.className = 'status-dot unavailable';
+          statusText.textContent = 'Not available';
+        }
+      }
+    }
+
+    // Update engine info panel
+    function updateEngineInfo() {
+      const panel = document.getElementById('engine-stats');
+      if (!panel) return;
+
+      const engineId = document.getElementById('translation-engine')?.value || 'auto';
+      let engine = availableEngines.find(e => e.id === engineId);
+
+      // For auto, show the engine that will be used
+      if (engineId === 'auto') {
+        engine = availableEngines.find(e => e.id.includes('translategemma') && e.available)
+                || availableEngines.find(e => e.id.includes('cloud') && e.available);
+      }
+
+      if (!engine) {
+        panel.innerHTML = '<p>No engine information available</p>';
+        return;
+      }
+
+      panel.innerHTML = `
+        <div class="engine-stat">
+          <span class="engine-stat-label">Engine</span>
+          <span class="engine-stat-value">${engine.name}</span>
+        </div>
+        <div class="engine-stat">
+          <span class="engine-stat-label">Status</span>
+          <span class="engine-stat-value">${engine.available ? '✅ Ready' : '❌ Unavailable'}</span>
+        </div>
+        <div class="engine-stat">
+          <span class="engine-stat-label">Cost</span>
+          <span class="engine-stat-value ${engine.cost_per_token === 0 ? 'free' : ''}">${engine.cost_per_token === 0 ? 'FREE' : '$0.001/1K tokens'}</span>
+        </div>
+        <div class="engine-stat">
+          <span class="engine-stat-label">Offline</span>
+          <span class="engine-stat-value">${engine.offline ? 'Yes ✓' : 'No'}</span>
+        </div>
+        <div class="engine-stat">
+          <span class="engine-stat-label">Languages</span>
+          <span class="engine-stat-value">${engine.languages_count || 55}</span>
+        </div>
+        ${engine.device ? `
+        <div class="engine-stat">
+          <span class="engine-stat-label">Device</span>
+          <span class="engine-stat-value">${engine.device.toUpperCase()}</span>
+        </div>
+        ` : ''}
+      `;
+    }
+
+    // Toggle engine info panel
+    function toggleEngineInfo() {
+      const content = document.getElementById('engine-info-content');
+      const chevron = document.querySelector('.engine-info-panel .chevron');
+
+      if (content.style.display === 'none') {
+        content.style.display = 'block';
+        chevron.textContent = '▲';
+        updateEngineInfo();
+      } else {
+        content.style.display = 'none';
+        chevron.textContent = '▼';
+      }
+    }
+
+    // Handle engine selection change
+    function onEngineChange() {
+      const select = document.getElementById('translation-engine');
+      selectedEngine = select?.value || 'auto';
+
+      updateEngineStatus();
+      updateEngineInfo();
+
+      // Save preference
+      localStorage.setItem('preferred_engine', selectedEngine);
+    }
+
+    // Get selected engine for API calls
+    function getSelectedEngine() {
+      return selectedEngine || 'auto';
+    }
+
+    // Initialize engine management
+    function initEngineManagement() {
+      // Load saved preference
+      const saved = localStorage.getItem('preferred_engine');
+      if (saved) {
+        const select = document.getElementById('translation-engine');
+        if (select) {
+          select.value = saved;
+          selectedEngine = saved;
+        }
+      }
+
+      // Add change listener
+      const select = document.getElementById('translation-engine');
+      if (select) {
+        select.addEventListener('change', onEngineChange);
+      }
+
+      // Fetch available engines
+      fetchAvailableEngines();
+    }
+
     // Upload file to server
     async function uploadFile(file) {
       const formData = new FormData();
@@ -3523,7 +3862,8 @@
         model: document.getElementById('model-select').value || 'gpt-4o-mini',
         output_format: 'docx',
         docx_template: docxTemplate || 'auto',  // Professional DOCX template
-        pdf_template: pdfTemplate || 'auto'  // Professional PDF template
+        pdf_template: pdfTemplate || 'auto',  // Professional PDF template
+        engine: getSelectedEngine()  // Translation engine (TranslateGemma/Cloud API)
       };
 
       try {
@@ -4461,6 +4801,7 @@
     // =============================================
 
     initTheme();
+    initEngineManagement();
   </script>
 </body>
 </html>
