@@ -19,6 +19,11 @@ from api.services.extraction_feedback import (
     ExtractionStrategy as EQSStrategy,
     FeedbackAction,
 )
+from api.services.provider_stats import ProviderStatsTracker, CallRecord
+from api.services.provider_router import ProviderRouter, RoutingMode
+from api.services.consistency_checker import ConsistencyChecker
+from api.services.layout_analyzer import LayoutAnalyzer
+from api.services.epub_renderer import EpubRenderer, is_available as epub_available
 
 from .job_repository import get_job_repository, JobRepository
 
@@ -167,6 +172,22 @@ class APSV2Service:
         )
         self._last_eqs_report: Optional[Dict] = None  # per-extraction metadata
 
+        # QAPR — Quality-Aware Provider Routing (Sprint 10)
+        self._provider_stats = ProviderStatsTracker(
+            persist_path=str(self.base_dir / "data" / "provider_stats.json"),
+        )
+        self._provider_router = ProviderRouter(
+            stats_tracker=self._provider_stats,
+            mode=RoutingMode.BALANCED,
+        )
+        self._last_routing_decision: Optional[Dict] = None
+
+        # Consistency Checker (Sprint 11)
+        self._consistency_checker = ConsistencyChecker()
+
+        # Layout Analyzer (Sprint 12)
+        self._layout_analyzer = LayoutAnalyzer()
+
         logger.info(f"APSV2Service initialized: output={self.output_dir}, jobs loaded: {len(self._jobs)}")
 
     def _load_jobs_from_db(self):
@@ -290,6 +311,26 @@ class APSV2Service:
             elif 'gpt' in model.lower():
                 use_provider = 'openai'
 
+        # QAPR: data-driven provider routing when no explicit provider given
+        routing_decision = None
+        if not provider and not model:
+            try:
+                lang_pair = f"{job.get('source_language', '*')}→{job.get('target_language', '*')}"
+                doc_type = job.get("profile_id", "general")
+                routing_decision = self._provider_router.select(
+                    language_pair=lang_pair,
+                    document_type=doc_type,
+                )
+                use_provider = routing_decision.provider
+                self._last_routing_decision = routing_decision.to_dict()
+                logger.info(
+                    f"[{job_id}] QAPR selected provider={use_provider} "
+                    f"(score={routing_decision.score:.3f}, mode={routing_decision.mode.value})"
+                )
+            except Exception as exc:
+                logger.warning(f"[{job_id}] QAPR routing failed, using default: {exc}")
+                self._last_routing_decision = None
+
         # If user provided API key or specific provider, create a temporary client/publisher for this job
         publisher = self._publisher
         llm_client = self._llm_client
@@ -373,6 +414,24 @@ class APSV2Service:
 
                 for fmt in job["output_formats"][1:]:
                     try:
+                        # Sprint 13: Use LayoutDNA-aware EPUB renderer
+                        if fmt == "epub" and epub_available() and job.get("layout_dna"):
+                            from api.services.layout_dna import LayoutDNA
+                            base_name = f"{job_id}_translated"
+                            output_path = self.output_dir / f"{base_name}.epub"
+                            dna = LayoutDNA.from_dict(job["layout_dna"])
+                            epub_renderer = EpubRenderer()
+                            epub_renderer.render(
+                                layout_dna=dna,
+                                output_path=str(output_path),
+                                title=result.dna.title if result.dna else "Document",
+                                author=result.dna.author if result.dna else "",
+                                language=job.get("target_language", "en"),
+                            )
+                            job["output_paths"]["epub"] = str(output_path)
+                            logger.info(f"[{job_id}] EPUB created via LayoutDNA renderer")
+                            continue
+
                         format_enum = OutputFormat(fmt)
                         base_name = f"{job_id}_translated"
                         output_path = self.output_dir / f"{base_name}.{fmt}"
@@ -393,6 +452,44 @@ class APSV2Service:
             if result.verification:
                 job["verification"] = result.verification
 
+            # Consistency check (Sprint 11) — read-only analysis, non-blocking
+            try:
+                if (result.chunks and result.translated_chunks
+                        and len(result.translated_chunks) >= 2):
+                    source_texts = [
+                        c.content if hasattr(c, 'content') else str(c)
+                        for c in result.chunks
+                    ]
+                    consistency_report = self._consistency_checker.check(
+                        source_chunks=source_texts,
+                        translated_chunks=result.translated_chunks,
+                        source_language=job.get("source_language", "en"),
+                        target_language=job.get("target_language", "vi"),
+                    )
+                    job["consistency"] = consistency_report.to_dict()
+                    logger.info(
+                        f"[{job_id}] Consistency: score={consistency_report.score:.3f} "
+                        f"issues={consistency_report.issues_found} "
+                        f"passed={consistency_report.passed}"
+                    )
+            except Exception as exc:
+                logger.warning(f"[{job_id}] Consistency check failed: {exc}")
+
+            # Layout DNA analysis (Sprint 12) — read-only, non-blocking
+            try:
+                source_text = result.full_content if hasattr(result, 'full_content') else None
+                if not source_text and result.chunks:
+                    source_text = "\n\n".join(
+                        c.content if hasattr(c, 'content') else str(c)
+                        for c in result.chunks
+                    )
+                if source_text and len(source_text) > 50:
+                    layout_dna = self._layout_analyzer.analyze(source_text)
+                    job["layout_dna"] = layout_dna.to_dict()
+                    logger.info(f"[{job_id}] {layout_dna.summary()}")
+            except Exception as exc:
+                logger.warning(f"[{job_id}] Layout DNA analysis failed: {exc}")
+
             if result.error:
                 job["error"] = result.error
                 job["status"] = JobStatusV2.FAILED
@@ -400,6 +497,33 @@ class APSV2Service:
             else:
                 # Save completion to database
                 self._repo.mark_complete(job_id, job["output_paths"])
+
+            # QAPR: record call outcome for future routing decisions
+            try:
+                job_elapsed = (time.time() - job.get("job_start_time", time.time())) * 1000
+                usage = job.get("usage_stats", {})
+                eqs_score = 0.0
+                if self._last_eqs_report:
+                    eqs_score = self._last_eqs_report.get("eqs_score", 0.0)
+                lang_pair = f"{job.get('source_language', '*')}→{job.get('target_language', '*')}"
+                doc_type = job.get("profile_id", "general")
+
+                self._provider_stats.record(CallRecord(
+                    provider=use_provider,
+                    language_pair=lang_pair,
+                    document_type=doc_type,
+                    success=result.error is None,
+                    latency_ms=job_elapsed,
+                    quality_score=eqs_score,
+                    cost_usd=usage.get("estimated_cost_usd", 0.0),
+                    input_tokens=usage.get("total_input_tokens", 0),
+                    output_tokens=usage.get("total_output_tokens", 0),
+                ))
+
+                # Save routing metadata to job
+                job["qapr"] = self._last_routing_decision
+            except Exception as exc:
+                logger.warning(f"[{job_id}] QAPR recording failed: {exc}")
 
             logger.info(f"[{job_id}] Job completed: {job['status']}")
 
@@ -413,6 +537,20 @@ class APSV2Service:
             job["error"] = str(e)
             self._repo.mark_failed(job_id, str(e))
             logger.error(f"[{job_id}] Job failed: {e}")
+
+            # QAPR: record failure
+            try:
+                lang_pair = f"{job.get('source_language', '*')}→{job.get('target_language', '*')}"
+                doc_type = job.get("profile_id", "general")
+                self._provider_stats.record(CallRecord(
+                    provider=use_provider,
+                    language_pair=lang_pair,
+                    document_type=doc_type,
+                    success=False,
+                    latency_ms=0,
+                ))
+            except Exception:
+                pass
 
     def get_job(self, job_id: str) -> Optional[Dict]:
         """Get job by ID (memory first, then database)."""

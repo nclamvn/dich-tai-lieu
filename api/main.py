@@ -66,6 +66,9 @@ from api.routes.system import router as system_router
 from api.routes.job_outputs import router as job_outputs_router
 from api.routes.jobs import router as jobs_router
 
+# --- Sprint 14 routes ---
+from api.routes.dashboard import router as dashboard_router
+
 # =============================================================================
 # CSRF Protection Configuration
 # =============================================================================
@@ -160,6 +163,9 @@ app.include_router(batch_legacy_router)
 app.include_router(system_router)
 app.include_router(job_outputs_router)
 app.include_router(jobs_router)
+
+# Sprint 14 routers
+app.include_router(dashboard_router)
 
 # =============================================================================
 # Startup / Shutdown Events
