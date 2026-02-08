@@ -6,6 +6,7 @@ boundaries: chapters, sections, paragraphs. Claude helps identify boundaries
 for complex documents.
 """
 
+import json
 import re
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Any
@@ -336,12 +337,11 @@ If no clear boundaries, return empty array: []
                 response_format={"type": "json_object"}
             )
 
-            import json
             boundaries = json.loads(response.content)
             if isinstance(boundaries, list):
                 return [b for b in boundaries if isinstance(b, int)]
-        except (json.JSONDecodeError, AttributeError, TypeError):
-            # Failed to parse LLM response as JSON boundaries
+        except (json.JSONDecodeError, AttributeError, TypeError, Exception):
+            # Failed to call LLM or parse response as JSON boundaries
             pass
 
         return []

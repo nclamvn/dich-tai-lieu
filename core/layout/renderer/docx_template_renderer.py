@@ -323,8 +323,8 @@ def _create_minimal_template():
             style.font.size = Pt(size)
             style.font.bold = bold
             style.font.italic = italic
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Failed to add style '%s': %s", name, e)
 
     doc.add_paragraph("{{APS_CONTENT_START}}")
 

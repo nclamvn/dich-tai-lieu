@@ -7,8 +7,11 @@ FastAPI Dependencies for Authentication
 Provides dependency injection functions for protecting endpoints.
 """
 
+import logging
 from typing import Optional, List
 from functools import wraps
+
+logger = logging.getLogger(__name__)
 
 from fastapi import Depends, HTTPException, Header, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -192,7 +195,7 @@ async def get_session_or_jwt_user(
                 organization=session.organization,
                 role=UserRole.USER
             )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Legacy session validation failed: %s", e)
 
     return None

@@ -14,9 +14,12 @@ Usage:
 
 import io
 import hashlib
+import logging
 from pathlib import Path
 from typing import List, Optional, Dict, Tuple, Union
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 try:
     import fitz  # PyMuPDF
@@ -328,8 +331,8 @@ class ImageExtractor:
                         w = rect.width
                         h = rect.height
                         break
-        except Exception:
-            pass  # Position lookup failed, use defaults
+        except Exception as e:
+            logger.debug("Image position lookup failed, using defaults: %s", e)
 
         # Calculate relative position
         x_ratio = x / page_width if page_width > 0 else 0.0

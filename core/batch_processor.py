@@ -880,8 +880,8 @@ class BatchProcessor:
                         "message": message,
                         **data
                     })
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("WebSocket broadcast failed: %s", e)
 
         # Process with orchestrator
         result = await self._orchestrator.process(

@@ -15,9 +15,12 @@ Author: AI Translator Pro Team
 Version: 2.0.0
 """
 
+import logging
 import os
 import re
 import json
+
+logger = logging.getLogger(__name__)
 import base64
 import html
 from pathlib import Path
@@ -677,16 +680,16 @@ class PdfExporter:
                 try:
                     pdfmetrics.registerFont(TTFont(font_name, font_paths[font_name]))
                     registered = True
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug("Font registration failed for %s: %s", font_name, e)
 
             # Try fallback path if primary failed
             if not registered and font_name in fallback_paths:
                 if Path(fallback_paths[font_name]).exists():
                     try:
                         pdfmetrics.registerFont(TTFont(font_name, fallback_paths[font_name]))
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        logger.debug("Fallback font registration failed for %s: %s", font_name, e)
     
     def _setup_custom_styles(self):
         """Setup custom paragraph styles"""
@@ -789,8 +792,8 @@ class PdfExporter:
             from core.export.commercial_book import CommercialBookExporter
             temp_exporter = CommercialBookExporter()
             detected_title, detected_author, cleaned_text = temp_exporter._extract_title_from_first_line(text)
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug("Title extraction failed: %s", e)
 
         # Update config if title/author detected
         if detected_title:
@@ -1078,8 +1081,8 @@ class UniversalExporter:
                     title = detected_title
                 if detected_author:
                     author = detected_author
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Title extraction failed: %s", e)
 
             renderer = PDFRendererV2(template=template)
             renderer.render(
