@@ -193,87 +193,85 @@ class JobQueue:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(exist_ok=True, parents=True)
 
+        from core.database import get_db_backend
+        self._backend = get_db_backend("jobs", db_dir=self.db_path.parent)
+
         self._init_db()
 
     def _init_db(self):
         """Initialize database schema"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
+        with self._backend.connection() as conn:
+            # Jobs table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS jobs (
+                    job_id TEXT PRIMARY KEY,
+                    job_name TEXT NOT NULL,
+                    status TEXT NOT NULL,
+                    priority INTEGER NOT NULL DEFAULT 5,
 
-        # Jobs table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS jobs (
-                job_id TEXT PRIMARY KEY,
-                job_name TEXT NOT NULL,
-                status TEXT NOT NULL,
-                priority INTEGER NOT NULL DEFAULT 5,
+                    -- Input/Output
+                    input_file TEXT NOT NULL,
+                    output_file TEXT NOT NULL,
+                    input_format TEXT DEFAULT 'txt',
+                    output_format TEXT DEFAULT 'txt',
 
-                -- Input/Output
-                input_file TEXT NOT NULL,
-                output_file TEXT NOT NULL,
-                input_format TEXT DEFAULT 'txt',
-                output_format TEXT DEFAULT 'txt',
+                    -- Translation config
+                    source_lang TEXT DEFAULT 'en',
+                    target_lang TEXT DEFAULT 'vi',
+                    domain TEXT,
+                    glossary TEXT,
 
-                -- Translation config
-                source_lang TEXT DEFAULT 'en',
-                target_lang TEXT DEFAULT 'vi',
-                domain TEXT,
-                glossary TEXT,
+                    -- Processing config
+                    provider TEXT DEFAULT 'openai',
+                    model TEXT DEFAULT 'gpt-4o-mini',
+                    concurrency INTEGER DEFAULT 5,
+                    chunk_size INTEGER DEFAULT 3000,
 
-                -- Processing config
-                provider TEXT DEFAULT 'openai',
-                model TEXT DEFAULT 'gpt-4o-mini',
-                concurrency INTEGER DEFAULT 5,
-                chunk_size INTEGER DEFAULT 3000,
+                    -- Progress
+                    progress REAL DEFAULT 0.0,
+                    total_chunks INTEGER DEFAULT 0,
+                    completed_chunks INTEGER DEFAULT 0,
+                    failed_chunks INTEGER DEFAULT 0,
 
-                -- Progress
-                progress REAL DEFAULT 0.0,
-                total_chunks INTEGER DEFAULT 0,
-                completed_chunks INTEGER DEFAULT 0,
-                failed_chunks INTEGER DEFAULT 0,
+                    -- Quality & stats
+                    avg_quality_score REAL DEFAULT 0.0,
+                    total_cost_usd REAL DEFAULT 0.0,
+                    tm_hits INTEGER DEFAULT 0,
+                    cache_hits INTEGER DEFAULT 0,
 
-                -- Quality & stats
-                avg_quality_score REAL DEFAULT 0.0,
-                total_cost_usd REAL DEFAULT 0.0,
-                tm_hits INTEGER DEFAULT 0,
-                cache_hits INTEGER DEFAULT 0,
+                    -- Timestamps
+                    scheduled_at REAL,
+                    created_at REAL NOT NULL,
+                    started_at REAL,
+                    completed_at REAL,
+                    updated_at REAL NOT NULL,
 
-                -- Timestamps
-                scheduled_at REAL,
-                created_at REAL NOT NULL,
-                started_at REAL,
-                completed_at REAL,
-                updated_at REAL NOT NULL,
+                    -- Error handling
+                    error_message TEXT,
+                    retry_count INTEGER DEFAULT 0,
+                    max_retries INTEGER DEFAULT 3,
 
-                -- Error handling
-                error_message TEXT,
-                retry_count INTEGER DEFAULT 0,
-                max_retries INTEGER DEFAULT 3,
+                    -- Metadata (JSON)
+                    tags TEXT,
+                    metadata TEXT
+                )
+            """)
 
-                -- Metadata (JSON)
-                tags TEXT,
-                metadata TEXT
-            )
-        """)
+            # Indexes for performance
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_status_priority
+                ON jobs(status, priority DESC, created_at)
+            """)
 
-        # Indexes for performance
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_status_priority
-            ON jobs(status, priority DESC, created_at)
-        """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_created_at
+                ON jobs(created_at DESC)
+            """)
 
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_created_at
-            ON jobs(created_at DESC)
-        """)
-
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_status
-            ON jobs(status)
-        """)
-
-        conn.commit()
-        conn.close()
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_status
+                ON jobs(status)
+            """)
 
     def create_job(
         self,
@@ -328,59 +326,49 @@ class JobQueue:
 
     def _save_job(self, job: TranslationJob):
         """Save job to database"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            INSERT OR REPLACE INTO jobs (
-                job_id, job_name, status, priority,
-                input_file, output_file, input_format, output_format,
-                source_lang, target_lang, domain, glossary,
-                provider, model, concurrency, chunk_size,
-                progress, total_chunks, completed_chunks, failed_chunks,
-                avg_quality_score, total_cost_usd, tm_hits, cache_hits,
-                scheduled_at, created_at, started_at, completed_at, updated_at,
-                error_message, retry_count, max_retries,
-                tags, metadata
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            job.job_id, job.job_name, job.status, job.priority,
-            job.input_file, job.output_file, job.input_format, job.output_format,
-            job.source_lang, job.target_lang, job.domain, job.glossary,
-            job.provider, job.model, job.concurrency, job.chunk_size,
-            job.progress, job.total_chunks, job.completed_chunks, job.failed_chunks,
-            job.avg_quality_score, job.total_cost_usd, job.tm_hits, job.cache_hits,
-            job.scheduled_at, job.created_at, job.started_at, job.completed_at, job.updated_at,
-            job.error_message, job.retry_count, job.max_retries,
-            json.dumps(job.tags), json.dumps(job.metadata)
-        ))
-
-        conn.commit()
-        conn.close()
+        with self._backend.connection() as conn:
+            conn.execute("""
+                INSERT OR REPLACE INTO jobs (
+                    job_id, job_name, status, priority,
+                    input_file, output_file, input_format, output_format,
+                    source_lang, target_lang, domain, glossary,
+                    provider, model, concurrency, chunk_size,
+                    progress, total_chunks, completed_chunks, failed_chunks,
+                    avg_quality_score, total_cost_usd, tm_hits, cache_hits,
+                    scheduled_at, created_at, started_at, completed_at, updated_at,
+                    error_message, retry_count, max_retries,
+                    tags, metadata
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                job.job_id, job.job_name, job.status, job.priority,
+                job.input_file, job.output_file, job.input_format, job.output_format,
+                job.source_lang, job.target_lang, job.domain, job.glossary,
+                job.provider, job.model, job.concurrency, job.chunk_size,
+                job.progress, job.total_chunks, job.completed_chunks, job.failed_chunks,
+                job.avg_quality_score, job.total_cost_usd, job.tm_hits, job.cache_hits,
+                job.scheduled_at, job.created_at, job.started_at, job.completed_at, job.updated_at,
+                job.error_message, job.retry_count, job.max_retries,
+                json.dumps(job.tags), json.dumps(job.metadata)
+            ))
 
     def get_job(self, job_id: str) -> Optional[TranslationJob]:
         """Get job by ID (supports partial ID prefix matching)"""
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        with self._backend.connection() as conn:
+            # Try exact match first
+            row = conn.execute(
+                "SELECT * FROM jobs WHERE job_id = ?", (job_id,)
+            ).fetchone()
 
-        # Try exact match first
-        cursor.execute("SELECT * FROM jobs WHERE job_id = ?", (job_id,))
-        row = cursor.fetchone()
+            # If not found and ID looks partial (< 12 chars), try prefix match
+            if not row and len(job_id) < 12:
+                row = conn.execute(
+                    "SELECT * FROM jobs WHERE job_id LIKE ? LIMIT 1",
+                    (f"{job_id}%",)
+                ).fetchone()
 
-        # If not found and ID looks partial (< 12 chars), try prefix match
-        if not row and len(job_id) < 12:
-            cursor.execute(
-                "SELECT * FROM jobs WHERE job_id LIKE ? LIMIT 1",
-                (f"{job_id}%",)
-            )
-            row = cursor.fetchone()
-
-        conn.close()
-
-        if row:
-            return self._row_to_job(row)
-        return None
+            if row:
+                return self._row_to_job(row)
+            return None
 
     def _row_to_job(self, row: sqlite3.Row) -> TranslationJob:
         """Convert database row to TranslationJob"""
@@ -411,21 +399,15 @@ class JobQueue:
         Returns:
             Next job or None if queue is empty
         """
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
-
-        # Get highest priority pending/retrying job (NOT queued - prevents race condition)
-        cursor.execute("""
-            SELECT * FROM jobs
-            WHERE status IN ('pending', 'retrying')
-            AND (scheduled_at IS NULL OR scheduled_at <= ?)
-            ORDER BY priority DESC, created_at ASC
-            LIMIT 1
-        """, (time.time(),))
-
-        row = cursor.fetchone()
-        conn.close()
+        with self._backend.connection() as conn:
+            # Get highest priority pending/retrying job (NOT queued - prevents race condition)
+            row = conn.execute("""
+                SELECT * FROM jobs
+                WHERE status IN ('pending', 'retrying')
+                AND (scheduled_at IS NULL OR scheduled_at <= ?)
+                ORDER BY priority DESC, created_at ASC
+                LIMIT 1
+            """, (time.time(),)).fetchone()
 
         if row:
             job = self._row_to_job(row)
@@ -453,48 +435,39 @@ class JobQueue:
         Returns:
             List of jobs
         """
-        conn = sqlite3.connect(self.db_path)
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        with self._backend.connection() as conn:
+            if status:
+                rows = conn.execute("""
+                    SELECT * FROM jobs
+                    WHERE status = ?
+                    ORDER BY created_at DESC
+                    LIMIT ? OFFSET ?
+                """, (status, limit, offset)).fetchall()
+            else:
+                rows = conn.execute("""
+                    SELECT * FROM jobs
+                    ORDER BY created_at DESC
+                    LIMIT ? OFFSET ?
+                """, (limit, offset)).fetchall()
 
-        if status:
-            cursor.execute("""
-                SELECT * FROM jobs
-                WHERE status = ?
-                ORDER BY created_at DESC
-                LIMIT ? OFFSET ?
-            """, (status, limit, offset))
-        else:
-            cursor.execute("""
-                SELECT * FROM jobs
-                ORDER BY created_at DESC
-                LIMIT ? OFFSET ?
-            """, (limit, offset))
-
-        rows = cursor.fetchall()
-        conn.close()
-
-        return [self._row_to_job(row) for row in rows]
+            return [self._row_to_job(row) for row in rows]
 
     def get_queue_stats(self) -> Dict[str, int]:
         """Get queue statistics"""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            SELECT status, COUNT(*) as count
-            FROM jobs
-            GROUP BY status
-        """)
+        with self._backend.connection() as conn:
+            rows = conn.execute("""
+                SELECT status, COUNT(*) as count
+                FROM jobs
+                GROUP BY status
+            """).fetchall()
 
         stats = {status: 0 for status in JobStatus}
-        for status, count in cursor.fetchall():
-            stats[status] = count
+        for row in rows:
+            stats[row[0]] = row[1]
 
         # Total
         stats['total'] = sum(stats.values())
 
-        conn.close()
         return stats
 
     def cancel_job(self, job_id: str) -> bool:
@@ -518,11 +491,8 @@ class JobQueue:
             return False
 
         if job.status in [JobStatus.COMPLETED, JobStatus.FAILED, JobStatus.CANCELLED]:
-            conn = sqlite3.connect(self.db_path)
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM jobs WHERE job_id = ?", (job_id,))
-            conn.commit()
-            conn.close()
+            with self._backend.connection() as conn:
+                conn.execute("DELETE FROM jobs WHERE job_id = ?", (job_id,))
             return True
 
         return False
@@ -539,17 +509,12 @@ class JobQueue:
         """
         cutoff_time = time.time() - (days * 86400)
 
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.cursor()
-
-        cursor.execute("""
-            DELETE FROM jobs
-            WHERE status IN ('completed', 'failed', 'cancelled')
-            AND completed_at < ?
-        """, (cutoff_time,))
-
-        deleted = cursor.rowcount
-        conn.commit()
-        conn.close()
+        with self._backend.connection() as conn:
+            conn.execute("""
+                DELETE FROM jobs
+                WHERE status IN ('completed', 'failed', 'cancelled')
+                AND completed_at < ?
+            """, (cutoff_time,))
+            deleted = conn.rowcount
 
         return deleted

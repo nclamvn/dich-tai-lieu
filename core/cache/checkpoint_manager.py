@@ -52,13 +52,17 @@ class CheckpointManager:
     - Resume capability after crashes/interruptions
     """
 
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: Path | None = None):
         """
         Initialize checkpoint manager
 
         Args:
-            db_path: Path to SQLite database file
+            db_path: Path to SQLite database file.
+                     If None, uses settings.checkpoint_dir / "checkpoints.db".
         """
+        if db_path is None:
+            from config.settings import settings
+            db_path = settings.checkpoint_dir / "checkpoints.db"
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()

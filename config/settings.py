@@ -111,6 +111,17 @@ class Settings(BaseSettings):
     # Safe to enable - has graceful fallback on errors
     enable_beautification: bool = True  # Default ON - improves output quality
 
+    # ========== Database ==========
+    database_backend: str = "sqlite"  # sqlite | postgresql (Sprint 2)
+    database_url: Optional[str] = None
+    database_dir: Path = BASE_DIR / "data"
+
+    # ========== Cleanup / Retention ==========
+    cleanup_upload_retention_days: int = 7
+    cleanup_output_retention_days: int = 30
+    cleanup_temp_max_age_hours: int = 24
+    cleanup_checkpoint_retention_days: int = 7
+
     # ========== Directories ==========
     input_dir: Path = BASE_DIR / "data" / "input"
     output_dir: Path = BASE_DIR / "data" / "output"

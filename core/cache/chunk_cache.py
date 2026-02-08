@@ -111,13 +111,17 @@ class ChunkCache:
         {'total_entries': 1, 'hits': 1, 'misses': 0, 'hit_rate': 1.0}
     """
 
-    def __init__(self, db_path: str | Path):
+    def __init__(self, db_path: str | Path | None = None):
         """
         Initialize cache with SQLite database.
 
         Args:
-            db_path: Path to SQLite database file (will be created if doesn't exist)
+            db_path: Path to SQLite database file (will be created if doesn't exist).
+                     If None, uses settings.cache_dir / "chunks.db".
         """
+        if db_path is None:
+            from config.settings import settings
+            db_path = settings.cache_dir / "chunks.db"
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 

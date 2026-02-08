@@ -400,6 +400,45 @@ async def startup_resume_jobs():
         logger.error(f"Startup: Failed to resume jobs: {e}")
 
 
+@app.on_event("startup")
+async def startup_redis():
+    """Initialize Redis client (falls back to in-memory if unavailable)."""
+    try:
+        from core.cache.redis_client import get_redis_client
+        redis_url = os.environ.get("REDIS_URL")
+        client = await get_redis_client(redis_url)
+        logger.info(f"Redis initialized (real={client.is_real_redis})")
+    except Exception as e:
+        logger.warning(f"Redis init skipped: {e}")
+
+
+@app.on_event("shutdown")
+async def shutdown_redis():
+    """Close Redis connection on shutdown."""
+    try:
+        from core.cache.redis_client import close_redis_client
+        await close_redis_client()
+    except Exception:
+        pass
+
+
+@app.on_event("startup")
+async def startup_cleanup_scheduler():
+    """Start periodic file cleanup (every 6 hours)."""
+    async def _cleanup_loop():
+        while True:
+            await asyncio.sleep(6 * 3600)  # 6 hours
+            try:
+                from core.services.file_cleanup import FileCleanupService
+                svc = FileCleanupService()
+                result = svc.run_cleanup()
+                logger.info(f"Scheduled cleanup: {result}")
+            except Exception as e:
+                logger.error(f"Scheduled cleanup failed: {e}")
+
+    asyncio.create_task(_cleanup_loop())
+
+
 # Batch Processing: Include batch job routes
 app.include_router(batch_router)
 

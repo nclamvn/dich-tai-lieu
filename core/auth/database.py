@@ -25,8 +25,10 @@ USER_DB_PATH = Path("data/users/users.db")
 class UserDatabase:
     """SQLite-based user storage."""
 
-    def __init__(self, db_path: Path = USER_DB_PATH):
+    def __init__(self, db_path: Path | None = None):
         """Initialize user database."""
+        if db_path is None:
+            db_path = USER_DB_PATH
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = None

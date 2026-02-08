@@ -12,6 +12,8 @@ from typing import Dict, Optional, List
 from datetime import datetime
 from contextlib import contextmanager
 
+from core.database import get_db_backend
+
 logger = logging.getLogger(__name__)
 
 
@@ -25,22 +27,15 @@ class JobRepository:
     def __init__(self, db_path: str = "data/jobs.db"):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._backend = get_db_backend("aps_jobs", db_dir=self.db_path.parent)
         self._init_db()
         logger.info(f"JobRepository initialized: {self.db_path}")
 
     @contextmanager
     def _get_connection(self):
         """Get database connection with context manager."""
-        conn = sqlite3.connect(str(self.db_path))
-        conn.row_factory = sqlite3.Row
-        try:
+        with self._backend.connection() as conn:
             yield conn
-            conn.commit()
-        except Exception as e:
-            conn.rollback()
-            raise e
-        finally:
-            conn.close()
 
     def _init_db(self):
         """Initialize database schema."""
