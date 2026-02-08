@@ -854,6 +854,7 @@ class OutputConverter:
         template: str = "ebook",
         title: str = "Untitled",
         author: str = "Unknown",
+        language: str = "vi",
     ) -> Path:
         """
         Convert markdown content directly to professional DOCX.
@@ -864,22 +865,34 @@ class OutputConverter:
             template: Template name ('ebook', 'academic', 'business')
             title: Document title
             author: Document author
+            language: Document language code for i18n strings
 
         Returns:
             Path to created DOCX file
         """
+        from core.docx_engine.models import DocumentMeta
+        from core.i18n import get_string
+
         output_path = Path(output_path)
 
         # Create renderer with selected template
         renderer = DocxRenderer(template=template)
 
-        # Render directly from markdown
-        result_path = renderer.render_markdown(
-            markdown_content=markdown_content,
-            output_path=str(output_path),
-            title=title,
-            author=author,
-        )
+        # Build meta with language so renderers use correct i18n strings
+        meta = DocumentMeta(title=title, author=author, language=language)
+
+        # Render from markdown with language-aware meta
+        normalizer = renderer.normalizer
+        doc = normalizer.from_markdown(markdown_content, meta)
+
+        # Update TOC/glossary/bibliography titles based on language
+        doc.toc.title = get_string("table_of_contents", language)
+        if doc.glossary:
+            doc.glossary.title = get_string("glossary", language)
+        if doc.bibliography:
+            doc.bibliography.title = get_string("references", language)
+
+        result_path = renderer.render_document(doc, str(output_path))
 
         logger.info(f"Professional DOCX from markdown: {result_path}")
         return result_path
@@ -943,6 +956,7 @@ class OutputConverter:
         template: str = "ebook",
         title: str = "Untitled",
         author: str = "Unknown",
+        language: str = "vi",
     ) -> Path:
         """
         Convert markdown content directly to professional PDF.
@@ -953,23 +967,33 @@ class OutputConverter:
             template: Template name ('ebook', 'academic', 'business')
             title: Document title
             author: Document author
+            language: Document language code for i18n strings
 
         Returns:
             Path to created PDF file
         """
+        from core.docx_engine.models import DocumentMeta
+        from core.docx_engine.normalizer import DocumentNormalizer
+        from core.i18n import get_string
+
         output_path = Path(output_path)
 
         # Create renderer with selected template
         renderer = PdfRenderer(template=template)
 
-        # Render directly from markdown
-        result_path = renderer.render_markdown(
-            markdown_content=markdown_content,
-            output_path=str(output_path),
-            title=title,
-            author=author,
-            include_toc=True,
-        )
+        # Build document with language-aware meta
+        normalizer = DocumentNormalizer()
+        meta = DocumentMeta(title=title, author=author, language=language)
+        document = normalizer.from_markdown(markdown_content, meta)
+
+        # Update section titles based on language
+        document.toc.title = get_string("table_of_contents", language)
+        if document.glossary:
+            document.glossary.title = get_string("glossary", language)
+        if document.bibliography:
+            document.bibliography.title = get_string("references", language)
+
+        result_path = renderer.render(document, str(output_path), include_toc=True, include_glossary=False)
 
         logger.info(f"Professional PDF from markdown: {result_path}")
         return result_path

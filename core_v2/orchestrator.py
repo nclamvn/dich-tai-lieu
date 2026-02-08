@@ -19,7 +19,7 @@ from enum import Enum
 
 from .document_dna import DocumentDNA, extract_dna, quick_dna
 from .semantic_chunker import SemanticChunker, SemanticChunk
-from .publishing_profiles import PublishingProfile, PROFILES, get_profile
+from .publishing_profiles import PublishingProfile, PROFILES, get_profile, BASE_RENDERING_SKILL
 from .output_converter import OutputConverter, OutputFormat
 from .verifier import QualityVerifier, VerificationResult
 from .vision_reader import VisionReader, VisionDocument
@@ -157,6 +157,8 @@ DOCUMENT DNA:
 
 PUBLISHING PROFILE:
 {profile_prompt}
+
+{rendering_skill}
 
 TRANSLATED CHUNKS (in {target_lang}):
 {chunks_text}
@@ -406,6 +408,8 @@ class UniversalPublisher:
                 dna=job.dna,  # Pass DNA for formula detection
                 docx_template=docx_template,  # Professional DOCX template
                 pdf_template=pdf_template,  # Professional PDF template
+                profile_id=profile_id,  # For profile-based template selection
+                target_lang=target_lang,  # For i18n in renderers
             )
 
             # Stage 6: Verify (98%)
@@ -597,9 +601,15 @@ class UniversalPublisher:
         # Join chunks with markers
         chunks_text = "\n\n---\n\n".join(translated_chunks)
 
+        # Build rendering skill from base + profile-specific instructions
+        rendering_skill = BASE_RENDERING_SKILL
+        if profile.rendering_instructions:
+            rendering_skill += "\n" + profile.rendering_instructions
+
         prompt = ASSEMBLY_PROMPT.format(
             dna_context=dna.to_context_prompt(),
             profile_prompt=profile.to_prompt(),
+            rendering_skill=rendering_skill,
             chunks_text=chunks_text,
             target_lang=target_lang,
         )
@@ -630,6 +640,8 @@ class UniversalPublisher:
         dna: Optional[DocumentDNA] = None,
         docx_template: str = "auto",
         pdf_template: str = "auto",
+        profile_id: str = "essay",
+        target_lang: str = "vi",
     ) -> Path:
         """Convert to final output format."""
         format_enum = OutputFormat(output_format.lower())
@@ -649,20 +661,33 @@ class UniversalPublisher:
         if has_formulas:
             logger.info(f"Document has formulas - using LaTeX-aware conversion")
 
+        # Resolve template from profile first, then DNA-based heuristic
+        profile = get_profile(profile_id)
+
+        def _resolve_template(requested: str) -> str:
+            """Resolve 'auto' template using profile, then DNA fallback."""
+            if requested != "auto":
+                return requested
+            # Try profile-based template first
+            if profile and profile.template_name != "auto":
+                logger.info(f"Template from profile '{profile_id}': {profile.template_name}")
+                return profile.template_name
+            # Fallback to DNA-based heuristic
+            if dna:
+                genre = (dna.genre or "").lower()
+                if any(kw in genre for kw in ["academic", "research", "paper", "thesis", "technical"]):
+                    return "academic"
+                elif any(kw in genre for kw in ["business", "report", "memo", "corporate"]):
+                    return "business"
+            return "ebook"
+
+        language = target_lang
+
         # Use professional DOCX rendering if template specified and format is docx
         if format_enum == OutputFormat.DOCX and docx_template:
             try:
-                # Auto-select template based on DNA genre if "auto"
-                template = docx_template
-                if template == "auto" and dna:
-                    genre = (dna.genre or "").lower()
-                    if any(kw in genre for kw in ["academic", "research", "paper", "thesis", "technical"]):
-                        template = "academic"
-                    elif any(kw in genre for kw in ["business", "report", "memo", "corporate"]):
-                        template = "business"
-                    else:
-                        template = "ebook"
-                    logger.info(f"Auto-selected DOCX template: {template} (genre: {dna.genre})")
+                template = _resolve_template(docx_template)
+                logger.info(f"DOCX template: {template}")
 
                 result_path = await self.converter.convert_markdown_to_docx_professional(
                     markdown_content=content,
@@ -670,6 +695,7 @@ class UniversalPublisher:
                     template=template,
                     title=title,
                     author=author or "Unknown",
+                    language=language,
                 )
                 logger.info(f"Professional DOCX created: {result_path}")
                 return result_path
@@ -680,17 +706,8 @@ class UniversalPublisher:
         # Use professional PDF rendering if template specified and format is pdf
         if format_enum == OutputFormat.PDF and pdf_template:
             try:
-                # Auto-select template based on DNA genre if "auto"
-                template = pdf_template
-                if template == "auto" and dna:
-                    genre = (dna.genre or "").lower()
-                    if any(kw in genre for kw in ["academic", "research", "paper", "thesis", "technical"]):
-                        template = "academic"
-                    elif any(kw in genre for kw in ["business", "report", "memo", "corporate"]):
-                        template = "business"
-                    else:
-                        template = "ebook"
-                    logger.info(f"Auto-selected PDF template: {template} (genre: {dna.genre})")
+                template = _resolve_template(pdf_template)
+                logger.info(f"PDF template: {template}")
 
                 result_path = await self.converter.convert_markdown_to_pdf_professional(
                     markdown_content=content,
@@ -698,6 +715,7 @@ class UniversalPublisher:
                     template=template,
                     title=title,
                     author=author or "Unknown",
+                    language=language,
                 )
                 logger.info(f"Professional PDF created: {result_path}")
                 return result_path

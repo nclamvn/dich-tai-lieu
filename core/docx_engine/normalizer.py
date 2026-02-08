@@ -506,7 +506,7 @@ class DocumentNormalizer:
             ))
 
         return Glossary(
-            title=data.get('title', 'Thuật ngữ') if isinstance(data, dict) else 'Thuật ngữ',
+            title=data.get('title', 'Glossary') if isinstance(data, dict) else 'Glossary',
             items=items
         )
 

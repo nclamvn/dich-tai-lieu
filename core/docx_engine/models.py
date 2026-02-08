@@ -129,7 +129,7 @@ class TocItem:
 @dataclass
 class TableOfContents:
     """Table of contents"""
-    title: str = "Mục lục"
+    title: str = "Table of Contents"
     items: List[TocItem] = field(default_factory=list)
     auto_generate: bool = True  # Generate from headings
 
@@ -145,7 +145,7 @@ class GlossaryItem:
 @dataclass
 class Glossary:
     """Glossary section"""
-    title: str = "Thuật ngữ"
+    title: str = "Glossary"
     items: List[GlossaryItem] = field(default_factory=list)
 
 
@@ -160,7 +160,7 @@ class BibliographyItem:
 @dataclass
 class Bibliography:
     """Bibliography section"""
-    title: str = "Tài liệu tham khảo"
+    title: str = "References"
     items: List[BibliographyItem] = field(default_factory=list)
 
 

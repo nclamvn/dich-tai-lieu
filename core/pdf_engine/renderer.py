@@ -31,6 +31,7 @@ from core.docx_engine.normalizer import DocumentNormalizer
 
 from .templates import PdfTemplate, create_pdf_template
 from .style_builder import FontManager, StyleBuilder
+from core.i18n import get_string, format_chapter_title
 
 
 logger = logging.getLogger(__name__)
@@ -140,10 +141,11 @@ class PdfRenderer:
         current_item += 1
 
         # 2. Table of contents
+        lang = document.meta.language or "en"
         if include_toc and document.toc.items:
             if progress_callback:
                 progress_callback(current_item, total_items, "Rendering table of contents...")
-            self._add_toc(story, document.toc)
+            self._add_toc(story, document.toc, lang=lang)
         current_item += 1
 
         # 3. Chapters
@@ -157,7 +159,7 @@ class PdfRenderer:
                     f"Rendering chapter {chapter.number}: {chapter.title[:30]}..."
                 )
 
-            self._add_chapter(story, chapter, chapter_break)
+            self._add_chapter(story, chapter, chapter_break, lang=lang)
             current_item += 1
 
         # 4. Glossary
@@ -257,8 +259,10 @@ class PdfRenderer:
 
         # Translator
         if meta.translator:
+            lang = meta.language or "en"
+            translator_label = get_string("translator", lang)
             story.append(Paragraph(
-                f"Dịch giả: {self._escape_html(meta.translator)}",
+                f"{translator_label}: {self._escape_html(meta.translator)}",
                 self._styles['author']
             ))
 
@@ -278,7 +282,7 @@ class PdfRenderer:
 
         story.append(PageBreak())
 
-    def _add_toc(self, story: List, toc: TableOfContents):
+    def _add_toc(self, story: List, toc: TableOfContents, lang: str = "en"):
         """Add table of contents."""
         # TOC title
         story.append(Paragraph(
@@ -293,24 +297,23 @@ class PdfRenderer:
             style = self._styles.get(style_name, self._styles['body'])
 
             # Format entry
-            text = self._escape_html(item.title)
             if item.chapter_number:
-                text = f"Chương {item.chapter_number}: {text}"
+                text = self._escape_html(format_chapter_title(item.chapter_number, item.title, lang))
+            else:
+                text = self._escape_html(item.title)
 
             story.append(Paragraph(text, style))
 
         story.append(PageBreak())
 
-    def _add_chapter(self, story: List, chapter: Chapter, chapter_break: str):
+    def _add_chapter(self, story: List, chapter: Chapter, chapter_break: str, lang: str = "en"):
         """Add chapter to story."""
         # Page break before chapter (if not first and template requires)
         if chapter_break == 'page' and chapter.number > 1:
             story.append(PageBreak())
 
         # Chapter title
-        title_text = f"Chương {chapter.number}"
-        if chapter.title:
-            title_text = chapter.title
+        title_text = chapter.title if chapter.title else format_chapter_title(chapter.number, "", lang)
 
         story.append(Paragraph(
             self._escape_html(title_text),

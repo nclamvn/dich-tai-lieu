@@ -266,7 +266,7 @@ class EbookTemplate(DocxTemplate):
 
     def get_toc_spec(self) -> TocSpec:
         return TocSpec(
-            title="Mục lục",
+            title="Table of Contents",
             title_style=ParagraphSpec(
                 font=FontSpec(name=self.HEADING_FONT, size=Pt(24), bold=True),
                 alignment=WD_ALIGN_PARAGRAPH.CENTER,

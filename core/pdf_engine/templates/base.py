@@ -139,7 +139,7 @@ class HeaderFooterSpec:
 @dataclass
 class TocSpec:
     """Table of contents specification"""
-    title: str = "Mục lục"
+    title: str = "Table of Contents"
 
     # Styles for each level
     title_style: Optional[ParagraphSpec] = None
@@ -221,7 +221,7 @@ class PdfTemplate(ABC):
         """Return TOC configuration. Override for custom TOC."""
         styles = self.get_styles()
         return TocSpec(
-            title="Mục lục",
+            title="Table of Contents",
             title_style=styles.get('toc_title'),
             level1_style=styles.get('toc_1'),
             level2_style=styles.get('toc_2'),
