@@ -157,21 +157,22 @@ class TestParallelProcessor:
     @pytest.mark.asyncio
     async def test_process_single_task_success(self, processor):
         """Test processing a single successful task."""
-        async def mock_handler(data):
+        async def mock_handler(client, data):
             await asyncio.sleep(0.01)
             return f"processed_{data}"
 
         tasks_data = ["task1"]
         results, stats = await processor.process_all(tasks_data, mock_handler)
 
+        # process_all returns raw result values (not Task objects)
         assert len(results) == 1
-        assert results[0].status == TaskStatus.COMPLETED
-        assert results[0].result == "processed_task1"
+        assert results[0] == "processed_task1"
+        assert stats.completed == 1
 
     @pytest.mark.asyncio
     async def test_process_multiple_tasks(self, processor):
         """Test processing multiple tasks."""
-        async def mock_handler(data):
+        async def mock_handler(client, data):
             await asyncio.sleep(0.01)
             return f"processed_{data}"
 
@@ -179,12 +180,12 @@ class TestParallelProcessor:
         results, stats = await processor.process_all(tasks_data, mock_handler)
 
         assert len(results) == 3
-        assert all(r.status == TaskStatus.COMPLETED for r in results)
+        assert stats.completed == 3
 
     @pytest.mark.asyncio
     async def test_process_task_failure(self, processor):
         """Test processing a task that fails."""
-        async def failing_handler(data):
+        async def failing_handler(client, data):
             if data == "fail":
                 raise Exception("Task failed")
             return f"processed_{data}"
@@ -192,18 +193,21 @@ class TestParallelProcessor:
         tasks_data = ["task1", "fail", "task2"]
         results, stats = await processor.process_all(tasks_data, failing_handler)
 
-        assert len(results) == 3
-        # Check that failed task is marked as failed
-        failed_task = next(r for r in results if r.data == "fail")
-        assert failed_task.status == TaskStatus.FAILED
-        assert failed_task.error is not None
+        # Only successful results are returned
+        assert len(results) == 2
+        assert stats.completed == 2
+        assert stats.failed == 1
+        # Check failed task via processor.tasks
+        failed_tasks = processor.get_failed_tasks()
+        assert len(failed_tasks) == 1
+        assert failed_tasks[0].data == "fail"
 
     @pytest.mark.asyncio
     async def test_process_with_retries(self, processor):
         """Test that failed tasks are retried."""
         attempt_count = {"count": 0}
 
-        async def flaky_handler(data):
+        async def flaky_handler(client, data):
             attempt_count["count"] += 1
             if attempt_count["count"] <= 2:
                 raise Exception("Temporary failure")
@@ -214,15 +218,15 @@ class TestParallelProcessor:
 
         # Should succeed after retries
         assert len(results) == 1
-        assert results[0].status == TaskStatus.COMPLETED
-        assert results[0].retry_count >= 1
+        assert results[0] == "success"
+        assert stats.retried >= 1
 
     @pytest.mark.asyncio
     async def test_concurrency_limit(self, processor):
         """Test that concurrency is limited."""
         active_tasks = {"count": 0, "max": 0}
 
-        async def tracking_handler(data):
+        async def tracking_handler(client, data):
             active_tasks["count"] += 1
             active_tasks["max"] = max(active_tasks["max"], active_tasks["count"])
             await asyncio.sleep(0.05)
@@ -234,33 +238,33 @@ class TestParallelProcessor:
 
         # Max concurrent tasks should not exceed max_concurrency
         assert active_tasks["max"] <= processor.max_concurrency
+        assert len(results) == 10
 
     @pytest.mark.asyncio
     async def test_timeout_handling(self):
         """Test task timeout handling."""
-        processor = ParallelProcessor(timeout=0.1, max_retries=1, show_progress=False)
+        processor = ParallelProcessor(timeout=0.1, max_retries=0, show_progress=False)
 
-        async def slow_handler(data):
+        async def slow_handler(client, data):
             await asyncio.sleep(1.0)  # Exceeds timeout
             return "done"
 
         tasks_data = ["task1"]
         results, stats = await processor.process_all(tasks_data, slow_handler)
 
-        # Should fail due to timeout
-        assert len(results) == 1
-        # Depending on implementation, may be FAILED or have error
-        # Just check it didn't complete successfully
-        assert results[0].status != TaskStatus.COMPLETED or results[0].error is not None
+        # Should fail due to timeout — no successful results
+        assert len(results) == 0
+        assert stats.failed == 1
 
     @pytest.mark.asyncio
     async def test_empty_task_list(self, processor):
         """Test processing empty task list."""
-        async def mock_handler(data):
+        async def mock_handler(client, data):
             return data
 
         results, stats = await processor.process_all([], mock_handler)
         assert len(results) == 0
+        assert stats.total_tasks == 0
 
     # ========================================================================
     # Test: Statistics
@@ -269,20 +273,17 @@ class TestParallelProcessor:
     @pytest.mark.asyncio
     async def test_statistics_collection(self, processor):
         """Test that statistics are collected correctly."""
-        async def mock_handler(data):
+        async def mock_handler(client, data):
             await asyncio.sleep(0.01)
             return f"processed_{data}"
 
         tasks_data = ["task1", "task2", "task3"]
         results, stats = await processor.process_all(tasks_data, mock_handler)
 
-        # Processor should have stats
-        # Check results have timing info
-        for result in results:
-            if result.status == TaskStatus.COMPLETED:
-                assert result.start_time is not None
-                assert result.end_time is not None
-                assert result.end_time >= result.start_time
+        assert stats.total_tasks == 3
+        assert stats.completed == 3
+        assert stats.failed == 0
+        assert stats.total_time > 0
 
     # ========================================================================
     # Integration Tests
@@ -291,7 +292,7 @@ class TestParallelProcessor:
     @pytest.mark.asyncio
     async def test_realistic_workflow(self, processor):
         """Test realistic translation workflow."""
-        async def translation_handler(chunk):
+        async def translation_handler(client, chunk):
             # Simulate translation
             await asyncio.sleep(0.02)
             return {
@@ -308,13 +309,14 @@ class TestParallelProcessor:
         results, stats = await processor.process_all(chunks, translation_handler)
 
         assert len(results) == 3
-        assert all(r.status == TaskStatus.COMPLETED for r in results)
-        assert all(r.result is not None for r in results)
+        assert stats.completed == 3
+        assert all(isinstance(r, dict) for r in results)
+        assert all("translated" in r for r in results)
 
     @pytest.mark.asyncio
     async def test_mixed_success_and_failure(self, processor):
         """Test handling mix of successful and failed tasks."""
-        async def mixed_handler(data):
+        async def mixed_handler(client, data):
             await asyncio.sleep(0.01)
             if "fail" in data:
                 raise Exception("Intentional failure")
@@ -323,13 +325,10 @@ class TestParallelProcessor:
         tasks_data = ["good1", "fail1", "good2", "fail2", "good3"]
         results, stats = await processor.process_all(tasks_data, mixed_handler)
 
-        assert len(results) == 5
-
-        successful = [r for r in results if r.status == TaskStatus.COMPLETED]
-        failed = [r for r in results if r.status == TaskStatus.FAILED]
-
-        assert len(successful) == 3
-        assert len(failed) == 2
+        # Only successful results returned
+        assert len(results) == 3
+        assert stats.completed == 3
+        assert stats.failed == 2
 
     @pytest.mark.parametrize("concurrency", [1, 3, 5])
     @pytest.mark.asyncio
@@ -337,7 +336,7 @@ class TestParallelProcessor:
         """Test processor with various concurrency levels."""
         processor = ParallelProcessor(max_concurrency=concurrency, show_progress=False)
 
-        async def mock_handler(data):
+        async def mock_handler(client, data):
             await asyncio.sleep(0.01)
             return data
 
@@ -345,4 +344,4 @@ class TestParallelProcessor:
         results, stats = await processor.process_all(tasks_data, mock_handler)
 
         assert len(results) == 10
-        assert all(r.status == TaskStatus.COMPLETED for r in results)
+        assert stats.completed == 10

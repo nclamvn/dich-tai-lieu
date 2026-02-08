@@ -388,8 +388,8 @@ async def shutdown_redis():
     try:
         from core.cache.redis_client import close_redis_client
         await close_redis_client()
-    except Exception:
-        pass
+    except Exception as e:
+        logger.debug("Redis shutdown skipped: %s", e)
 
 
 @app.on_event("startup")
@@ -539,9 +539,8 @@ class ConnectionManager:
         for connection in self.active_connections:
             try:
                 await connection.send_json(message)
-            except Exception:
-                # Silently ignore connection errors (client may have disconnected)
-                pass
+            except Exception as e:
+                logger.debug("WebSocket send failed (client may have disconnected): %s", e)
 
 
 manager = ConnectionManager()
@@ -1319,8 +1318,8 @@ async def convert_document_format(source_path: Path, target_format: str, output_
             try:
                 pdfmetrics.registerFont(TTFont('DejaVu', '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf'))
                 font_name = 'DejaVu'
-            except Exception:
-                # Fallback to Helvetica if DejaVu not available
+            except Exception as e:
+                logger.debug("DejaVu font not available, using Helvetica: %s", e)
                 font_name = 'Helvetica'
 
             doc = Document(str(source_path))
