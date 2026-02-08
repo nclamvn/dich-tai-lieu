@@ -13,6 +13,13 @@ from pathlib import Path
 from typing import Dict, Optional, List, Any
 from datetime import datetime
 
+from api.services.eqs import ExtractionQualityScorer
+from api.services.extraction_feedback import (
+    ExtractionFeedbackLoop,
+    ExtractionStrategy as EQSStrategy,
+    FeedbackAction,
+)
+
 from .job_repository import get_job_repository, JobRepository
 
 from core_v2 import (
@@ -153,6 +160,13 @@ class APSV2Service:
         self._llm_client: Optional[LLMClientAdapter] = None
         self._publisher: Optional[UniversalPublisher] = None
 
+        # EQS — Extraction Quality Scoring (Sprint 9)
+        self._eqs_scorer = ExtractionQualityScorer()
+        self._eqs_feedback = ExtractionFeedbackLoop(
+            min_score=0.7, max_retries=3, scorer=self._eqs_scorer,
+        )
+        self._last_eqs_report: Optional[Dict] = None  # per-extraction metadata
+
         logger.info(f"APSV2Service initialized: output={self.output_dir}, jobs loaded: {len(self._jobs)}")
 
     def _load_jobs_from_db(self):
@@ -242,6 +256,7 @@ class APSV2Service:
             },
             "job_start_time": time.time(),
             "api_key": api_key,  # User-provided API key (not persisted to DB)
+            "eqs": self._last_eqs_report,  # EQS extraction quality (Sprint 9)
         }
 
         # Save to database FIRST
@@ -606,6 +621,31 @@ class APSV2Service:
             # Try reading as text
             return file_path.read_text(encoding='utf-8', errors='ignore')
 
+    def _eqs_score_text(
+        self, text: str, total_pages: int, strategy: str, source_lang: str = None
+    ) -> None:
+        """Score extracted text quality and store result. Never raises."""
+        try:
+            report = self._eqs_scorer.score(
+                text=text,
+                total_pages=total_pages,
+                expected_language=source_lang,
+            )
+            self._last_eqs_report = {
+                "eqs_score": round(report.overall_score, 4),
+                "eqs_grade": report.grade,
+                "eqs_strategy_used": strategy,
+                "eqs_recommendation": report.recommendation,
+                "eqs_passed": report.passed,
+            }
+            logger.info(
+                "EQS: strategy=%s score=%.3f grade=%s recommendation=%s",
+                strategy, report.overall_score, report.grade, report.recommendation,
+            )
+        except Exception as exc:
+            logger.warning("EQS scoring failed (non-blocking): %s", exc)
+            self._last_eqs_report = None
+
     async def _smart_extract_pdf(
         self,
         file_path: Path,
@@ -621,11 +661,16 @@ class APSV2Service:
         - OCR: Scanned docs with known language → PaddleOCR, FREE
         - FULL_VISION: Scanned, complex layouts → Full Vision API
 
+        After extraction, runs EQS quality scoring and auto-retries
+        with the next fallback strategy if score < 0.7.
+
         Args:
             file_path: Path to PDF file
             use_vision: Enable Vision API fallback
             source_lang: Source language for OCR routing ('ja', 'zh', 'ko', etc.)
         """
+        self._last_eqs_report = None
+
         try:
             from core.smart_extraction import (
                 SmartExtractionRouter,
@@ -651,57 +696,137 @@ class APSV2Service:
                 logger.info(f"   Vision disabled, forcing FAST_TEXT")
                 analysis.strategy = ExtractionStrategy.FAST_TEXT
 
-            # Route based on strategy
-            if analysis.strategy == ExtractionStrategy.FAST_TEXT:
-                # Use fast PyMuPDF extraction
-                from core.smart_extraction import fast_extract
-                result = await fast_extract(str(file_path))
-                logger.info(f"   ⚡ Fast extracted {result.total_pages} pages in {result.extraction_time:.1f}s")
-                logger.info(f"   💰 Estimated savings: ${analysis.estimated_cost_vision:.2f}")
-                return result.full_content
+            # === Extraction with EQS feedback loop (Sprint 9) ===
+            async def _try_extract(strategy: ExtractionStrategy):
+                """Extract text using a specific strategy. Returns (text, pages)."""
+                if strategy == ExtractionStrategy.FAST_TEXT:
+                    from core.smart_extraction import fast_extract
+                    result = await fast_extract(str(file_path))
+                    logger.info(f"   ⚡ Fast extracted {result.total_pages} pages in {result.extraction_time:.1f}s")
+                    return result.full_content, result.total_pages
 
-            elif analysis.strategy == ExtractionStrategy.HYBRID:
-                # Use fast extraction for most pages, Vision only for complex
-                from core.smart_extraction import fast_extract
-                result = await fast_extract(str(file_path))
+                elif strategy == ExtractionStrategy.HYBRID:
+                    from core.smart_extraction import fast_extract
+                    result = await fast_extract(str(file_path))
+                    logger.info(f"   📖 Hybrid extraction (fast for most pages)")
+                    logger.info(f"   Complex pages that could use Vision: {len(analysis.complex_page_numbers)}")
+                    return result.full_content, result.total_pages
 
-                # TODO: Re-extract complex pages with Vision if needed
-                # For now, return fast extraction result
-                logger.info(f"   📖 Hybrid extraction (fast for most pages)")
-                logger.info(f"   Complex pages that could use Vision: {len(analysis.complex_page_numbers)}")
-                return result.full_content
+                elif strategy == ExtractionStrategy.FULL_VISION:
+                    ocr_supported = {'ja', 'zh', 'zh-Hans', 'zh-Hant', 'ko', 'en', 'fr', 'de', 'es', 'vi'}
+                    if source_lang and source_lang in ocr_supported and analysis.scanned_pages > 0:
+                        logger.info(f"   🔤 Using PaddleOCR for {source_lang} scanned document (FREE)")
+                        result = await smart_extract(
+                            str(file_path),
+                            source_lang=source_lang,
+                            use_vision=False
+                        )
+                        logger.info(f"   ✅ OCR extracted {result.total_pages} pages")
+                        logger.info(f"   📊 OCR confidence: {result.ocr_confidence:.1%}")
+                        return result.content, result.total_pages
+                    else:
+                        # Vision path: return file path for orchestrator
+                        logger.info(f"   🔍 Document requires Vision API (scanned/complex)")
+                        return None, analysis.total_pages  # None signals "pass to orchestrator"
 
-            elif analysis.strategy == ExtractionStrategy.FULL_VISION:
-                # Check if we can use OCR instead (for scanned docs with known language)
-                ocr_supported = {'ja', 'zh', 'zh-Hans', 'zh-Hant', 'ko', 'en', 'fr', 'de', 'es', 'vi'}
-                if source_lang and source_lang in ocr_supported and analysis.scanned_pages > 0:
-                    # Use PaddleOCR instead of Vision API (FREE!)
-                    logger.info(f"   🔤 Using PaddleOCR for {source_lang} scanned document (FREE)")
+                else:  # OCR strategy
+                    logger.info(f"   🔤 Using PaddleOCR extraction")
                     result = await smart_extract(
                         str(file_path),
-                        source_lang=source_lang,
-                        use_vision=False  # Disable Vision to force OCR path
+                        source_lang=source_lang or 'en',
+                        use_vision=False
                     )
                     logger.info(f"   ✅ OCR extracted {result.total_pages} pages")
                     logger.info(f"   📊 OCR confidence: {result.ocr_confidence:.1%}")
-                    logger.info(f"   💰 Cost: $0 (vs Vision ${analysis.estimated_cost_vision:.2f})")
-                    return result.content
-                else:
-                    # Return path for Vision processing by orchestrator
-                    logger.info(f"   🔍 Document requires Vision API (scanned/complex)")
-                    return str(file_path)
+                    return result.content, result.total_pages
 
-            else:  # OCR strategy (explicitly set)
-                # Use PaddleOCR
-                logger.info(f"   🔤 Using PaddleOCR extraction")
-                result = await smart_extract(
-                    str(file_path),
-                    source_lang=source_lang or 'en',
-                    use_vision=False
+            # Map core ExtractionStrategy to EQS strategy names
+            _STRATEGY_TO_EQS = {
+                ExtractionStrategy.FAST_TEXT: EQSStrategy.TEXT,
+                ExtractionStrategy.HYBRID: EQSStrategy.TEXT,  # hybrid uses text extraction
+                ExtractionStrategy.FULL_VISION: EQSStrategy.VISION,
+                ExtractionStrategy.OCR: EQSStrategy.OCR,
+            }
+            # Reverse: EQS strategy → core strategy for retry
+            _EQS_TO_STRATEGY = {
+                EQSStrategy.TEXT: ExtractionStrategy.FAST_TEXT,
+                EQSStrategy.OCR: ExtractionStrategy.OCR,
+                EQSStrategy.VISION: ExtractionStrategy.FULL_VISION,
+            }
+
+            # --- First extraction attempt ---
+            text, total_pages = await _try_extract(analysis.strategy)
+
+            if text is None:
+                # FULL_VISION pass-through — can't score, return file path
+                logger.info(f"   💰 Estimated savings: ${analysis.estimated_cost_vision:.2f}")
+                return str(file_path)
+
+            # --- EQS scoring + feedback loop ---
+            try:
+                eqs_strategy = _STRATEGY_TO_EQS.get(analysis.strategy, EQSStrategy.TEXT)
+                fb = self._eqs_feedback.evaluate(
+                    text=text,
+                    strategy=eqs_strategy,
+                    total_pages=total_pages,
+                    expected_language=source_lang,
+                    iteration=1,
                 )
-                logger.info(f"   ✅ OCR extracted {result.total_pages} pages")
-                logger.info(f"   📊 OCR confidence: {result.ocr_confidence:.1%}")
-                return result.content
+                logger.info(
+                    "EQS: strategy=%s score=%.3f grade=%s action=%s",
+                    eqs_strategy.value, fb.eqs_report.overall_score,
+                    fb.eqs_report.grade, fb.action.value,
+                )
+
+                # Retry if score below threshold and there's a next strategy
+                if fb.action == FeedbackAction.RETRY and fb.next_strategy:
+                    retry_core = _EQS_TO_STRATEGY.get(fb.next_strategy)
+                    if retry_core and retry_core != analysis.strategy:
+                        logger.info(
+                            "EQS retry: %s → %s (score %.3f < %.1f)",
+                            getattr(analysis.strategy, 'value', analysis.strategy),
+                            getattr(retry_core, 'value', retry_core),
+                            fb.eqs_report.overall_score, self._eqs_feedback.min_score,
+                        )
+                        try:
+                            retry_text, retry_pages = await _try_extract(retry_core)
+                            if retry_text is not None:
+                                fb2 = self._eqs_feedback.evaluate(
+                                    text=retry_text,
+                                    strategy=fb.next_strategy,
+                                    total_pages=retry_pages,
+                                    expected_language=source_lang,
+                                    iteration=2,
+                                )
+                                logger.info(
+                                    "EQS retry result: score=%.3f grade=%s",
+                                    fb2.eqs_report.overall_score, fb2.eqs_report.grade,
+                                )
+                                # Use retry text if it scored better
+                                if fb2.eqs_report.overall_score > fb.eqs_report.overall_score:
+                                    text = retry_text
+                                    fb = fb2
+                                    logger.info("EQS: using retry result (better score)")
+                                else:
+                                    logger.info("EQS: keeping original (retry not better)")
+                        except Exception as retry_exc:
+                            logger.warning("EQS retry extraction failed: %s", retry_exc)
+
+                # Store final EQS metadata
+                self._last_eqs_report = {
+                    "eqs_score": round(fb.eqs_report.overall_score, 4),
+                    "eqs_grade": fb.eqs_report.grade,
+                    "eqs_strategy_used": fb.strategy_used.value,
+                    "eqs_recommendation": fb.eqs_report.recommendation,
+                    "eqs_passed": fb.eqs_report.passed,
+                    "eqs_retried": fb.iteration > 1,
+                    "eqs_attempts": fb.iteration,
+                }
+            except Exception as eqs_exc:
+                logger.warning("EQS scoring failed (non-blocking): %s", eqs_exc)
+                self._last_eqs_report = None
+
+            return text
 
         except ImportError as e:
             logger.warning(f"Smart extraction not available: {e}, using legacy")
