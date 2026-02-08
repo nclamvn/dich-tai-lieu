@@ -221,36 +221,6 @@ class SystemInfo(BaseModel):
     queue_stats: QueueStats
 
 
-class OCRRequest(BaseModel):
-    """Request model for OCR recognition"""
-    image_base64: str = Field(..., description="Base64 encoded image")
-    language: str = Field(default="auto", description="Language code (auto/vi/en/zh/ja/ko)")
-    mode: str = Field(default="accurate", description="Recognition mode (fast/accurate/handwriting)")
-
-
-class OCRTranslateRequest(BaseModel):
-    """Request model for OCR + Translation"""
-    image_base64: str = Field(..., description="Base64 encoded image")
-    target_lang: str = Field(default="vi", description="Target language code")
-    source_lang: str = Field(default="auto", description="Source language (auto detect)")
-
-
-class OCRResponse(BaseModel):
-    """Response model for OCR results"""
-    text: str
-    confidence: float
-    language: str
-    processing_time: float
-    regions: List[Dict[str, Any]] = []
-
-
-class OCRTranslateResponse(BaseModel):
-    """Response model for OCR + Translation"""
-    ocr: Dict[str, Any]
-    translation: Dict[str, Any]
-    regions: List[Dict[str, Any]] = []
-
-
 class AnalyzeRequest(BaseModel):
     """Request model for file analysis"""
     file_path: str = Field(..., description="Server path to uploaded file")
@@ -1178,6 +1148,8 @@ async def cancel_job(
         )
 
 
+ALLOWED_DOWNLOAD_FORMATS = {"docx", "pdf", "md", "txt", "html", "srt"}
+
 @app.get("/api/jobs/{job_id}/download/{format}")
 async def download_job_output(job_id: str, format: str):
     """
@@ -1185,11 +1157,17 @@ async def download_job_output(job_id: str, format: str):
 
     Args:
         job_id: Job ID
-        format: Output format (docx, pdf, md, txt, html)
+        format: Output format (docx, pdf, md, txt, html, srt)
 
     Returns:
         FileResponse with translated document
     """
+    if format not in ALLOWED_DOWNLOAD_FORMATS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid format '{format}'. Allowed: {', '.join(sorted(ALLOWED_DOWNLOAD_FORMATS))}"
+        )
+
     job = queue.get_job(job_id)
     if not job:
         raise HTTPException(
@@ -1540,11 +1518,16 @@ async def detect_pdf_type(
 
     from core.ocr import SmartDetector, PDFType, OCRMode
 
-    # Resolve path
+    # Resolve path with traversal protection
+    project_root = Path(__file__).parent.parent.resolve()
     pdf_path = Path(file_path)
     if not pdf_path.is_absolute():
-        project_root = Path(__file__).parent.parent
         pdf_path = project_root / pdf_path
+    pdf_path = pdf_path.resolve()
+
+    # Prevent path traversal outside project directory
+    if not str(pdf_path).startswith(str(project_root)):
+        raise HTTPException(status_code=403, detail="Access denied: path outside project directory")
 
     if not pdf_path.exists():
         raise HTTPException(status_code=404, detail=f"PDF not found: {file_path}")
@@ -2093,195 +2076,6 @@ async def process_batch_job(job_id: str):
     except Exception as e:
         job["status"] = "failed"
         job["error"] = str(e)
-
-
-# =============================================================================
-# API Endpoints - OCR (Deepseek)
-# =============================================================================
-
-@app.post("/api/ocr/recognize", response_model=OCRResponse)
-async def ocr_recognize(request: OCRRequest):
-    """
-    Nhận dạng văn bản từ ảnh (OCR)
-
-    - **image_base64**: Ảnh đã encode base64
-    - **language**: Ngôn ngữ (auto/vi/en/zh/ja/ko)
-    - **mode**: Chế độ nhận dạng (fast/accurate/handwriting)
-
-    Returns OCR result với văn bản, độ tin cậy, ngôn ngữ phát hiện
-    """
-    import os
-    import tempfile
-    import base64
-
-    # Get Deepseek API key from environment
-    deepseek_key = os.getenv("DEEPSEEK_API_KEY")
-    if not deepseek_key:
-        raise HTTPException(
-            status_code=500,
-            detail="DEEPSEEK_API_KEY not configured. Set environment variable."
-        )
-
-    # Decode base64 image and save to temp file
-    try:
-        image_data = base64.b64decode(request.image_base64)
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-            tmp_file.write(image_data)
-            tmp_path = tmp_file.name
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid image data: {str(e)}")
-
-    # Perform OCR
-    try:
-        # Deprecated: DeepSeek OCR replaced by hybrid system
-        raise HTTPException(status_code=501, detail="DeepSeek OCR is deprecated. Use hybrid OCR in translation jobs instead.")
-        # ocr = DeepseekOCR(api_key=deepseek_key)
-        # result = await ocr.recognize_image(
-        #     tmp_path,
-        #     language=request.language,
-        #     mode=request.mode
-        # )
-
-        # Clean up temp file
-        Path(tmp_path).unlink()
-
-        return OCRResponse(
-            text=result.text,
-            confidence=result.confidence,
-            language=result.language,
-            processing_time=result.processing_time,
-            regions=result.regions
-        )
-    except Exception as e:
-        # Clean up temp file
-        if Path(tmp_path).exists():
-            Path(tmp_path).unlink()
-        raise HTTPException(status_code=500, detail=f"OCR failed: {str(e)}")
-
-
-@app.post("/api/ocr/handwriting", response_model=OCRResponse)
-async def ocr_handwriting(request: OCRRequest):
-    """
-    Nhận dạng chữ viết tay (Handwriting Recognition)
-
-    Tối ưu hóa cho:
-    - Chữ viết tay tiếng Việt
-    - Ghi chú học tập
-    - Biên bản họp
-
-    Uses handwriting-optimized mode automatically.
-    """
-    # Force handwriting mode
-    request.mode = "handwriting"
-    return await ocr_recognize(request)
-
-
-@app.post("/api/ocr/translate", response_model=OCRTranslateResponse)
-async def ocr_translate(request: OCRTranslateRequest):
-    """
-    Nhận dạng ảnh và dịch văn bản (OCR + Translation)
-
-    Workflow:
-    1. OCR: Nhận dạng văn bản từ ảnh
-    2. Detect: Phát hiện ngôn ngữ nguồn
-    3. Translate: Dịch sang ngôn ngữ đích
-
-    - **image_base64**: Ảnh đã encode base64
-    - **target_lang**: Ngôn ngữ đích (vi/en/zh)
-    - **source_lang**: Ngôn ngữ nguồn (auto detect)
-    """
-    import os
-    import tempfile
-    import base64
-
-    # Get API keys
-    deepseek_key = os.getenv("DEEPSEEK_API_KEY")
-    openai_key = os.getenv("OPENAI_API_KEY")
-
-    if not deepseek_key:
-        raise HTTPException(
-            status_code=500,
-            detail="DEEPSEEK_API_KEY not configured"
-        )
-    if not openai_key:
-        raise HTTPException(
-            status_code=500,
-            detail="OPENAI_API_KEY not configured for translation"
-        )
-
-    # Decode base64 image
-    try:
-        image_data = base64.b64decode(request.image_base64)
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_file:
-            tmp_file.write(image_data)
-            tmp_path = tmp_file.name
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=f"Invalid image data: {str(e)}")
-
-    # Perform OCR + Translation
-    try:
-        # Deprecated: DeepSeek OCR replaced by hybrid system
-        raise HTTPException(status_code=501, detail="DeepSeek OCR+translate is deprecated. Use hybrid OCR in translation jobs instead.")
-        # ocr = DeepseekOCR(api_key=deepseek_key)
-        # result = await ocr.recognize_with_translation(
-        #     tmp_path,
-        #     target_lang=request.target_lang,
-        #     translator_api_key=openai_key
-        # )
-
-        # Clean up
-        Path(tmp_path).unlink()
-
-        return OCRTranslateResponse(
-            ocr=result["ocr"],
-            translation=result["translation"],
-            regions=result["regions"]
-        )
-    except Exception as e:
-        # Clean up
-        if Path(tmp_path).exists():
-            Path(tmp_path).unlink()
-        raise HTTPException(status_code=500, detail=f"OCR/Translation failed: {str(e)}")
-
-
-@app.post("/api/ocr/upload")
-@limiter.limit("30/minute")
-async def ocr_upload(request: Request, file: UploadFile = File(...)):
-    """
-    Upload ảnh để OCR (alternative to base64)
-
-    Accepts: JPG, PNG, HEIC
-    Max size: 10MB
-
-    Returns base64 encoded image for use with other OCR endpoints.
-    """
-    # Validate file type
-    allowed_types = ["image/jpeg", "image/png", "image/heic"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid file type. Allowed: {', '.join(allowed_types)}"
-        )
-
-    # Read file
-    contents = await file.read()
-
-    # Check size (configurable via MAX_OCR_IMAGE_SIZE_MB env var, default 10MB)
-    max_size_mb = int(os.getenv("MAX_OCR_IMAGE_SIZE_MB", "10"))
-    max_size_bytes = max_size_mb * 1024 * 1024
-    if len(contents) > max_size_bytes:
-        raise HTTPException(status_code=400, detail=f"File too large (max {max_size_mb}MB)")
-
-    # Encode to base64
-    import base64
-    encoded = base64.b64encode(contents).decode('utf-8')
-
-    return {
-        "filename": file.filename,
-        "size": len(contents),
-        "content_type": file.content_type,
-        "base64": encoded
-    }
 
 
 @app.post("/api/upload")
