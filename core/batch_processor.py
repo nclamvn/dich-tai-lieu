@@ -128,6 +128,15 @@ except ImportError as e:
     HAS_ADN = False
     logger.info(f"⚠️  ADN module not available: {e}")
 
+# Phase 2026-02 - Smart Extraction with Vision API
+try:
+    from .smart_extraction import smart_extract, ExtractionStrategy
+    HAS_SMART_EXTRACTION = True
+    logger.info("✅ Smart Extraction module imported successfully")
+except ImportError as e:
+    HAS_SMART_EXTRACTION = False
+    logger.info(f"⚠️  Smart Extraction not available: {e}")
+
 
 # OCR Language Mapping for PaddleOCR
 OCR_LANG_MAP = {
@@ -534,7 +543,14 @@ class BatchProcessor:
             Configured TranslatorEngine
         """
         from config.settings import settings
-        api_key = settings.openai_api_key if job.provider == "openai" else settings.anthropic_api_key
+
+        # Phase 2026-02: Check for user-provided API key first
+        user_api_key = job.metadata.get('api_key') if job.metadata else None
+        if user_api_key and len(user_api_key.strip()) >= 10:
+            api_key = user_api_key
+            logger.info(f"Using user-provided API key for provider: {job.provider}")
+        else:
+            api_key = settings.openai_api_key if job.provider == "openai" else settings.anthropic_api_key
 
         if not api_key or len(api_key.strip()) < 10:
             raise ValueError(f"Invalid or missing API key for provider '{job.provider}'")
@@ -1039,8 +1055,26 @@ class BatchProcessor:
 
         # Read document normally if OCR not used
         if input_text is None:
-            input_text = read_document(input_path)
-        
+            # Phase 2026-02: Use Smart Extraction with Vision API for PDFs
+            use_vision = job.metadata.get('use_vision', True) if job.metadata else True
+
+            if (HAS_SMART_EXTRACTION and
+                use_vision and
+                input_path.suffix.lower() == '.pdf'):
+                logger.info(f"📷 Vision Layout enabled - using Smart Extraction for PDF")
+                try:
+                    import asyncio
+                    result = asyncio.get_event_loop().run_until_complete(
+                        smart_extract(str(input_path), source_lang=job.source_lang, use_vision=True)
+                    )
+                    input_text = result.combined_text
+                    logger.info(f"✅ Vision extracted {result.total_pages} pages (strategy: {result.strategy})")
+                except Exception as e:
+                    logger.warning(f"⚠️ Vision extraction failed: {e}, falling back to basic extraction")
+                    input_text = read_document(input_path)
+            else:
+                input_text = read_document(input_path)
+
         # Phase 8: Smart Tables (Premium)
         if job.metadata.get('use_smart_tables', False) and input_path.suffix.lower() == '.pdf':
             logger.info("🚀 Smart Tables Enabled: Running Vision Reconstruction Pipeline...")
@@ -1096,13 +1130,18 @@ class BatchProcessor:
                 db_path=Path("data/translation_memory/tm.db")
         )
 
-        # Get API key
+        # Get API key - Phase 2026-02: Check user-provided key first
         from config.settings import settings
-        api_key = settings.openai_api_key if job.provider == "openai" else settings.anthropic_api_key
+        user_api_key = job.metadata.get('api_key') if job.metadata else None
+        if user_api_key and len(user_api_key.strip()) >= 10:
+            api_key = user_api_key
+            logger.info(f" Using user-provided API key for provider: {job.provider}")
+        else:
+            api_key = settings.openai_api_key if job.provider == "openai" else settings.anthropic_api_key
 
         # Validate API key before starting
         if not api_key or len(api_key.strip()) < 10:
-                error_msg = f"Invalid or missing API key for provider '{job.provider}'. Please configure your API key in config/settings.py"
+                error_msg = f"Invalid or missing API key for provider '{job.provider}'. Please configure your API key in config/settings.py or provide one in Settings"
                 logger.error(f" {error_msg}")
                 raise ValueError(error_msg)
 

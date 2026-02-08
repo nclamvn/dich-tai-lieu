@@ -50,6 +50,8 @@ async def publish_file(
     api_key: str = Form(default="", description="User API key (optional, overrides server config)"),
     docx_template: str = Form(default="auto", description="DOCX template: 'ebook', 'academic', 'business', or 'auto'"),
     pdf_template: str = Form(default="auto", description="PDF template: 'ebook', 'academic', 'business', or 'auto'"),
+    provider: str = Form(default="auto", description="AI provider: 'auto', 'openai', 'anthropic'"),
+    model: str = Form(default="", description="Model name (e.g., 'gpt-4o', 'claude-sonnet-4-20250514')"),
 ):
     """
     Upload a document and start the publishing pipeline.
@@ -127,7 +129,7 @@ async def publish_file(
         if not formats:
             formats = ["docx"]
 
-        # Create job with Vision mode
+        # Create job with Vision mode and provider selection
         job = await service.create_job(
             source_file=file.filename,
             content=content,
@@ -139,6 +141,8 @@ async def publish_file(
             api_key=api_key if api_key else None,
             docx_template=docx_template,
             pdf_template=pdf_template,
+            provider=provider if provider != "auto" else None,
+            model=model if model else None,
         )
 
         return service.get_job_response(job)

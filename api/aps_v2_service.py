@@ -191,6 +191,8 @@ class APSV2Service:
         api_key: Optional[str] = None,  # User-provided API key
         docx_template: str = "auto",  # DOCX template (ebook/academic/business/auto)
         pdf_template: str = "auto",  # PDF template (ebook/academic/business/auto)
+        provider: Optional[str] = None,  # AI provider: 'openai', 'anthropic'
+        model: Optional[str] = None,  # Model name (e.g., 'gpt-4o', 'claude-sonnet-4-20250514')
     ) -> Dict:
         """Create and start a new publishing job."""
 
@@ -214,6 +216,8 @@ class APSV2Service:
             "use_vision": use_vision,
             "docx_template": docx_template,  # DOCX template (ebook/academic/business/auto)
             "pdf_template": pdf_template,  # PDF template (ebook/academic/business/auto)
+            "provider": provider,  # AI provider selection
+            "model": model,  # Model name
             "status": JobStatusV2.PENDING,
             "progress": 0.0,
             "current_stage": "",
@@ -247,26 +251,36 @@ class APSV2Service:
         # Start processing in background with Vision mode
         task = asyncio.create_task(self._process_job(
             job_id, content, use_vision=use_vision, api_key=api_key,
-            docx_template=docx_template, pdf_template=pdf_template
+            docx_template=docx_template, pdf_template=pdf_template,
+            provider=provider, model=model
         ))
         self._job_tasks[job_id] = task
 
-        logger.info(f"[{job_id}] Job created and saved to DB: {source_file} ({profile_id}) vision={use_vision} docx={docx_template} pdf={pdf_template}")
+        logger.info(f"[{job_id}] Job created: {source_file} ({profile_id}) vision={use_vision} provider={provider} model={model}")
 
         return job_record
 
-    async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None, docx_template: str = "auto", pdf_template: str = "auto"):
+    async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None, docx_template: str = "auto", pdf_template: str = "auto", provider: Optional[str] = None, model: Optional[str] = None):
         """Process job in background."""
         job = self._jobs.get(job_id)
         if not job:
             return
 
-        # If user provided API key, create a temporary client/publisher for this job
+        # Determine provider to use
+        use_provider = provider or self.provider
+        if model:
+            # Auto-detect provider from model name
+            if 'claude' in model.lower():
+                use_provider = 'anthropic'
+            elif 'gpt' in model.lower():
+                use_provider = 'openai'
+
+        # If user provided API key or specific provider, create a temporary client/publisher for this job
         publisher = self._publisher
         llm_client = self._llm_client
-        if api_key:
-            logger.info(f"[{job_id}] Using user-provided API key")
-            llm_client = LLMClientAdapter(self.provider, api_key=api_key)
+        if api_key or provider:
+            logger.info(f"[{job_id}] Using provider={use_provider}, model={model or 'default'}")
+            llm_client = LLMClientAdapter(use_provider, api_key=api_key)
             publisher = UniversalPublisher(
                 llm_client=llm_client,
                 output_dir=self.output_dir,

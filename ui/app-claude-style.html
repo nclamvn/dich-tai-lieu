@@ -1973,6 +1973,18 @@
       gap: 0.5rem;
     }
 
+    .engine-selector select.settings-input {
+      padding: var(--space-4);
+      min-height: 48px;
+      font-size: var(--font-size-base);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 40px;
+    }
+
     .engine-status {
       display: flex;
       align-items: center;
@@ -2631,20 +2643,39 @@
 
         <!-- API Section -->
         <div class="settings-section">
-          <div class="settings-section-title">API</div>
-          <div class="settings-item" style="flex-direction: column; align-items: stretch;">
+          <div class="settings-section-title">API Keys</div>
+
+          <!-- OpenAI API Key -->
+          <div class="settings-item" style="flex-direction: column; align-items: stretch; margin-bottom: var(--space-4);">
             <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3);">
-              <div class="settings-item-icon">
-                <i data-lucide="key"></i>
+              <div class="settings-item-icon" style="background: linear-gradient(135deg, #10a37f 0%, #1a7f5a 100%);">
+                <i data-lucide="sparkles"></i>
               </div>
               <div>
                 <div class="settings-item-label">OpenAI API Key</div>
-                <div class="settings-item-desc">Sử dụng API key riêng của bạn</div>
+                <div class="settings-item-desc">GPT-4o, GPT-4o Mini</div>
               </div>
             </div>
             <div class="settings-input-group">
               <input type="password" class="settings-input" id="api-key-input" placeholder="sk-...">
               <button class="settings-save-btn" id="save-api-key">Lưu</button>
+            </div>
+          </div>
+
+          <!-- Anthropic API Key -->
+          <div class="settings-item" style="flex-direction: column; align-items: stretch;">
+            <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3);">
+              <div class="settings-item-icon" style="background: linear-gradient(135deg, #cc785c 0%, #b8624a 100%);">
+                <i data-lucide="brain"></i>
+              </div>
+              <div>
+                <div class="settings-item-label">Anthropic API Key</div>
+                <div class="settings-item-desc">Claude Sonnet 4, Claude Opus 4</div>
+              </div>
+            </div>
+            <div class="settings-input-group">
+              <input type="password" class="settings-input" id="anthropic-api-key-input" placeholder="sk-ant-...">
+              <button class="settings-save-btn" id="save-anthropic-api-key">Lưu</button>
             </div>
           </div>
         </div>
@@ -2654,8 +2685,8 @@
           <div class="settings-section-title">Translation Engine</div>
           <div class="settings-item" style="flex-direction: column; align-items: stretch;">
             <div style="display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-3);">
-              <div class="settings-item-icon">
-                <i data-lucide="cpu"></i>
+              <div class="settings-item-icon" style="background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);">
+                <i data-lucide="layers"></i>
               </div>
               <div>
                 <div class="settings-item-label">Engine</div>
@@ -2664,9 +2695,9 @@
             </div>
             <div class="engine-selector">
               <select id="translation-engine" class="settings-input" style="width: 100%;">
-                <option value="auto">🤖 Auto (Best Available)</option>
-                <option value="translategemma_4b">🏠 TranslateGemma 4B (Local/Free)</option>
-                <option value="cloud_api_auto">☁️ Cloud API (GPT/Claude)</option>
+                <option value="auto">Auto - Best Available</option>
+                <option value="translategemma_4b">TranslateGemma 4B (Local/Free)</option>
+                <option value="cloud_api_auto">Cloud API (GPT/Claude)</option>
               </select>
               <div id="engine-status" class="engine-status">
                 <span class="status-dot"></span>
@@ -2841,12 +2872,24 @@
               </select>
             </div>
             <div class="option-group">
-              <label class="option-label">Mô hình AI</label>
+              <label class="option-label">Mô hình Dịch thuật</label>
               <select class="option-select" id="model-select">
-                <option value="gpt-4o">GPT-4o (Khuyên dùng)</option>
-                <option value="gpt-4o-mini">GPT-4o Mini (Nhanh)</option>
-                <option value="claude">Claude 3.5 Sonnet</option>
+                <optgroup label="Khuyên dùng">
+                  <option value="gpt-4o">GPT-4o (Nhanh, Chính xác)</option>
+                  <option value="claude-sonnet-4-20250514">Claude Sonnet 4 (Chất lượng cao)</option>
+                </optgroup>
+                <optgroup label="OpenAI">
+                  <option value="gpt-4o-mini">GPT-4o Mini (Tiết kiệm)</option>
+                </optgroup>
+                <optgroup label="Anthropic Claude">
+                  <option value="claude-opus-4-20250514">Claude Opus 4 (Tốt nhất)</option>
+                  <option value="claude-3-5-sonnet-20241022">Claude 3.5 Sonnet</option>
+                  <option value="claude-3-5-haiku-20241022">Claude 3.5 Haiku (Nhanh)</option>
+                </optgroup>
               </select>
+              <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                Vision Layout luôn dùng Claude Vision (ưu tiên) cho đọc PDF
+              </small>
             </div>
             <div class="option-group">
               <label class="option-label">Ngôn ngữ nguồn</label>
@@ -2924,6 +2967,23 @@
                   <span class="toggle-slider"></span>
                 </button>
               </div>
+            </div>
+
+            <!-- Vision Layout Toggle (Phase 2026-02) -->
+            <div class="option-group option-group-full">
+              <label class="option-label">
+                <i data-lucide="scan-eye" style="width: 14px; height: 14px; margin-right: 6px;"></i>
+                Vision Layout (Claude Vision ưu tiên)
+              </label>
+              <div class="toggle-option">
+                <span class="toggle-label">Đọc PDF bằng AI Vision - giữ bảng, công thức, layout</span>
+                <button class="toggle-btn active" id="use-vision-toggle" type="button">
+                  <span class="toggle-slider"></span>
+                </button>
+              </div>
+              <small style="color: var(--text-muted); font-size: 11px; margin-top: 4px; display: block;">
+                ON = Claude Vision đọc PDF → Mô hình dịch thuật (ở trên) dịch
+              </small>
             </div>
           </div>
         </div>
@@ -3145,6 +3205,7 @@
     let coverImageFile = null;
     let coverImageBase64 = null;
     let includeImages = true; // Default: extract images from PDF
+    let useVision = true; // Default: use Vision API for layout preservation
 
     // Translation Engine State
     let availableEngines = [];
@@ -3160,6 +3221,7 @@
     const coverDimensions = document.getElementById('cover-dimensions');
     const coverRemoveBtn = document.getElementById('cover-remove-btn');
     const includeImagesToggle = document.getElementById('include-images-toggle');
+    const useVisionToggle = document.getElementById('use-vision-toggle');
 
     // Tips data for rotating display
     const tips = [
@@ -3265,6 +3327,14 @@
       includeImagesToggle.addEventListener('click', () => {
         includeImagesToggle.classList.toggle('active');
         includeImages = includeImagesToggle.classList.contains('active');
+      });
+    }
+
+    // Vision Layout Toggle
+    if (useVisionToggle) {
+      useVisionToggle.addEventListener('click', () => {
+        useVisionToggle.classList.toggle('active');
+        useVision = useVisionToggle.classList.contains('active');
       });
     }
 
@@ -3845,32 +3915,51 @@
       }
     }
 
-    // Create translation job
+    // Create translation job using V2 API (with layout preservation)
     async function createJob(filePath, sourceLang, targetLang, outputFormats, docxTemplate, pdfTemplate) {
-      // Generate output path based on input
-      const inputFileName = filePath.split('/').pop();
-      const baseName = inputFileName.replace(/\.[^/.]+$/, '');
-      const outputPath = filePath.replace(inputFileName, `${baseName}_translated.docx`);
+      // Get appropriate API key based on selected model
+      const selectedModel = document.getElementById('model-select').value || 'gpt-4o-mini';
+      const isClaudeModel = selectedModel.toLowerCase().includes('claude');
+      const settings = getSettings();
+      const apiKey = isClaudeModel ? (settings.anthropicApiKey || '') : (settings.apiKey || '');
 
-      const payload = {
-        job_name: `Translate ${selectedFile.name}`,
-        input_file: filePath,
-        output_file: outputPath,
-        source_lang: sourceLang === 'auto' ? 'en' : sourceLang,
-        target_lang: targetLang,
-        output_formats: outputFormats || ['docx', 'pdf', 'txt', 'md'],
-        model: document.getElementById('model-select').value || 'gpt-4o-mini',
-        output_format: 'docx',
-        docx_template: docxTemplate || 'auto',  // Professional DOCX template
-        pdf_template: pdfTemplate || 'auto',  // Professional PDF template
-        engine: getSelectedEngine()  // Translation engine (TranslateGemma/Cloud API)
+      // Map profile from UI settings
+      const profileSelect = document.getElementById('profile-select');
+      const profileMap = {
+        'academic': 'academic_paper',
+        'business': 'business_report',
+        'book': 'novel',
+        'technical': 'technical_doc'
       };
+      const profileId = profileMap[profileSelect?.value] || 'novel';
+
+      // Determine provider from model selection
+      const provider = isClaudeModel ? 'anthropic' : 'openai';
+
+      // Build FormData for V2 API (supports layout preservation)
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      // Keep 'auto' to let backend detect language (important for Korean, Chinese, etc.)
+      formData.append('source_language', sourceLang === 'auto' ? 'auto' : sourceLang);
+      formData.append('target_language', targetLang);
+      formData.append('profile_id', profileId);
+      formData.append('output_formats', (outputFormats || ['docx', 'pdf', 'txt', 'md']).join(','));
+      formData.append('use_vision', useVision ? 'true' : 'false');
+      formData.append('docx_template', docxTemplate || 'auto');
+      formData.append('pdf_template', pdfTemplate || 'auto');
+      formData.append('provider', provider);  // Send provider selection
+      formData.append('model', selectedModel);  // Send model name
+      if (apiKey) {
+        formData.append('api_key', apiKey);
+      }
+
+      console.log(`Creating job with provider=${provider}, model=${selectedModel}`);
 
       try {
-        const response = await fetch(`${API_BASE}/api/jobs`, {
+        // Use V2 API for proper layout preservation
+        const response = await fetch(`${API_BASE}/api/v2/publish`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: formData
         });
 
         if (!response.ok) {
@@ -3879,31 +3968,25 @@
         }
 
         const data = await response.json();
-        return data.job_id || data.id;
+        console.log('V2 API response:', data);
+        return data.job_id;
       } catch (error) {
         console.error('Create job error:', error);
         throw error;
       }
     }
 
-    // Ensure batch processor is running
+    // Ensure batch processor is running (V1 API only - V2 auto-processes)
     async function ensureProcessorRunning() {
-      try {
-        const response = await fetch(`${API_BASE}/api/processor/start`, {
-          method: 'POST'
-        });
-        if (response.ok) {
-          console.log('Batch processor started/confirmed running');
-        }
-      } catch (error) {
-        console.warn('Could not start processor (may already be running):', error);
-      }
+      // V2 API processes jobs immediately, no batch processor needed
+      console.log('Using V2 API - auto-processing enabled');
     }
 
-    // Poll job progress
+    // Poll job progress using V2 API
     async function pollProgress(jobId) {
       try {
-        const response = await fetch(`${API_BASE}/api/jobs/${jobId}/progress`);
+        // V2 API: GET /api/v2/jobs/{job_id}
+        const response = await fetch(`${API_BASE}/api/v2/jobs/${jobId}`);
 
         if (!response.ok) {
           if (response.status === 404) {
@@ -3912,27 +3995,30 @@
           throw new Error('Failed to get progress');
         }
 
-        return await response.json();
+        const data = await response.json();
+        // Map V2 response to expected format
+        return {
+          status: data.status,
+          progress: data.progress || 0,
+          progress_percent: data.progress || 0,
+          current_stage: data.current_stage || '',
+          chunks_completed: data.chunks_completed || 0,
+          chunks_total: data.chunks_total || 1,
+          tokens_used: data.usage?.total_tokens || 0,
+          cost_usd: data.usage?.total_cost_usd || 0,
+          output_paths: data.output_paths || {}
+        };
       } catch (error) {
         console.error('Progress poll error:', error);
         return null;
       }
     }
 
-    // Get preview content
+    // Get preview content (V2 API doesn't have preview - returns null)
     async function fetchPreview(jobId, limit = 10) {
-      try {
-        const response = await fetch(`${API_BASE}/api/jobs/${jobId}/preview?limit=${limit}`);
-
-        if (!response.ok) {
-          return null;
-        }
-
-        return await response.json();
-      } catch (error) {
-        console.error('Preview fetch error:', error);
-        return null;
-      }
+      // V2 API doesn't support preview - return null gracefully
+      console.log('Preview not available in V2 API');
+      return null;
     }
 
     // Download file in specific format
@@ -3947,7 +4033,8 @@
       }
 
       try {
-        const response = await fetch(`${API_BASE}/api/jobs/${jobId}/download/${format}`);
+        // V2 API: GET /api/v2/jobs/{job_id}/download/{format_type}
+        const response = await fetch(`${API_BASE}/api/v2/jobs/${jobId}/download/${format}`);
 
         if (!response.ok) {
           throw new Error(`Download failed: ${response.statusText}`);
@@ -4678,6 +4765,8 @@
     const autosaveToggle = document.getElementById('autosave-toggle');
     const apiKeyInput = document.getElementById('api-key-input');
     const saveApiKeyBtn = document.getElementById('save-api-key');
+    const anthropicApiKeyInput = document.getElementById('anthropic-api-key-input');
+    const saveAnthropicApiKeyBtn = document.getElementById('save-anthropic-api-key');
 
     // Open settings panel
     function openSettingsPanel() {
@@ -4698,10 +4787,11 @@
         return JSON.parse(localStorage.getItem(STORAGE_KEY_SETTINGS)) || {
           notifications: false,
           autosave: true,
-          apiKey: ''
+          apiKey: '',
+          anthropicApiKey: ''
         };
       } catch {
-        return { notifications: false, autosave: true, apiKey: '' };
+        return { notifications: false, autosave: true, apiKey: '', anthropicApiKey: '' };
       }
     }
 
@@ -4717,6 +4807,9 @@
       autosaveToggle.classList.toggle('active', settings.autosave);
       if (settings.apiKey) {
         apiKeyInput.value = settings.apiKey;
+      }
+      if (settings.anthropicApiKey && anthropicApiKeyInput) {
+        anthropicApiKeyInput.value = settings.anthropicApiKey;
       }
     }
 
@@ -4740,7 +4833,7 @@
     setupToggle(notificationToggle, 'notifications');
     setupToggle(autosaveToggle, 'autosave');
 
-    // Save API key
+    // Save OpenAI API key
     saveApiKeyBtn.addEventListener('click', () => {
       const settings = getSettings();
       settings.apiKey = apiKeyInput.value;
@@ -4752,6 +4845,21 @@
         saveApiKeyBtn.style.background = '';
       }, 2000);
     });
+
+    // Save Anthropic API key
+    if (saveAnthropicApiKeyBtn) {
+      saveAnthropicApiKeyBtn.addEventListener('click', () => {
+        const settings = getSettings();
+        settings.anthropicApiKey = anthropicApiKeyInput.value;
+        saveSettings(settings);
+        saveAnthropicApiKeyBtn.textContent = 'Đã lưu!';
+        saveAnthropicApiKeyBtn.style.background = '#10B981';
+        setTimeout(() => {
+          saveAnthropicApiKeyBtn.textContent = 'Lưu';
+          saveAnthropicApiKeyBtn.style.background = '';
+        }, 2000);
+      });
+    }
 
     // Settings panel event listeners
     settingsBtn.addEventListener('click', openSettingsPanel);

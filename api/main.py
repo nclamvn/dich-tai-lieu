@@ -164,6 +164,12 @@ class JobCreate(BaseModel):
     # Translation Engine (Phase 2026-01)
     engine: str = Field(default="auto", description="Translation engine: 'auto', 'translategemma_4b', 'cloud_api_auto'")
 
+    # Vision Layout (Phase 2026-02)
+    use_vision: bool = Field(default=True, description="Use Claude/OpenAI Vision API for layout-preserving PDF translation. Recommended for documents with tables, formulas, or complex layouts.")
+
+    # User API Keys (Phase 2026-02)
+    api_key: Optional[str] = Field(default=None, description="User's API key (OpenAI or Anthropic). Overrides server config.")
+
 
 class JobUpdate(BaseModel):
     """Request model for updating a job"""
@@ -747,6 +753,10 @@ async def create_job(
         # Phase 2026-01: Image Embedding
         'cover_image': job_data.cover_image,  # Base64 cover image (Page 1)
         'include_images': job_data.include_images,  # Extract/embed images from source
+        # Phase 2026-02: Vision Layout
+        'use_vision': job_data.use_vision,  # Use Claude/OpenAI Vision for layout preservation
+        # Phase 2026-02: User API Key
+        'api_key': job_data.api_key,  # User-provided API key (overrides server config)
     }
     logger.debug(f"Creating job with metadata: {metadata_dict}")
 

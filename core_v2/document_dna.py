@@ -116,7 +116,7 @@ Respond in JSON format:
 {{
     "title": "detected title or empty",
     "author": "detected author or empty",
-    "language": "source language code (en, zh, ja, etc.)",
+    "language": "source language code (en, zh, ja, ko, vi, fr, de, es, ru, etc.)",
     "genre": "novel|poetry|essay|business_report|white_paper|academic_paper|arxiv_paper|thesis|textbook|technical_doc|api_doc|user_manual|other",
     "sub_genre": "more specific genre if applicable",
     "tone": "formal|casual|literary|technical|academic|conversational",
@@ -185,16 +185,59 @@ async def extract_dna(
         dna.word_count = len(text.split())
         dna.document_id = hashlib.md5(text[:1000].encode()).hexdigest()[:12]
 
+        # Fallback language detection if LLM returned "unknown"
+        if dna.language in ("unknown", "", None):
+            dna.language = _detect_language_fallback(text)
+
         return dna
 
     except Exception as e:
-        # Return basic DNA on error
+        # Return basic DNA on error with fallback language detection
+        detected_lang = _detect_language_fallback(text)
         return DocumentDNA(
             document_id=hashlib.md5(text[:1000].encode()).hexdigest()[:12],
             word_count=len(text.split()),
-            language="unknown",
+            language=detected_lang,
             genre="other"
         )
+
+
+def _detect_language_fallback(text: str) -> str:
+    """
+    Fallback language detection based on character set analysis.
+    Used when LLM-based detection fails.
+    """
+    import re
+
+    sample = text[:5000]  # Sample first 5000 chars
+
+    # Count character types
+    korean = len(re.findall(r'[\uAC00-\uD7AF\u1100-\u11FF]', sample))  # Hangul
+    japanese = len(re.findall(r'[\u3040-\u30FF]', sample))  # Hiragana + Katakana
+    chinese = len(re.findall(r'[\u4E00-\u9FFF]', sample))  # CJK Unified
+    cyrillic = len(re.findall(r'[\u0400-\u04FF]', sample))  # Cyrillic
+    arabic = len(re.findall(r'[\u0600-\u06FF]', sample))  # Arabic
+    vietnamese = len(re.findall(r'[ăâđêôơưàảãáạằẳẵắặầẩẫấậèẻẽéẹềểễếệìỉĩíịòỏõóọồổỗốộờởỡớợùủũúụừửữứựỳỷỹýỵ]', sample, re.IGNORECASE))
+
+    # Determine language by highest count
+    counts = {
+        'ko': korean,
+        'ja': japanese + chinese // 2,  # Japanese often includes kanji
+        'zh': chinese - japanese,  # Chinese without Japanese context
+        'ru': cyrillic,
+        'ar': arabic,
+        'vi': vietnamese,
+    }
+
+    max_lang = max(counts, key=counts.get)
+    max_count = counts[max_lang]
+
+    # Require at least 50 characters to detect non-Latin language
+    if max_count >= 50:
+        return max_lang
+
+    # Default to English for Latin-based text
+    return "en"
 
 
 def detect_formula_notation(content: str) -> str:

@@ -372,11 +372,14 @@ class UniversalPublisher:
             # Stage 3: Translate chunks (55% - 90%)
             update_progress(0.55, "Translating")
             job.status = JobStatus.TRANSLATING
+            # Use detected language from DNA if source_lang is 'auto'
+            actual_source_lang = job.dna.language if source_lang == "auto" and job.dna.language else source_lang
+            logger.info(f"Translation: {actual_source_lang} → {target_lang} (requested: {source_lang}, detected: {job.dna.language})")
             job.translated_chunks = await self._translate_chunks(
                 job.chunks,
                 job.dna,
                 profile_id,
-                source_lang,
+                actual_source_lang,
                 target_lang,
                 lambda p: update_progress(0.55 + p * 0.35, f"Translating chunk {int(p * len(job.chunks))}/{len(job.chunks)}"),
             )
