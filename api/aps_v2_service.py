@@ -367,6 +367,9 @@ class APSV2Service:
 
             # Run the publisher pipeline (first format for main processing)
             first_format = job["output_formats"][0] if job["output_formats"] else "docx"
+            # Use source filename (without extension) as title fallback
+            source_file = job.get("source_file", "")
+            title_fallback = source_file.rsplit(".", 1)[0] if source_file else ""
             result = await publisher.publish(
                 source_text=content,
                 source_lang=job["source_language"],
@@ -377,6 +380,7 @@ class APSV2Service:
                 use_vision=use_vision,  # NEW: Pass Vision mode flag
                 docx_template=docx_template,  # Professional DOCX template
                 pdf_template=pdf_template,  # Professional PDF template
+                title_fallback=title_fallback,
             )
 
             # Update job with results

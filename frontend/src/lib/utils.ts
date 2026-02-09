@@ -27,22 +27,28 @@ export function formatDate(ts: string | number): string {
 
 export function gradeColor(grade: string): string {
   const colors: Record<string, string> = {
-    A: "text-green-600",
-    B: "text-blue-600",
-    C: "text-yellow-600",
-    D: "text-orange-600",
-    F: "text-red-600",
+    A: "color-notion-green",
+    B: "color-notion-blue",
+    C: "color-notion-yellow",
+    D: "color-notion-orange",
+    F: "color-notion-red",
   };
-  return colors[grade] || "text-gray-600";
+  return colors[grade] || "var(--fg-secondary)";
 }
 
-export function statusColor(status: string): string {
-  const colors: Record<string, string> = {
-    completed: "bg-green-100 text-green-800",
-    processing: "bg-blue-100 text-blue-800",
-    pending: "bg-yellow-100 text-yellow-800",
-    failed: "bg-red-100 text-red-800",
-    cancelled: "bg-gray-100 text-gray-800",
+export function statusVariant(
+  status: string,
+): "default" | "success" | "warning" | "error" | "info" {
+  const map: Record<
+    string,
+    "default" | "success" | "warning" | "error" | "info"
+  > = {
+    completed: "success",
+    processing: "info",
+    pending: "warning",
+    failed: "error",
+    cancelled: "default",
   };
-  return colors[status] || "bg-gray-100 text-gray-800";
+  return map[status] || "default";
 }
+

@@ -11,16 +11,18 @@ export default function ProfilesPage() {
   const profileList = data?.profiles || [];
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <h1 className="text-2xl font-bold">Publishing Profiles</h1>
-      <p className="text-slate-500">
-        Reusable settings for translation + output formatting
-      </p>
+    <div className="space-y-6">
+      <div>
+        <h1>Publishing Profiles</h1>
+        <p style={{ color: "var(--fg-secondary)" }}>
+          Reusable settings for translation + output formatting
+        </p>
+      </div>
 
       {isLoading ? (
-        <div className="animate-pulse space-y-3">
+        <div className="space-y-3">
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-slate-200 rounded-lg" />
+            <div key={i} className="h-24 skeleton" />
           ))}
         </div>
       ) : profileList.length === 0 ? (
@@ -32,15 +34,33 @@ export default function ProfilesPage() {
       ) : (
         <div className="grid gap-4">
           {profileList.map((p) => (
-            <Card key={p.id} className="hover:shadow-md transition-shadow">
+            <Card
+              key={p.id}
+              className="cursor-pointer transition-colors duration-100"
+              onMouseEnter={(e) =>
+                (e.currentTarget.style.background = "var(--bg-hover)")
+              }
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.background = "var(--bg-primary)")
+              }
+            >
               <CardContent className="py-4">
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="font-semibold flex items-center gap-2">
-                      <Sparkles className="w-4 h-4 text-purple-500" />
-                      {p.name}
+                    <h3 className="font-semibold flex items-center gap-2 text-[15px]">
+                      <Sparkles
+                        className="w-4 h-4"
+                        style={{ color: "var(--color-notion-purple)" }}
+                        strokeWidth={1.5}
+                      />
+                      <span style={{ color: "var(--fg-primary)" }}>
+                        {p.name}
+                      </span>
                     </h3>
-                    <p className="text-sm text-slate-500 mt-1">
+                    <p
+                      className="text-sm mt-1"
+                      style={{ color: "var(--fg-secondary)" }}
+                    >
                       {p.description}
                     </p>
                     <div className="flex gap-2 mt-2">

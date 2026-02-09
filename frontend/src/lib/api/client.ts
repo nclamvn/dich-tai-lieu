@@ -1,14 +1,12 @@
 /**
  * Type-safe API client for AI Publisher Pro backend.
  *
- * Uses fetch with automatic error handling + JSON parsing.
- * All endpoints match backend routes from Sprint 1-14.
+ * Endpoints matched to actual backend routes (verified 2026-02-09).
  */
 
 import type {
   TranslationJob,
   TranslateRequest,
-  JobOutput,
   Glossary,
   GlossaryListItem,
   GlossaryEntry,
@@ -58,7 +56,68 @@ async function apiFetch<T>(
   return res.json();
 }
 
+// ─── Language Detection ───
+
+export async function detectLanguage(
+  file: File,
+): Promise<{ language: string; confidence: number }> {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const res = await fetch(`${API_BASE}/api/v2/detect-language`, {
+    method: "POST",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    throw new ApiError(res.status, "Language detection failed");
+  }
+
+  return res.json();
+}
+
 // ─── Translation Jobs ───
+
+// Map V2 status to frontend status
+function mapV2Status(status: string): TranslationJob["status"] {
+  switch (status) {
+    case "running":
+    case "vision_reading":
+    case "extracting_dna":
+    case "chunking":
+    case "translating":
+    case "assembling":
+    case "converting":
+    case "verifying":
+      return "processing";
+    case "complete":
+      return "completed";
+    case "cancelled":
+      return "cancelled";
+    default:
+      return status as TranslationJob["status"];
+  }
+}
+
+function mapV2Job(data: Record<string, unknown>): TranslationJob {
+  const outputPaths = (data.output_paths as Record<string, string>) || {};
+  return {
+    id: (data.job_id as string) || "",
+    status: mapV2Status(data.status as string),
+    source_language: (data.source_language as string) || "",
+    target_language: (data.target_language as string) || "",
+    source_filename: (data.source_file as string) || "",
+    output_format: ((data.output_formats as string[]) || ["docx"])[0],
+    created_at: (data.created_at as string) || "",
+    updated_at: (data.completed_at as string) || (data.created_at as string) || "",
+    progress: (data.progress as number) || 0,
+    error: (data.error as string) || undefined,
+    _outputPaths: outputPaths,
+    _qualityScore: data.quality_score as number | undefined,
+    _qualityLevel: data.quality_level as string | undefined,
+    _currentStage: data.current_stage as string | undefined,
+  };
+}
 
 export const jobs = {
   async create(
@@ -67,16 +126,15 @@ export const jobs = {
   ): Promise<TranslationJob> {
     const formData = new FormData();
     formData.append("file", file);
-    Object.entries(request).forEach(([key, value]) => {
-      if (value !== undefined) {
-        formData.append(
-          key,
-          Array.isArray(value) ? JSON.stringify(value) : String(value),
-        );
-      }
-    });
+    formData.append("source_language", request.source_language);
+    formData.append("target_language", request.target_language);
+    formData.append(
+      "output_formats",
+      request.output_formats ? request.output_formats.join(",") : "docx",
+    );
+    if (request.profile_id) formData.append("profile_id", request.profile_id);
 
-    const res = await fetch(`${API_BASE}/api/v2/translate`, {
+    const res = await fetch(`${API_BASE}/api/v2/publish`, {
       method: "POST",
       body: formData,
     });
@@ -86,44 +144,86 @@ export const jobs = {
       throw new ApiError(res.status, data?.detail || "Upload failed", data);
     }
 
-    return res.json();
+    const data = await res.json();
+    // V2 publish returns { job_id, status, source_file, progress (0-100), ... }
+    return {
+      id: data.job_id,
+      status: mapV2Status(data.status),
+      source_language: data.source_language || request.source_language,
+      target_language: data.target_language || request.target_language,
+      source_filename: data.source_file || file.name,
+      output_format: (data.output_formats || ["docx"])[0],
+      created_at: data.created_at || new Date().toISOString(),
+      updated_at: data.created_at || new Date().toISOString(),
+      progress: data.progress || 0,
+      error: data.error || undefined,
+    };
   },
 
   async get(jobId: string): Promise<TranslationJob> {
-    return apiFetch(`/api/v2/jobs/${jobId}`);
+    const data = await apiFetch<Record<string, unknown>>(
+      `/api/v2/jobs/${jobId}`,
+    );
+    return mapV2Job(data);
   },
 
   async list(params?: {
     status?: string;
     limit?: number;
-    offset?: number;
   }): Promise<{ jobs: TranslationJob[]; total: number }> {
     const searchParams = new URLSearchParams();
-    if (params?.status) searchParams.set("status", params.status);
     if (params?.limit) searchParams.set("limit", String(params.limit));
-    if (params?.offset) searchParams.set("offset", String(params.offset));
     const qs = searchParams.toString();
-    return apiFetch(`/api/v2/jobs${qs ? `?${qs}` : ""}`);
+
+    // GET /api/v2/jobs returns V2 job list
+    const data = await apiFetch<Array<Record<string, unknown>>>(
+      `/api/v2/jobs${qs ? `?${qs}` : ""}`,
+    );
+    const mapped = data.map((d) => mapV2Job(d));
+    return {
+      jobs: params?.status ? mapped.filter((j) => j.status === params.status) : mapped,
+      total: mapped.length,
+    };
   },
 
   async delete(jobId: string): Promise<void> {
-    await apiFetch(`/api/v2/jobs/${jobId}`, { method: "DELETE" });
+    await apiFetch(`/api/v2/jobs`, {
+      method: "DELETE",
+      body: JSON.stringify([jobId]),
+    });
   },
 
-  async getOutputs(jobId: string): Promise<{ outputs: JobOutput[] }> {
-    return apiFetch(`/api/v2/jobs/${jobId}/outputs`);
+  async bulkDelete(jobIds: string[]): Promise<{ deleted: number }> {
+    return apiFetch(`/api/v2/jobs`, {
+      method: "DELETE",
+      body: JSON.stringify(jobIds),
+    });
   },
 
-  getDownloadUrl(jobId: string, filename: string): string {
-    return `${API_BASE}/api/v2/jobs/${jobId}/outputs/${filename}`;
+  getDownloadUrl(jobId: string, format: string): string {
+    return `${API_BASE}/api/v2/jobs/${jobId}/download/${format}`;
   },
 
-  async getPreview(jobId: string): Promise<{ preview: string }> {
-    return apiFetch(`/api/v2/jobs/${jobId}/preview`);
+  async download(jobId: string, format: string, filename?: string): Promise<void> {
+    // Use fetch + blob for cross-origin downloads
+    const res = await fetch(`${API_BASE}/api/v2/jobs/${jobId}/download/${format}`);
+    if (!res.ok) throw new ApiError(res.status, "Download failed");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    // Content-Disposition not accessible cross-origin, use provided filename
+    a.download = filename || res.headers.get("content-disposition")?.match(/filename="(.+)"/)?.[1] || `output.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
   },
 };
 
 // ─── Glossaries ───
+
+const GLOSSARY_BASE = "/api/glossary/api/glossary";
 
 export const glossaries = {
   async list(
@@ -131,14 +231,58 @@ export const glossaries = {
     targetLang?: string,
   ): Promise<{ glossaries: GlossaryListItem[] }> {
     const params = new URLSearchParams();
-    if (sourceLang) params.set("source_lang", sourceLang);
-    if (targetLang) params.set("target_lang", targetLang);
+    if (sourceLang) params.set("source_language", sourceLang);
+    if (targetLang) params.set("target_language", targetLang);
     const qs = params.toString();
-    return apiFetch(`/api/v2/glossaries${qs ? `?${qs}` : ""}`);
+    const data = await apiFetch<{
+      glossaries: Array<Record<string, unknown>>;
+      total: number;
+    }>(`${GLOSSARY_BASE}/${qs ? `?${qs}` : ""}`);
+
+    return {
+      glossaries: data.glossaries.map((g) => ({
+        id: g.id as string,
+        name: g.name as string,
+        language_pair: `${g.source_language}→${g.target_language}`,
+        project: (g.domain as string) || "",
+        entry_count: (g.term_count as number) || 0,
+      })),
+    };
   },
 
   async get(id: string): Promise<{ glossary: Glossary }> {
-    return apiFetch(`/api/v2/glossaries/${id}`);
+    const g = await apiFetch<Record<string, unknown>>(
+      `${GLOSSARY_BASE}/${id}`,
+    );
+    const termsData = await apiFetch<{
+      terms: Array<Record<string, unknown>>;
+      total: number;
+    }>(`${GLOSSARY_BASE}/${id}/terms?limit=200`);
+
+    return {
+      glossary: {
+        id: g.id as string,
+        name: g.name as string,
+        source_language: g.source_language as string,
+        target_language: g.target_language as string,
+        language_pair: `${g.source_language}→${g.target_language}`,
+        project: (g.domain as string) || "",
+        entry_count: (g.term_count as number) || 0,
+        entries: termsData.terms.map((t) => ({
+          id: t.id as string,
+          source_term: t.source_term as string,
+          target_term: t.target_term as string,
+          context: (t.context as string) || "",
+          notes: "",
+          domain: (t.part_of_speech as string) || "",
+          approved: true,
+          created_at: 0,
+          updated_at: 0,
+        })),
+        created_at: 0,
+        updated_at: 0,
+      },
+    };
   },
 
   async create(data: {
@@ -147,14 +291,33 @@ export const glossaries = {
     target_language: string;
     project?: string;
   }): Promise<{ glossary: Glossary }> {
-    return apiFetch("/api/v2/glossaries", {
+    const g = await apiFetch<Record<string, unknown>>(`${GLOSSARY_BASE}/`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        name: data.name,
+        source_language: data.source_language,
+        target_language: data.target_language,
+        domain: data.project || "general",
+      }),
     });
+    return {
+      glossary: {
+        id: g.id as string,
+        name: g.name as string,
+        source_language: g.source_language as string,
+        target_language: g.target_language as string,
+        language_pair: `${g.source_language}→${g.target_language}`,
+        project: (g.domain as string) || "",
+        entry_count: 0,
+        entries: [],
+        created_at: 0,
+        updated_at: 0,
+      },
+    };
   },
 
   async delete(id: string): Promise<void> {
-    await apiFetch(`/api/v2/glossaries/${id}`, { method: "DELETE" });
+    await apiFetch(`${GLOSSARY_BASE}/${id}`, { method: "DELETE" });
   },
 
   async addEntry(
@@ -163,39 +326,48 @@ export const glossaries = {
       source_term: string;
       target_term: string;
       context?: string;
-      notes?: string;
-      domain?: string;
     },
   ): Promise<{ entry: GlossaryEntry }> {
-    return apiFetch(`/api/v2/glossaries/${glossaryId}/entries`, {
-      method: "POST",
-      body: JSON.stringify(entry),
-    });
+    const t = await apiFetch<Record<string, unknown>>(
+      `${GLOSSARY_BASE}/${glossaryId}/terms`,
+      {
+        method: "POST",
+        body: JSON.stringify(entry),
+      },
+    );
+    return {
+      entry: {
+        id: t.id as string,
+        source_term: t.source_term as string,
+        target_term: t.target_term as string,
+        context: (t.context as string) || "",
+        notes: "",
+        domain: (t.part_of_speech as string) || "",
+        approved: true,
+        created_at: 0,
+        updated_at: 0,
+      },
+    };
   },
 
   async removeEntry(glossaryId: string, entryId: string): Promise<void> {
-    await apiFetch(`/api/v2/glossaries/${glossaryId}/entries/${entryId}`, {
+    await apiFetch(`${GLOSSARY_BASE}/${glossaryId}/terms/${entryId}`, {
       method: "DELETE",
     });
-  },
-
-  async search(
-    glossaryId: string,
-    query: string,
-  ): Promise<{ entries: GlossaryEntry[] }> {
-    return apiFetch(
-      `/api/v2/glossaries/${glossaryId}/search?q=${encodeURIComponent(query)}`,
-    );
   },
 
   async importEntries(
     glossaryId: string,
     entries: Array<{ source_term: string; target_term: string }>,
   ): Promise<{ imported: number }> {
-    return apiFetch(`/api/v2/glossaries/${glossaryId}/import`, {
-      method: "POST",
-      body: JSON.stringify({ entries }),
-    });
+    const data = await apiFetch<{ added: number }>(
+      `${GLOSSARY_BASE}/${glossaryId}/terms/bulk`,
+      {
+        method: "POST",
+        body: JSON.stringify({ terms: entries, skip_duplicates: true }),
+      },
+    );
+    return { imported: data.added };
   },
 
   async exportEntries(glossaryId: string): Promise<{
@@ -203,7 +375,26 @@ export const glossaries = {
     language_pair: string;
     entries: GlossaryEntry[];
   }> {
-    return apiFetch(`/api/v2/glossaries/${glossaryId}/export`);
+    // Export returns a file download, so we use terms list instead
+    const termsData = await apiFetch<{
+      terms: Array<Record<string, unknown>>;
+    }>(`${GLOSSARY_BASE}/${glossaryId}/terms?limit=1000`);
+
+    return {
+      glossary_name: glossaryId,
+      language_pair: "",
+      entries: termsData.terms.map((t) => ({
+        id: t.id as string,
+        source_term: t.source_term as string,
+        target_term: t.target_term as string,
+        context: (t.context as string) || "",
+        notes: "",
+        domain: (t.part_of_speech as string) || "",
+        approved: true,
+        created_at: 0,
+        updated_at: 0,
+      })),
+    };
   },
 };
 
@@ -221,26 +412,6 @@ export const dashboard = {
   async getLanguagePairs(): Promise<Record<string, number>> {
     return apiFetch("/api/dashboard/language-pairs");
   },
-
-  async estimate(params: {
-    pages?: number;
-    language_pair?: string;
-    provider?: string;
-  }): Promise<{ estimated_cost_usd: number; provider: string }> {
-    const searchParams = new URLSearchParams();
-    Object.entries(params).forEach(([k, v]) => {
-      if (v !== undefined) searchParams.set(k, String(v));
-    });
-    return apiFetch(`/api/dashboard/estimate?${searchParams}`);
-  },
-
-  async getCheapest(): Promise<ProviderCost | { provider: null }> {
-    return apiFetch("/api/dashboard/cheapest");
-  },
-
-  async getBestValue(): Promise<ProviderCost | { provider: null }> {
-    return apiFetch("/api/dashboard/best-value");
-  },
 };
 
 // ─── Profiles ───
@@ -248,9 +419,40 @@ export const dashboard = {
 export const profiles = {
   async list(): Promise<{ profiles: PublishingProfile[] }> {
     try {
-      return await apiFetch("/api/v2/profiles");
+      const data = await apiFetch<{
+        profiles: Array<Record<string, unknown>>;
+      }>("/api/v2/profiles");
+      return {
+        profiles: data.profiles.map((p) => ({
+          id: p.id as string,
+          name: p.name as string,
+          description: (p.description as string) || "",
+          source_language: "",
+          target_language: "",
+          language_pair: "",
+          translation: {
+            preferred_provider: "",
+            routing_mode: "auto",
+            glossary_ids: [],
+            preserve_formatting: true,
+            formality: "neutral",
+          },
+          output: {
+            format: (p.output_format as string) || "docx",
+            page_size: "A4",
+            font_family: "",
+            font_size: 12,
+            line_spacing: 1.5,
+            margins: { top: 1, bottom: 1, left: 1, right: 1 },
+            include_toc: false,
+            include_cover: false,
+            cover_image: "",
+          },
+          created_at: 0,
+          updated_at: 0,
+        })),
+      };
     } catch {
-      // Fallback: profiles may be frontend-only for now
       return { profiles: [] };
     }
   },

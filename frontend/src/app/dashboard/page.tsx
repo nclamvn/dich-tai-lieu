@@ -23,12 +23,22 @@ import {
 } from "recharts";
 
 const CHART_COLORS = [
-  "#3b82f6",
-  "#8b5cf6",
-  "#f59e0b",
-  "#10b981",
-  "#ef4444",
+  "rgb(35,131,226)",
+  "rgb(15,123,108)",
+  "rgb(203,145,47)",
+  "rgb(144,101,176)",
+  "rgb(217,115,13)",
+  "rgb(193,76,138)",
+  "rgb(159,107,83)",
 ];
+
+const TOOLTIP_STYLE: React.CSSProperties = {
+  background: "var(--bg-primary)",
+  border: "1px solid var(--border-default)",
+  borderRadius: "var(--radius-md)",
+  fontSize: "13px",
+  color: "var(--fg-primary)",
+};
 
 export default function DashboardPage() {
   const { data: overview } = useCostOverview();
@@ -45,7 +55,7 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Cost Dashboard</h1>
+      <h1>Cost Dashboard</h1>
 
       {/* Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -75,7 +85,7 @@ export default function DashboardPage() {
         {/* Provider Cost Chart */}
         <Card>
           <CardHeader>
-            <h3 className="font-semibold">Cost by Provider</h3>
+            <h3 className="text-[15px] font-semibold">Cost by Provider</h3>
           </CardHeader>
           <CardContent>
             {providerList.length > 0 ? (
@@ -103,12 +113,18 @@ export default function DashboardPage() {
                   </Pie>
                   <Tooltip
                     formatter={(v) => formatCost(v as number)}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                   <Legend />
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-center text-slate-400 py-8">No data yet</p>
+              <p
+                className="text-center py-8 text-sm"
+                style={{ color: "var(--fg-tertiary)" }}
+              >
+                No data yet
+              </p>
             )}
           </CardContent>
         </Card>
@@ -116,7 +132,9 @@ export default function DashboardPage() {
         {/* Language Pair Chart */}
         <Card>
           <CardHeader>
-            <h3 className="font-semibold">Cost by Language Pair</h3>
+            <h3 className="text-[15px] font-semibold">
+              Cost by Language Pair
+            </h3>
           </CardHeader>
           <CardContent>
             {langPairData.length > 0 ? (
@@ -129,16 +147,22 @@ export default function DashboardPage() {
                   <YAxis tickFormatter={(v) => formatCost(v)} />
                   <Tooltip
                     formatter={(v) => formatCost(v as number)}
+                    contentStyle={TOOLTIP_STYLE}
                   />
                   <Bar
                     dataKey="cost_usd"
-                    fill="#3b82f6"
+                    fill="rgb(35,131,226)"
                     radius={[4, 4, 0, 0]}
                   />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
-              <p className="text-center text-slate-400 py-8">No data yet</p>
+              <p
+                className="text-center py-8 text-sm"
+                style={{ color: "var(--fg-tertiary)" }}
+              >
+                No data yet
+              </p>
             )}
           </CardContent>
         </Card>
@@ -148,41 +172,88 @@ export default function DashboardPage() {
       {providerList.length > 0 && (
         <Card>
           <CardHeader>
-            <h3 className="font-semibold">Provider Details</h3>
+            <h3 className="text-[15px] font-semibold">Provider Details</h3>
           </CardHeader>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-slate-50">
-                <tr>
-                  <th className="text-left px-5 py-3 font-medium">
+              <thead>
+                <tr style={{ background: "var(--bg-secondary)" }}>
+                  <th
+                    className="text-left px-5 py-3 font-medium"
+                    style={{ color: "var(--fg-secondary)" }}
+                  >
                     Provider
                   </th>
-                  <th className="text-right px-5 py-3 font-medium">Cost</th>
-                  <th className="text-right px-5 py-3 font-medium">Calls</th>
-                  <th className="text-right px-5 py-3 font-medium">
+                  <th
+                    className="text-right px-5 py-3 font-medium"
+                    style={{ color: "var(--fg-secondary)" }}
+                  >
+                    Cost
+                  </th>
+                  <th
+                    className="text-right px-5 py-3 font-medium"
+                    style={{ color: "var(--fg-secondary)" }}
+                  >
+                    Calls
+                  </th>
+                  <th
+                    className="text-right px-5 py-3 font-medium"
+                    style={{ color: "var(--fg-secondary)" }}
+                  >
                     Tokens
                   </th>
-                  <th className="text-right px-5 py-3 font-medium">
+                  <th
+                    className="text-right px-5 py-3 font-medium"
+                    style={{ color: "var(--fg-secondary)" }}
+                  >
                     Avg Quality
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody>
                 {providerList.map((p) => (
-                  <tr key={p.provider} className="hover:bg-slate-50">
-                    <td className="px-5 py-3 font-medium capitalize">
+                  <tr
+                    key={p.provider}
+                    className="transition-colors duration-100"
+                    style={{
+                      borderBottom: "1px solid var(--border-default)",
+                    }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.background =
+                        "var(--bg-hover)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.background = "transparent")
+                    }
+                  >
+                    <td
+                      className="px-5 py-3 font-medium capitalize"
+                      style={{ color: "var(--fg-primary)" }}
+                    >
                       {p.provider}
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td
+                      className="px-5 py-3 text-right"
+                      style={{ color: "var(--fg-primary)" }}
+                    >
                       {formatCost(p.cost_usd)}
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td
+                      className="px-5 py-3 text-right"
+                      style={{ color: "var(--fg-primary)" }}
+                    >
                       {formatNumber(p.calls)}
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td
+                      className="px-5 py-3 text-right"
+                      style={{ color: "var(--fg-primary)" }}
+                    >
                       {formatNumber(p.tokens)}
                     </td>
-                    <td className="px-5 py-3 text-right">
+                    <td
+                      className="px-5 py-3 text-right"
+                      style={{ color: "var(--fg-primary)" }}
+                    >
                       {(p.avg_quality * 100).toFixed(0)}%
                     </td>
                   </tr>

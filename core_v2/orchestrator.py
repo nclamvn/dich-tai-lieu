@@ -301,6 +301,7 @@ class UniversalPublisher:
         use_vision: bool = True,  # NEW: Use Claude Vision for PDF reading
         docx_template: str = "auto",  # NEW: DOCX template (ebook/academic/business/auto)
         pdf_template: str = "auto",  # NEW: PDF template (ebook/academic/business/auto)
+        title_fallback: str = "",  # Fallback title (e.g. source filename without extension)
     ) -> PublishingJob:
         """
         Main publishing pipeline.
@@ -402,7 +403,7 @@ class UniversalPublisher:
             job.output_path = await self._convert(
                 job.assembled_content,
                 output_format,
-                job.dna.title or "translated_document",
+                job.dna.title or title_fallback or "translated_document",
                 job.dna.author,
                 job.job_id,
                 dna=job.dna,  # Pass DNA for formula detection
@@ -482,7 +483,67 @@ class UniversalPublisher:
 
         # Sort by original index to maintain order
         results_with_index.sort(key=lambda x: x[0])
-        return [r[1] for r in results_with_index]
+        translated = [r[1] for r in results_with_index]
+
+        # Log translation language quality summary
+        correct_lang = sum(
+            1 for t in translated
+            if self._detect_language(t) in (target_lang, "unknown")
+        )
+        logger.info(
+            f"Translation quality: {correct_lang}/{total} chunks in target language '{target_lang}'"
+        )
+        if correct_lang < total:
+            wrong = [
+                i for i, t in enumerate(translated)
+                if self._detect_language(t) not in (target_lang, "unknown")
+            ]
+            logger.warning(f"Chunks still in source language: {wrong}")
+
+        return translated
+
+    @staticmethod
+    def _detect_language(text: str) -> str:
+        """Quick language detection based on character analysis.
+
+        Returns 'vi', 'zh', 'ja', 'en', or 'unknown'.
+        """
+        if not text or len(text) < 20:
+            return "unknown"
+
+        sample = text[:3000]
+        alpha_count = sum(1 for c in sample if c.isalpha())
+        if alpha_count == 0:
+            return "unknown"
+
+        # Vietnamese diacritical characters (unique to Vietnamese)
+        vi_diacriticals = set(
+            'àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệ'
+            'ìíỉĩịòóỏõọôốồổỗộơớờởỡợ'
+            'ùúủũụưứừửữựỳýỷỹỵđ'
+        )
+        vi_diacriticals |= {c.upper() for c in vi_diacriticals}
+
+        vi_count = sum(1 for c in sample if c in vi_diacriticals)
+
+        # CJK characters (Chinese/Japanese)
+        cjk_count = sum(
+            1 for c in sample
+            if '\u4e00' <= c <= '\u9fff'       # CJK Unified
+            or '\u3040' <= c <= '\u309f'        # Hiragana
+            or '\u30a0' <= c <= '\u30ff'        # Katakana
+        )
+
+        vi_ratio = vi_count / alpha_count
+        cjk_ratio = cjk_count / max(len(sample), 1)
+
+        if cjk_ratio > 0.1:
+            # Distinguish Chinese vs Japanese by kana presence
+            kana_count = sum(1 for c in sample if '\u3040' <= c <= '\u30ff')
+            return "ja" if kana_count > 5 else "zh"
+        if vi_ratio > 0.02:
+            return "vi"
+        return "en"
 
     async def _translate_chunk(
         self,
@@ -525,6 +586,39 @@ class UniversalPublisher:
                 # Verify LaTeX preservation if document has formulas
                 if dna.has_formulas:
                     translated = self._verify_latex_preservation(chunk.content, translated, chunk.index)
+
+                # Verify translation is in the target language
+                detected = self._detect_language(translated)
+                if detected != "unknown" and detected != target_lang:
+                    logger.warning(
+                        f"[Chunk {chunk.index}] Language mismatch: "
+                        f"expected '{target_lang}', detected '{detected}'. "
+                        f"Retrying with explicit instruction."
+                    )
+                    # Retry with a stronger, focused prompt
+                    retry_prompt = (
+                        f"CRITICAL INSTRUCTION: Translate the following text "
+                        f"from {source_lang} to {target_lang}.\n"
+                        f"Your output MUST be entirely in {target_lang}. "
+                        f"Do NOT include any {source_lang} text. "
+                        f"Do NOT echo the original. ONLY output the translation.\n\n"
+                        f"Text to translate:\n{chunk.content}"
+                    )
+                    retry_response = await self.llm_client.chat(
+                        messages=[{"role": "user", "content": retry_prompt}]
+                    )
+                    retranslated = retry_response.content.strip()
+
+                    detected2 = self._detect_language(retranslated)
+                    if detected2 == target_lang or detected2 == "unknown":
+                        logger.info(f"[Chunk {chunk.index}] Retry succeeded: now in '{target_lang}'")
+                        return retranslated
+                    else:
+                        logger.error(
+                            f"[Chunk {chunk.index}] Still wrong language after retry "
+                            f"(detected '{detected2}'). Using retry result anyway."
+                        )
+                        return retranslated
 
                 return translated
             except Exception as e:

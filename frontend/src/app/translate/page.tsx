@@ -2,10 +2,11 @@
 
 import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Upload, FileText, Sparkles, ArrowRight } from "lucide-react";
+import { Upload, FileText, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateJob, useProfiles, useGlossaries } from "@/lib/api/hooks";
+import { detectLanguage } from "@/lib/api/client";
 import {
   SUPPORTED_LANGUAGES,
   OUTPUT_FORMATS,
@@ -21,9 +22,10 @@ export default function TranslatePage() {
   const [dragOver, setDragOver] = useState(false);
   const [sourceLang, setSourceLang] = useState("en");
   const [targetLang, setTargetLang] = useState("vi");
-  const [outputFormat, setOutputFormat] = useState("docx");
+  const [selectedFormats, setSelectedFormats] = useState<string[]>(["docx"]);
   const [profileId, setProfileId] = useState("");
   const [selectedGlossaries, setSelectedGlossaries] = useState<string[]>([]);
+  const [detecting, setDetecting] = useState(false);
 
   const { data: profilesData } = useProfiles();
   const { data: glossaryData } = useGlossaries(sourceLang, targetLang);
@@ -31,12 +33,33 @@ export default function TranslatePage() {
   const profileList = profilesData?.profiles || [];
   const glossaryList = glossaryData?.glossaries || [];
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) setFile(droppedFile);
+  const handleFileSelected = useCallback(async (selectedFile: File) => {
+    setFile(selectedFile);
+    setDetecting(true);
+    try {
+      const result = await detectLanguage(selectedFile);
+      if (result.language && result.confidence > 0.5) {
+        setSourceLang(result.language);
+        // Auto-set target language different from source
+        if (result.language === "vi") setTargetLang("en");
+        else setTargetLang("vi");
+      }
+    } catch {
+      // Detection failed, keep defaults
+    } finally {
+      setDetecting(false);
+    }
   }, []);
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile) handleFileSelected(droppedFile);
+    },
+    [handleFileSelected],
+  );
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -47,13 +70,24 @@ export default function TranslatePage() {
     setDragOver(false);
   }, []);
 
+  const toggleFormat = (value: string) => {
+    setSelectedFormats((prev) => {
+      if (prev.includes(value)) {
+        // Don't allow empty — keep at least one
+        if (prev.length === 1) return prev;
+        return prev.filter((f) => f !== value);
+      }
+      return [...prev, value];
+    });
+  };
+
   const handleSubmit = async () => {
     if (!file) return;
 
     const request: TranslateRequest = {
       source_language: sourceLang,
       target_language: targetLang,
-      output_format: outputFormat,
+      output_formats: selectedFormats,
       profile_id: profileId || undefined,
       glossary_ids:
         selectedGlossaries.length > 0 ? selectedGlossaries : undefined,
@@ -68,10 +102,10 @@ export default function TranslatePage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">Translate Document</h1>
-        <p className="text-slate-500 mt-1">
+        <h1>Translate Document</h1>
+        <p className="mt-2" style={{ color: "var(--fg-secondary)" }}>
           Upload a document and configure translation settings
         </p>
       </div>
@@ -79,10 +113,10 @@ export default function TranslatePage() {
       {/* File Upload */}
       <Card>
         <CardHeader>
-          <h2 className="font-semibold flex items-center gap-2">
-            <Upload className="w-4 h-4" />
+          <h3 className="text-[15px] font-semibold flex items-center gap-2">
+            <Upload className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
             Upload Document
-          </h2>
+          </h3>
         </CardHeader>
         <CardContent>
           <div
@@ -90,13 +124,21 @@ export default function TranslatePage() {
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             className={cn(
-              "border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer",
-              dragOver
-                ? "border-blue-400 bg-blue-50"
-                : file
-                  ? "border-green-300 bg-green-50"
-                  : "border-slate-300 hover:border-slate-400",
+              "border-2 border-dashed p-8 text-center cursor-pointer transition-colors duration-100",
             )}
+            style={{
+              borderRadius: "var(--radius-lg)",
+              borderColor: dragOver
+                ? "var(--color-notion-blue)"
+                : file
+                  ? "var(--color-notion-green)"
+                  : "var(--border-hover)",
+              background: dragOver
+                ? "var(--accent-blue-bg)"
+                : file
+                  ? "var(--accent-green-bg)"
+                  : "transparent",
+            }}
             onClick={() => document.getElementById("file-input")?.click()}
           >
             <input
@@ -104,25 +146,35 @@ export default function TranslatePage() {
               type="file"
               className="hidden"
               accept=".pdf,.docx,.txt,.md,.epub"
-              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFileSelected(f);
+              }}
             />
             {file ? (
               <div className="flex items-center justify-center gap-3">
-                <FileText className="w-8 h-8 text-green-600" />
+                <FileText className="w-8 h-8" style={{ color: "var(--color-notion-green)" }} strokeWidth={1.5} />
                 <div className="text-left">
-                  <p className="font-medium text-green-900">{file.name}</p>
-                  <p className="text-sm text-green-600">
-                    {(file.size / 1024).toFixed(1)} KB — Click to change
-                  </p>
+                  <p className="font-medium" style={{ color: "var(--fg-primary)" }}>{file.name}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm" style={{ color: "var(--color-notion-green)" }}>
+                      {(file.size / 1024).toFixed(1)} KB — Click to change
+                    </p>
+                    {detecting && (
+                      <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-notion-blue)" }}>
+                        <Loader2 className="w-3 h-3 animate-spin" /> Detecting language...
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
             ) : (
               <>
-                <Upload className="w-10 h-10 text-slate-400 mx-auto mb-3" />
-                <p className="font-medium">
+                <Upload className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--fg-tertiary)" }} strokeWidth={1.25} />
+                <p className="font-medium" style={{ color: "var(--fg-primary)" }}>
                   Drop file here or click to browse
                 </p>
-                <p className="text-sm text-slate-400 mt-1">
+                <p className="text-sm mt-1" style={{ color: "var(--fg-tertiary)" }}>
                   PDF, DOCX, TXT, Markdown, EPUB
                 </p>
               </>
@@ -134,22 +186,27 @@ export default function TranslatePage() {
       {/* Translation Settings */}
       <Card>
         <CardHeader>
-          <h2 className="font-semibold flex items-center gap-2">
-            <Sparkles className="w-4 h-4" />
+          <h3 className="text-[15px] font-semibold flex items-center gap-2">
+            <Sparkles className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
             Translation Settings
-          </h2>
+          </h3>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Language Selection */}
           <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-end">
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
                 Source Language
+                {detecting && (
+                  <span className="ml-2 text-xs font-normal" style={{ color: "var(--color-notion-blue)" }}>
+                    (auto-detecting...)
+                  </span>
+                )}
               </label>
               <select
                 value={sourceLang}
                 onChange={(e) => setSourceLang(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
+                className="w-full"
               >
                 {SUPPORTED_LANGUAGES.map((l) => (
                   <option key={l.code} value={l.code}>
@@ -159,16 +216,16 @@ export default function TranslatePage() {
               </select>
             </div>
 
-            <ArrowRight className="w-5 h-5 text-slate-400 mb-2" />
+            <ArrowRight className="w-5 h-5 mb-2" style={{ color: "var(--fg-ghost)" }} strokeWidth={1.5} />
 
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
                 Target Language
               </label>
               <select
                 value={targetLang}
                 onChange={(e) => setTargetLang(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
+                className="w-full"
               >
                 {SUPPORTED_LANGUAGES.map((l) => (
                   <option key={l.code} value={l.code}>
@@ -179,44 +236,49 @@ export default function TranslatePage() {
             </div>
           </div>
 
-          {/* Output Format */}
+          {/* Output Format — Multi-select */}
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Output Format
+            <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
+              Output Formats (select one or more)
             </label>
             <div className="flex gap-2 flex-wrap">
-              {OUTPUT_FORMATS.map((f) => (
-                <button
-                  key={f.value}
-                  onClick={() => setOutputFormat(f.value)}
-                  className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm border transition-colors",
-                    outputFormat === f.value
-                      ? "border-blue-500 bg-blue-50 text-blue-700 font-medium"
-                      : "border-slate-200 hover:border-slate-300",
-                  )}
-                >
-                  {f.label}
-                </button>
-              ))}
+              {OUTPUT_FORMATS.map((f) => {
+                const isSelected = selectedFormats.includes(f.value);
+                return (
+                  <button
+                    key={f.value}
+                    onClick={() => toggleFormat(f.value)}
+                    className="px-3 py-1.5 text-sm transition-colors duration-100"
+                    style={{
+                      borderRadius: "var(--radius-sm)",
+                      border: `1px solid ${isSelected ? "var(--color-notion-blue)" : "var(--border-default)"}`,
+                      background: isSelected ? "var(--accent-blue-bg)" : "transparent",
+                      color: isSelected ? "var(--color-notion-blue)" : "var(--fg-secondary)",
+                      fontWeight: isSelected ? 500 : 400,
+                    }}
+                  >
+                    {isSelected ? "\u2713 " : ""}{f.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {/* Profile */}
           {profileList.length > 0 && (
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
                 Publishing Profile (optional)
               </label>
               <select
                 value={profileId}
                 onChange={(e) => setProfileId(e.target.value)}
-                className="w-full border rounded-lg px-3 py-2 text-sm bg-white"
+                className="w-full"
               >
                 <option value="">Auto (QAPR routing)</option>
                 {profileList.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} — {p.language_pair}
+                    {p.name} — {p.description}
                   </option>
                 ))}
               </select>
@@ -226,7 +288,7 @@ export default function TranslatePage() {
           {/* Glossaries */}
           {glossaryList.length > 0 && (
             <div>
-              <label className="block text-sm font-medium mb-1.5">
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
                 Glossaries ({sourceLang}&rarr;{targetLang})
               </label>
               <div className="space-y-1.5">
@@ -245,10 +307,9 @@ export default function TranslatePage() {
                             : prev.filter((id) => id !== g.id),
                         );
                       }}
-                      className="rounded border-slate-300"
                     />
-                    {g.name}
-                    <span className="text-slate-400">
+                    <span style={{ color: "var(--fg-primary)" }}>{g.name}</span>
+                    <span style={{ color: "var(--fg-tertiary)" }}>
                       ({g.entry_count} terms)
                     </span>
                   </label>
@@ -268,13 +329,13 @@ export default function TranslatePage() {
           disabled={!file}
           loading={createJob.isPending}
         >
-          <Upload className="w-4 h-4 mr-2" />
+          <Upload className="w-4 h-4 mr-2" strokeWidth={1.5} />
           Start Translation
         </Button>
       </div>
 
       {createJob.isError && (
-        <p className="text-red-600 text-sm">
+        <p className="text-sm" style={{ color: "var(--color-notion-red)" }}>
           Error: {(createJob.error as Error).message}
         </p>
       )}

@@ -31,14 +31,6 @@ export function useJob(jobId: string | null) {
   });
 }
 
-export function useJobOutputs(jobId: string | null) {
-  return useQuery({
-    queryKey: ["job-outputs", jobId],
-    queryFn: () => jobs.getOutputs(jobId!),
-    enabled: !!jobId,
-  });
-}
-
 export function useCreateJob() {
   const queryClient = useQueryClient();
   return useMutation({
@@ -59,6 +51,16 @@ export function useDeleteJob() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (jobId: string) => jobs.delete(jobId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["jobs"] });
+    },
+  });
+}
+
+export function useBulkDeleteJobs() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (jobIds: string[]) => jobs.bulkDelete(jobIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["jobs"] });
     },

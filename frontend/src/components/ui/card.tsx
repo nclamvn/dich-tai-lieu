@@ -3,11 +3,20 @@ import { cn } from "@/lib/utils";
 export function Card({
   className,
   children,
+  hover = false,
   ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+}: React.HTMLAttributes<HTMLDivElement> & { hover?: boolean }) {
   return (
     <div
-      className={cn("bg-white rounded-lg border shadow-sm", className)}
+      className={cn(
+        hover && "cursor-pointer",
+        className,
+      )}
+      style={{
+        background: "var(--bg-primary)",
+        borderRadius: "var(--radius-lg)",
+        border: "1px solid var(--border-default)",
+      }}
       {...props}
     >
       {children}
@@ -21,7 +30,11 @@ export function CardHeader({
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div className={cn("px-5 py-4 border-b", className)} {...props}>
+    <div
+      className={cn("px-5 py-3.5", className)}
+      style={{ borderBottom: "1px solid var(--border-default)" }}
+      {...props}
+    >
       {children}
     </div>
   );

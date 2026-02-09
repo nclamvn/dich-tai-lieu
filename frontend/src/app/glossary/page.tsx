@@ -36,29 +36,46 @@ export default function GlossaryPage() {
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Glossaries</h1>
+        <h1>Glossaries</h1>
         <Button onClick={() => setShowCreate(!showCreate)} size="sm">
           <Plus className="w-4 h-4 mr-1" /> New Glossary
         </Button>
       </div>
 
       {showCreate && (
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card
+          style={{
+            borderColor: "var(--color-notion-blue)",
+            background: "var(--accent-blue-bg)",
+          }}
+        >
           <CardContent className="pt-4 space-y-3">
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
               placeholder="Glossary name"
-              className="w-full border rounded-lg px-3 py-2 text-sm"
+              className="w-full px-3 py-2 text-sm"
+              style={{
+                borderRadius: "var(--radius-md)",
+                border: "1px solid var(--border-default)",
+                background: "var(--bg-primary)",
+                color: "var(--fg-primary)",
+              }}
               autoFocus
             />
             <div className="grid grid-cols-2 gap-3">
               <select
                 value={newSrc}
                 onChange={(e) => setNewSrc(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm"
+                className="px-3 py-2 text-sm"
+                style={{
+                  borderRadius: "var(--radius-md)",
+                  border: "1px solid var(--border-default)",
+                  background: "var(--bg-primary)",
+                  color: "var(--fg-primary)",
+                }}
               >
                 {SUPPORTED_LANGUAGES.map((l) => (
                   <option key={l.code} value={l.code}>
@@ -69,7 +86,13 @@ export default function GlossaryPage() {
               <select
                 value={newTgt}
                 onChange={(e) => setNewTgt(e.target.value)}
-                className="border rounded-lg px-3 py-2 text-sm"
+                className="px-3 py-2 text-sm"
+                style={{
+                  borderRadius: "var(--radius-md)",
+                  border: "1px solid var(--border-default)",
+                  background: "var(--bg-primary)",
+                  color: "var(--fg-primary)",
+                }}
               >
                 {SUPPORTED_LANGUAGES.map((l) => (
                   <option key={l.code} value={l.code}>
@@ -99,9 +122,9 @@ export default function GlossaryPage() {
       )}
 
       {isLoading ? (
-        <div className="animate-pulse space-y-2">
+        <div className="space-y-2">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-16 bg-slate-200 rounded-lg" />
+            <div key={i} className="h-16 skeleton" />
           ))}
         </div>
       ) : list.length === 0 ? (
@@ -113,14 +136,37 @@ export default function GlossaryPage() {
       ) : (
         <div className="space-y-2">
           {list.map((g) => (
-            <Link key={g.id} href={`/glossary/${g.id}`}>
-              <Card className="px-5 py-4 hover:shadow-md transition-shadow cursor-pointer">
+            <Link
+              key={g.id}
+              href={`/glossary/${g.id}`}
+              className="block no-underline"
+            >
+              <Card className="px-5 py-4 cursor-pointer transition-colors duration-100"
+                onMouseEnter={(e) =>
+                  (e.currentTarget.style.background = "var(--bg-hover)")
+                }
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.background = "var(--bg-primary)")
+                }
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <BookOpen className="w-5 h-5 text-slate-400" />
+                    <BookOpen
+                      className="w-5 h-5"
+                      style={{ color: "var(--fg-icon)" }}
+                      strokeWidth={1.5}
+                    />
                     <div>
-                      <p className="font-medium text-sm">{g.name}</p>
-                      <p className="text-xs text-slate-500">
+                      <p
+                        className="font-medium text-sm"
+                        style={{ color: "var(--fg-primary)" }}
+                      >
+                        {g.name}
+                      </p>
+                      <p
+                        className="text-xs"
+                        style={{ color: "var(--fg-secondary)" }}
+                      >
                         {g.language_pair} &middot; {g.entry_count} terms
                         {g.project && ` \u00b7 ${g.project}`}
                       </p>
@@ -132,9 +178,17 @@ export default function GlossaryPage() {
                       if (confirm("Delete this glossary?"))
                         deleteGlossary.mutate(g.id);
                     }}
-                    className="p-1.5 text-slate-400 hover:text-red-500"
+                    className="p-1.5 transition-colors duration-100"
+                    style={{ color: "var(--fg-icon)" }}
+                    onMouseEnter={(e) =>
+                      (e.currentTarget.style.color =
+                        "var(--color-notion-red)")
+                    }
+                    onMouseLeave={(e) =>
+                      (e.currentTarget.style.color = "var(--fg-icon)")
+                    }
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-4 h-4" strokeWidth={1.5} />
                   </button>
                 </div>
               </Card>

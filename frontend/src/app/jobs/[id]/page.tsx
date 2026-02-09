@@ -15,9 +15,42 @@ import {
 import Link from "next/link";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useJob, useJobOutputs } from "@/lib/api/hooks";
+import { useJob } from "@/lib/api/hooks";
 import { jobs as jobsApi } from "@/lib/api/client";
-import { formatDate, gradeColor, cn } from "@/lib/utils";
+import { formatDate, statusVariant } from "@/lib/utils";
+
+function DownloadButton({ jobId, format, filename }: { jobId: string; format: string; filename: string }) {
+  const handleDownload = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    try {
+      await jobsApi.download(jobId, format, filename);
+    } catch {
+      // Download failed
+    }
+  };
+
+  return (
+    <button
+      onClick={handleDownload}
+      className="flex items-center justify-between p-3 no-underline transition-colors duration-100 w-full text-left"
+      style={{
+        borderRadius: "var(--radius-md)",
+        border: "1px solid var(--border-default)",
+      }}
+      onMouseEnter={(e) => (e.currentTarget.style.background = "var(--bg-hover)")}
+      onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+    >
+      <div className="flex items-center gap-3">
+        <FileText className="w-5 h-5" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
+        <div>
+          <p className="text-sm font-medium" style={{ color: "var(--fg-primary)" }}>{filename}</p>
+          <p className="text-xs uppercase" style={{ color: "var(--fg-tertiary)" }}>{format}</p>
+        </div>
+      </div>
+      <Download className="w-4 h-4" style={{ color: "var(--color-notion-blue)" }} strokeWidth={1.5} />
+    </button>
+  );
+}
 
 export default function JobDetailPage({
   params,
@@ -26,62 +59,70 @@ export default function JobDetailPage({
 }) {
   const { id } = use(params);
   const { data: job, isLoading } = useJob(id);
-  const { data: outputsData } = useJobOutputs(
-    job?.status === "completed" ? id : null,
-  );
 
   if (isLoading) {
     return (
-      <div className="animate-pulse space-y-4">
-        <div className="h-8 bg-slate-200 rounded w-64" />
-        <div className="h-40 bg-slate-200 rounded-lg" />
+      <div className="space-y-4">
+        <div className="h-8 w-64 skeleton" />
+        <div className="h-40 skeleton" />
       </div>
     );
   }
 
   if (!job) {
-    return <p className="text-slate-500">Job not found</p>;
+    return <p style={{ color: "var(--fg-tertiary)" }}>Job not found</p>;
   }
 
-  const outputs = outputsData?.outputs || [];
+  // Derive outputs from V2 output_paths
+  const outputs = job.status === "completed" && job._outputPaths
+    ? Object.entries(job._outputPaths).map(([format, path]) => ({
+        filename: path.split("/").pop() || `output.${format}`,
+        format,
+        download_url: jobsApi.getDownloadUrl(id, format),
+      }))
+    : [];
+
+  // Grade colors
+  const GRADE_COLORS: Record<string, string> = {
+    A: "var(--color-notion-green)",
+    B: "var(--color-notion-blue)",
+    C: "var(--color-notion-yellow)",
+    D: "var(--color-notion-orange)",
+    F: "var(--color-notion-red)",
+  };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div>
         <Link
           href="/jobs"
-          className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1 mb-2"
+          className="text-sm flex items-center gap-1 mb-2 no-underline"
+          style={{ color: "var(--fg-secondary)" }}
         >
           <ArrowLeft className="w-3 h-3" /> Back to Jobs
         </Link>
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <FileText className="w-6 h-6" />
+            <h1 className="flex items-center gap-2">
+              <FileText
+                className="w-6 h-6"
+                style={{ color: "var(--fg-icon)" }}
+                strokeWidth={1.5}
+              />
               {job.source_filename}
             </h1>
-            <p className="text-slate-500 mt-1">
+            <p className="mt-1" style={{ color: "var(--fg-secondary)" }}>
               {job.source_language}&rarr;{job.target_language} &middot;{" "}
               {job.output_format} &middot; {formatDate(job.created_at)}
             </p>
           </div>
-          <span
-            className={`px-3 py-1.5 rounded-full text-sm font-medium ${
-              job.status === "completed"
-                ? "bg-green-100 text-green-800"
-                : job.status === "processing"
-                  ? "bg-blue-100 text-blue-800"
-                  : job.status === "failed"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-slate-100 text-slate-800"
-            }`}
-          >
+          <Badge variant={statusVariant(job.status)}>
             {job.status === "processing" && (
-              <Clock className="w-3 h-3 inline mr-1" />
+              <Clock className="w-3 h-3 inline mr-1" strokeWidth={1.5} />
             )}
             {job.status}
-          </span>
+          </Badge>
         </div>
       </div>
 
@@ -89,14 +130,77 @@ export default function JobDetailPage({
       {(job.status === "processing" || job.status === "pending") && (
         <Card className="px-5 py-4">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Processing...</span>
-            <span className="text-sm text-slate-500">{job.progress}%</span>
+            <span
+              className="text-sm font-medium"
+              style={{ color: "var(--fg-primary)" }}
+            >
+              {job._currentStage || "Processing..."}
+            </span>
+            <span
+              className="text-sm"
+              style={{ color: "var(--fg-secondary)" }}
+            >
+              {Math.round(job.progress)}%
+            </span>
           </div>
-          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+          <div
+            className="h-2 overflow-hidden"
+            style={{
+              background: "var(--bg-secondary)",
+              borderRadius: "var(--radius-sm)",
+            }}
+          >
             <div
-              className="h-full bg-blue-500 rounded-full transition-all duration-1000"
-              style={{ width: `${job.progress}%` }}
+              className="h-full transition-all duration-1000"
+              style={{
+                width: `${job.progress}%`,
+                background: "var(--color-notion-blue)",
+                borderRadius: "var(--radius-sm)",
+              }}
             />
+          </div>
+        </Card>
+      )}
+
+      {/* Completed Summary */}
+      {job.status === "completed" && job._qualityLevel && (
+        <Card className="px-5 py-4">
+          <div className="flex items-center gap-3">
+            <CheckCircle
+              className="w-5 h-5"
+              style={{ color: "var(--color-notion-green)" }}
+              strokeWidth={1.5}
+            />
+            <div>
+              <p className="text-sm font-medium" style={{ color: "var(--fg-primary)" }}>
+                Translation Complete
+              </p>
+              <p className="text-xs" style={{ color: "var(--fg-secondary)" }}>
+                Quality: <span className="capitalize">{job._qualityLevel}</span>
+                {job._qualityScore !== undefined && ` (${Math.round(job._qualityScore * 100)}%)`}
+              </p>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Error */}
+      {job.status === "failed" && job.error && (
+        <Card className="px-5 py-4">
+          <div className="flex items-center gap-3">
+            <AlertTriangle
+              className="w-5 h-5"
+              style={{ color: "var(--color-notion-red)" }}
+              strokeWidth={1.5}
+            />
+            <div>
+              <p className="text-sm font-medium" style={{ color: "var(--fg-primary)" }}>
+                Translation Failed
+              </p>
+              <p className="text-xs" style={{ color: "var(--color-notion-red)" }}>
+                {job.error}
+              </p>
+            </div>
           </div>
         </Card>
       )}
@@ -107,26 +211,37 @@ export default function JobDetailPage({
         {job.eqs && (
           <Card>
             <CardHeader>
-              <h3 className="font-semibold flex items-center gap-2 text-sm">
-                <Shield className="w-4 h-4 text-blue-500" />
+              <h3 className="text-[15px] font-semibold flex items-center gap-2">
+                <Shield
+                  className="w-4 h-4"
+                  style={{ color: "var(--color-notion-blue)" }}
+                  strokeWidth={1.5}
+                />
                 Extraction Quality
               </h3>
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-3">
                 <span
-                  className={cn(
-                    "text-3xl font-bold",
-                    gradeColor(job.eqs.grade),
-                  )}
+                  className="text-3xl font-bold"
+                  style={{
+                    color:
+                      GRADE_COLORS[job.eqs.grade] || "var(--fg-primary)",
+                  }}
                 >
                   {job.eqs.grade}
                 </span>
-                <span className="text-sm text-slate-500">
+                <span
+                  className="text-sm"
+                  style={{ color: "var(--fg-secondary)" }}
+                >
                   Score: {(job.eqs.score * 100).toFixed(0)}%
                 </span>
               </div>
-              <p className="mt-2 text-sm text-slate-600">
+              <p
+                className="mt-2 text-sm"
+                style={{ color: "var(--fg-secondary)" }}
+              >
                 {job.eqs.recommendation}
               </p>
               <div className="mt-3 space-y-1.5">
@@ -136,14 +251,25 @@ export default function JobDetailPage({
                       key={signal}
                       className="flex items-center gap-2 text-xs"
                     >
-                      <span className="w-24 text-slate-500 capitalize">
+                      <span
+                        className="w-24 capitalize"
+                        style={{ color: "var(--fg-tertiary)" }}
+                      >
                         {signal.replace("_", " ")}
                       </span>
-                      <div className="flex-1 h-1.5 bg-slate-100 rounded-full">
+                      <div
+                        className="flex-1 h-1.5 overflow-hidden"
+                        style={{
+                          background: "var(--bg-secondary)",
+                          borderRadius: "var(--radius-sm)",
+                        }}
+                      >
                         <div
-                          className="h-full bg-blue-500 rounded-full"
+                          className="h-full"
                           style={{
                             width: `${(value as number) * 100}%`,
+                            background: "var(--color-notion-blue)",
+                            borderRadius: "var(--radius-sm)",
                           }}
                         />
                       </div>
@@ -159,19 +285,29 @@ export default function JobDetailPage({
         {job.qapr && (
           <Card>
             <CardHeader>
-              <h3 className="font-semibold flex items-center gap-2 text-sm">
-                <Route className="w-4 h-4 text-purple-500" />
+              <h3 className="text-[15px] font-semibold flex items-center gap-2">
+                <Route
+                  className="w-4 h-4"
+                  style={{ color: "var(--color-notion-purple)" }}
+                  strokeWidth={1.5}
+                />
                 Provider Routing
               </h3>
             </CardHeader>
             <CardContent>
-              <p className="text-lg font-semibold capitalize">
+              <p
+                className="text-lg font-semibold capitalize"
+                style={{ color: "var(--fg-primary)" }}
+              >
                 {job.qapr.selected_provider}
               </p>
               <Badge variant="info" className="mt-1">
                 {job.qapr.mode.replace("_", " ")}
               </Badge>
-              <p className="mt-2 text-sm text-slate-600">
+              <p
+                className="mt-2 text-sm"
+                style={{ color: "var(--fg-secondary)" }}
+              >
                 {job.qapr.reasoning}
               </p>
             </CardContent>
@@ -182,14 +318,21 @@ export default function JobDetailPage({
         {job.consistency && (
           <Card>
             <CardHeader>
-              <h3 className="font-semibold flex items-center gap-2 text-sm">
-                <CheckCircle className="w-4 h-4 text-green-500" />
+              <h3 className="text-[15px] font-semibold flex items-center gap-2">
+                <CheckCircle
+                  className="w-4 h-4"
+                  style={{ color: "var(--color-notion-green)" }}
+                  strokeWidth={1.5}
+                />
                 Consistency Check
               </h3>
             </CardHeader>
             <CardContent>
               <div className="flex items-baseline gap-2">
-                <span className="text-2xl font-bold">
+                <span
+                  className="text-2xl font-bold"
+                  style={{ color: "var(--fg-primary)" }}
+                >
                   {Math.round(job.consistency.score * 100)}%
                 </span>
                 <Badge
@@ -206,16 +349,18 @@ export default function JobDetailPage({
                       className="flex items-start gap-2 text-xs"
                     >
                       <AlertTriangle
-                        className={cn(
-                          "w-3 h-3 mt-0.5 flex-shrink-0",
-                          issue.severity === "high"
-                            ? "text-red-500"
-                            : issue.severity === "medium"
-                              ? "text-yellow-500"
-                              : "text-slate-400",
-                        )}
+                        className="w-3 h-3 mt-0.5 shrink-0"
+                        strokeWidth={1.5}
+                        style={{
+                          color:
+                            issue.severity === "high"
+                              ? "var(--color-notion-red)"
+                              : issue.severity === "medium"
+                                ? "var(--color-notion-yellow)"
+                                : "var(--fg-tertiary)",
+                        }}
                       />
-                      <span className="text-slate-600">
+                      <span style={{ color: "var(--fg-secondary)" }}>
                         {issue.message}
                       </span>
                     </div>
@@ -230,30 +375,58 @@ export default function JobDetailPage({
         {job.layout_dna && (
           <Card>
             <CardHeader>
-              <h3 className="font-semibold flex items-center gap-2 text-sm">
-                <LayoutGrid className="w-4 h-4 text-orange-500" />
+              <h3 className="text-[15px] font-semibold flex items-center gap-2">
+                <LayoutGrid
+                  className="w-4 h-4"
+                  style={{ color: "var(--color-notion-orange)" }}
+                  strokeWidth={1.5}
+                />
                 Document Structure
               </h3>
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-3 gap-3 text-center">
                 <div>
-                  <p className="text-2xl font-bold">
+                  <p
+                    className="text-2xl font-bold"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
                     {job.layout_dna.total_regions}
                   </p>
-                  <p className="text-xs text-slate-500">Regions</p>
+                  <p
+                    className="text-xs"
+                    style={{ color: "var(--fg-tertiary)" }}
+                  >
+                    Regions
+                  </p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">
+                  <p
+                    className="text-2xl font-bold"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
                     {job.layout_dna.tables}
                   </p>
-                  <p className="text-xs text-slate-500">Tables</p>
+                  <p
+                    className="text-xs"
+                    style={{ color: "var(--fg-tertiary)" }}
+                  >
+                    Tables
+                  </p>
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">
+                  <p
+                    className="text-2xl font-bold"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
                     {job.layout_dna.formulas}
                   </p>
-                  <p className="text-xs text-slate-500">Formulas</p>
+                  <p
+                    className="text-xs"
+                    style={{ color: "var(--fg-tertiary)" }}
+                  >
+                    Formulas
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -265,30 +438,20 @@ export default function JobDetailPage({
       {outputs.length > 0 && (
         <Card>
           <CardHeader>
-            <h3 className="font-semibold">Download Outputs</h3>
+            <h3 className="text-[15px] font-semibold flex items-center gap-2">
+              <Download className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
+              Download Outputs
+            </h3>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {outputs.map((output) => (
-                <a
-                  key={output.filename}
-                  href={jobsApi.getDownloadUrl(id, output.filename)}
-                  download
-                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-slate-50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="w-5 h-5 text-slate-400" />
-                    <div>
-                      <p className="text-sm font-medium">
-                        {output.filename}
-                      </p>
-                      <p className="text-xs text-slate-500">
-                        {(output.size_bytes / 1024).toFixed(1)} KB
-                      </p>
-                    </div>
-                  </div>
-                  <Download className="w-4 h-4 text-blue-500" />
-                </a>
+                <DownloadButton
+                  key={output.format}
+                  jobId={id}
+                  format={output.format}
+                  filename={output.filename}
+                />
               ))}
             </div>
           </CardContent>

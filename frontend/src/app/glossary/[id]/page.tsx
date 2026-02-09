@@ -1,7 +1,14 @@
 "use client";
 
 import { use, useState } from "react";
-import { ArrowLeft, Plus, Trash2, Search, Download, Upload } from "lucide-react";
+import {
+  ArrowLeft,
+  Plus,
+  Trash2,
+  Search,
+  Download,
+  Upload,
+} from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -32,8 +39,11 @@ export default function GlossaryDetailPage({
   const glossary = data?.glossary;
 
   if (isLoading)
-    return <div className="animate-pulse h-40 bg-slate-200 rounded-lg" />;
-  if (!glossary) return <p>Glossary not found</p>;
+    return <div className="h-40 skeleton" />;
+  if (!glossary)
+    return (
+      <p style={{ color: "var(--fg-tertiary)" }}>Glossary not found</p>
+    );
 
   const filteredEntries = searchQuery
     ? glossary.entries.filter(
@@ -86,18 +96,22 @@ export default function GlossaryDetailPage({
   };
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="space-y-6">
       <Link
         href="/glossary"
-        className="text-sm text-slate-500 hover:text-slate-700 flex items-center gap-1"
+        className="text-sm flex items-center gap-1 no-underline"
+        style={{ color: "var(--fg-secondary)" }}
       >
         <ArrowLeft className="w-3 h-3" /> Back to Glossaries
       </Link>
 
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold">{glossary.name}</h1>
-          <p className="text-slate-500 text-sm">
+          <h1>{glossary.name}</h1>
+          <p
+            className="text-sm"
+            style={{ color: "var(--fg-secondary)" }}
+          >
             {glossary.language_pair} &middot; {glossary.entry_count} terms
           </p>
         </div>
@@ -113,12 +127,22 @@ export default function GlossaryDetailPage({
 
       <div className="flex gap-3">
         <div className="flex-1 relative">
-          <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+          <Search
+            className="w-4 h-4 absolute left-3 top-2.5"
+            style={{ color: "var(--fg-icon)" }}
+            strokeWidth={1.5}
+          />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search terms..."
-            className="w-full border rounded-lg pl-9 pr-3 py-2 text-sm"
+            className="w-full pl-9 pr-3 py-2 text-sm"
+            style={{
+              borderRadius: "var(--radius-md)",
+              border: "1px solid var(--border-default)",
+              background: "var(--bg-primary)",
+              color: "var(--fg-primary)",
+            }}
           />
         </div>
         <Button size="sm" onClick={() => setShowAdd(!showAdd)}>
@@ -127,21 +151,38 @@ export default function GlossaryDetailPage({
       </div>
 
       {showAdd && (
-        <Card className="border-blue-200 bg-blue-50/50">
+        <Card
+          style={{
+            borderColor: "var(--color-notion-blue)",
+            background: "var(--accent-blue-bg)",
+          }}
+        >
           <CardContent className="pt-4">
             <div className="grid grid-cols-2 gap-3">
               <input
                 value={srcTerm}
                 onChange={(e) => setSrcTerm(e.target.value)}
                 placeholder="Source term"
-                className="border rounded-lg px-3 py-2 text-sm"
+                className="px-3 py-2 text-sm"
+                style={{
+                  borderRadius: "var(--radius-md)",
+                  border: "1px solid var(--border-default)",
+                  background: "var(--bg-primary)",
+                  color: "var(--fg-primary)",
+                }}
                 autoFocus
               />
               <input
                 value={tgtTerm}
                 onChange={(e) => setTgtTerm(e.target.value)}
                 placeholder="Target term"
-                className="border rounded-lg px-3 py-2 text-sm"
+                className="px-3 py-2 text-sm"
+                style={{
+                  borderRadius: "var(--radius-md)",
+                  border: "1px solid var(--border-default)",
+                  background: "var(--bg-primary)",
+                  color: "var(--fg-primary)",
+                }}
                 onKeyDown={(e) => e.key === "Enter" && handleAdd()}
               />
             </div>
@@ -160,36 +201,81 @@ export default function GlossaryDetailPage({
       <Card>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="text-left px-5 py-3 font-medium text-slate-600">
+            <thead>
+              <tr style={{ background: "var(--bg-secondary)" }}>
+                <th
+                  className="text-left px-5 py-3 font-medium"
+                  style={{ color: "var(--fg-secondary)" }}
+                >
                   Source
                 </th>
-                <th className="text-left px-5 py-3 font-medium text-slate-600">
+                <th
+                  className="text-left px-5 py-3 font-medium"
+                  style={{ color: "var(--fg-secondary)" }}
+                >
                   Target
                 </th>
-                <th className="text-left px-5 py-3 font-medium text-slate-600">
+                <th
+                  className="text-left px-5 py-3 font-medium"
+                  style={{ color: "var(--fg-secondary)" }}
+                >
                   Domain
                 </th>
                 <th className="w-10"></th>
               </tr>
             </thead>
-            <tbody className="divide-y">
+            <tbody
+              style={{
+                borderTop: "1px solid var(--border-default)",
+              }}
+            >
               {filteredEntries.map((entry) => (
-                <tr key={entry.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-3 font-medium">
+                <tr
+                  key={entry.id}
+                  className="transition-colors duration-100"
+                  style={{
+                    borderBottom: "1px solid var(--border-default)",
+                  }}
+                  onMouseEnter={(e) =>
+                    (e.currentTarget.style.background =
+                      "var(--bg-hover)")
+                  }
+                  onMouseLeave={(e) =>
+                    (e.currentTarget.style.background = "transparent")
+                  }
+                >
+                  <td
+                    className="px-5 py-3 font-medium"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
                     {entry.source_term}
                   </td>
-                  <td className="px-5 py-3">{entry.target_term}</td>
-                  <td className="px-5 py-3 text-slate-500">
+                  <td
+                    className="px-5 py-3"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
+                    {entry.target_term}
+                  </td>
+                  <td
+                    className="px-5 py-3"
+                    style={{ color: "var(--fg-secondary)" }}
+                  >
                     {entry.domain}
                   </td>
                   <td className="px-3 py-3">
                     <button
                       onClick={() => removeEntry.mutate(entry.id)}
-                      className="p-1 text-slate-400 hover:text-red-500"
+                      className="p-1 transition-colors duration-100"
+                      style={{ color: "var(--fg-icon)" }}
+                      onMouseEnter={(e) =>
+                        (e.currentTarget.style.color =
+                          "var(--color-notion-red)")
+                      }
+                      onMouseLeave={(e) =>
+                        (e.currentTarget.style.color = "var(--fg-icon)")
+                      }
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Trash2 className="w-3.5 h-3.5" strokeWidth={1.5} />
                     </button>
                   </td>
                 </tr>

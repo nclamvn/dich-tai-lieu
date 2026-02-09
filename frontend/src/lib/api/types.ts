@@ -22,6 +22,12 @@ export interface TranslationJob {
   qapr?: QAPRDecision;
   consistency?: ConsistencyReport;
   layout_dna?: LayoutDNAStats;
+
+  // V2 publishing pipeline fields
+  _outputPaths?: Record<string, string>;
+  _qualityScore?: number;
+  _qualityLevel?: string;
+  _currentStage?: string;
 }
 
 export interface EQSReport {
@@ -60,7 +66,7 @@ export interface LayoutDNAStats {
 export interface TranslateRequest {
   source_language: string;
   target_language: string;
-  output_format: string;
+  output_formats?: string[];
   provider?: string;
   profile_id?: string;
   glossary_ids?: string[];

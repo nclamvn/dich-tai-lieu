@@ -4,6 +4,7 @@ from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, Inches, Cm
 from core.export.docx_styles import StyleManager, ThemeConfig
+from core.i18n import get_string
 
 # Cover image support (Phase 2026-01)
 try:
@@ -73,21 +74,22 @@ class FrontMatterGenerator:
         # 4. Large Spacer (Push to bottom)
         self._add_spacer(8)
 
-        # 5. Author Block
+        # 5. Author Block (skip generic "Unknown")
         author = metadata.get('author')
-        if author:
+        if author and author != "Unknown":
             self._add_author(author)
 
         # 6. Page Break
         self.doc.add_page_break()
 
-    def generate_toc(self):
+    def generate_toc(self, lang: str = "en"):
         """
         Generate Table of Contents (TOC).
         Note: Needs docx update/refresh to show page numbers.
         """
-        # Heading
-        para = self.doc.add_heading("Table of Contents", level=1)
+        # Heading (localized)
+        toc_title = get_string("table_of_contents", lang)
+        para = self.doc.add_heading(toc_title, level=1)
         self.style_manager.apply_heading_style(para, 1)
         
         # TOC Field Code

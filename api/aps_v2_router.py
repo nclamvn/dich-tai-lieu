@@ -6,8 +6,9 @@ FastAPI endpoints for Claude-Native Universal Publishing.
 
 import logging
 from pathlib import Path
+from typing import List
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Body
 from fastapi.responses import FileResponse
 
 from .aps_v2_models import (
@@ -207,6 +208,43 @@ async def publish_text(request: PublishTextRequest):
 
 
 # ==================== JOB ENDPOINTS ====================
+
+@router.get(
+    "/jobs",
+    response_model=List[JobResponseV2],
+    summary="List all V2 jobs",
+)
+async def list_jobs(limit: int = 50):
+    """List all V2 publishing jobs, most recent first."""
+    service = get_v2_service()
+    all_jobs = service._repo.get_all_jobs(limit=limit)
+    results = []
+    for job_data in all_jobs:
+        # Ensure job is in memory cache for get_job_response
+        job_id = job_data.get("job_id")
+        if job_id not in service._jobs:
+            service._jobs[job_id] = job_data
+        results.append(service.get_job_response(job_data))
+    return results
+
+
+@router.delete(
+    "/jobs",
+    summary="Bulk delete V2 jobs",
+)
+async def bulk_delete_jobs(job_ids: List[str] = Body(...)):
+    """Delete multiple V2 jobs at once."""
+    service = get_v2_service()
+    deleted = 0
+    for job_id in job_ids:
+        try:
+            service._repo.delete(job_id)
+            service._jobs.pop(job_id, None)
+            deleted += 1
+        except Exception:
+            pass
+    return {"deleted": deleted}
+
 
 @router.get(
     "/jobs/current",
