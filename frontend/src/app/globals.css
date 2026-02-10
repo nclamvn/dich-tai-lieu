@@ -70,6 +70,45 @@
   --radius-lg:        8px;
 }
 
+/* ─── Dark Mode ─── */
+
+.dark {
+  --bg-primary:       #191919;
+  --bg-secondary:     #202020;
+  --bg-tertiary:      #2A2A2A;
+  --bg-hover:         rgba(255, 255, 255, 0.055);
+  --bg-active:        rgba(255, 255, 255, 0.09);
+  --bg-sidebar:       #1E1E1E;
+  --bg-overlay:       rgba(0, 0, 0, 0.7);
+
+  --fg-primary:       rgba(255, 255, 255, 0.9);
+  --fg-secondary:     rgba(255, 255, 255, 0.6);
+  --fg-tertiary:      rgba(255, 255, 255, 0.4);
+  --fg-ghost:         rgba(255, 255, 255, 0.15);
+  --fg-icon:          rgba(255, 255, 255, 0.4);
+
+  --accent-blue-bg:   rgba(35, 131, 226, 0.15);
+  --accent-red-bg:    rgba(235, 87, 87, 0.15);
+  --accent-green-bg:  rgba(15, 123, 108, 0.15);
+  --accent-yellow-bg: rgba(203, 145, 47, 0.15);
+  --accent-orange-bg: rgba(217, 115, 13, 0.15);
+  --accent-purple-bg: rgba(144, 101, 176, 0.15);
+
+  --border-default:   rgba(255, 255, 255, 0.08);
+  --border-hover:     rgba(255, 255, 255, 0.16);
+
+  --shadow-sm:        rgba(0,0,0,0.15) 0px 0px 0px 1px,
+                      rgba(0,0,0,0.1) 0px 2px 4px;
+  --shadow-md:        rgba(0,0,0,0.15) 0px 0px 0px 1px,
+                      rgba(0,0,0,0.1) 0px 3px 6px,
+                      rgba(0,0,0,0.08) 0px 9px 24px;
+  --shadow-popup:     rgba(0,0,0,0.2) 0px 0px 0px 1px,
+                      rgba(0,0,0,0.2) 0px 3px 6px,
+                      rgba(0,0,0,0.4) 0px 9px 24px;
+
+  color-scheme: dark;
+}
+
 /* ─── Base ─── */
 
 * {
@@ -154,6 +193,18 @@ a:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(55, 53, 47, 0.3);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.16);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
   border: 2px solid transparent;
   background-clip: content-box;
 }

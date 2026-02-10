@@ -14,6 +14,11 @@ import type {
   CostOverview,
   ProviderCost,
   PublishingProfile,
+  BookProject,
+  BookListItem,
+  BookChapter,
+  CreateBookRequest,
+  ApproveOutlineRequest,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -223,6 +228,76 @@ export const jobs = {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  },
+};
+
+// ─── Book Writer ───
+
+export const bookWriter = {
+  async create(request: CreateBookRequest): Promise<BookProject> {
+    return apiFetch<BookProject>("/api/v2/books/", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  },
+
+  async get(bookId: string): Promise<BookProject> {
+    return apiFetch<BookProject>(`/api/v2/books/${bookId}`);
+  },
+
+  async list(limit = 20, offset = 0): Promise<BookListItem[]> {
+    return apiFetch<BookListItem[]>(`/api/v2/books/?limit=${limit}&offset=${offset}`);
+  },
+
+  async approve(bookId: string, request: ApproveOutlineRequest): Promise<BookProject> {
+    return apiFetch<BookProject>(`/api/v2/books/${bookId}/approve`, {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  },
+
+  async delete(bookId: string): Promise<void> {
+    await apiFetch(`/api/v2/books/${bookId}`, { method: "DELETE" });
+  },
+
+  async getChapter(bookId: string, chapterNum: number): Promise<BookChapter> {
+    return apiFetch<BookChapter>(`/api/v2/books/${bookId}/chapters/${chapterNum}`);
+  },
+
+  async editChapter(bookId: string, chapterNum: number, content: string): Promise<BookChapter> {
+    return apiFetch<BookChapter>(`/api/v2/books/${bookId}/chapters/${chapterNum}`, {
+      method: "PUT",
+      body: JSON.stringify({ chapter_number: chapterNum, content }),
+    });
+  },
+
+  async regenerateChapter(bookId: string, chapterNum: number, instructions?: string): Promise<any> {
+    return apiFetch(`/api/v2/books/${bookId}/chapters/${chapterNum}/regenerate`, {
+      method: "POST",
+      body: JSON.stringify({ chapter_number: chapterNum, instructions }),
+    });
+  },
+
+  async uploadDraft(file: File): Promise<{ file_id: string; filename: string; size: number }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_BASE}/api/v2/books/upload-draft`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new ApiError(res.status, data?.detail || res.statusText, data);
+    }
+    return res.json();
+  },
+
+  async getReaderContent(bookId: string): Promise<ReaderContent> {
+    return apiFetch<ReaderContent>(`/api/v2/books/${bookId}/reader-content`);
+  },
+
+  getDownloadUrl(bookId: string, format: string = "docx"): string {
+    return `${API_BASE}/api/v2/books/${bookId}/download/${format}`;
   },
 };
 

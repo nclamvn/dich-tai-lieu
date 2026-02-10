@@ -16,13 +16,16 @@ import {
   Layers,
   PanelLeftClose,
   PanelLeft,
+  PenTool,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocale } from "@/lib/i18n";
 import { LocaleToggle } from "@/components/ui/locale-toggle";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const NAV_KEYS = [
   { href: "/translate", key: "translate" as const, icon: Upload },
+  { href: "/write", key: "write" as const, icon: PenTool },
   { href: "/jobs", key: "jobs" as const, icon: List },
   { href: "/glossary", key: "glossary" as const, icon: BookOpen },
   { href: "/dashboard", key: "dashboard" as const, icon: BarChart3 },
@@ -205,7 +208,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div
           className={cn(
             "shrink-0 flex items-center",
-            collapsed ? "flex-col gap-2 px-1.5 py-3" : "justify-between px-3 py-3",
+            collapsed ? "flex-col gap-2 px-1.5 pt-3 pb-12" : "justify-between px-3 py-3",
           )}
           style={{ borderTop: "1px solid var(--border-default)" }}
         >
@@ -217,7 +220,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               VIBECODE KIT V4
             </p>
           )}
-          <LocaleToggle collapsed={collapsed} />
+          <div className={cn("flex items-center", collapsed ? "flex-col gap-2" : "gap-1.5")}>
+            <ThemeToggle collapsed={collapsed} />
+            <LocaleToggle collapsed={collapsed} />
+          </div>
         </div>
       </aside>
 
@@ -262,6 +268,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </>
             )}
           </div>
+          <ThemeToggle />
           <LocaleToggle />
         </header>
 

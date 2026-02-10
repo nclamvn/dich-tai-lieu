@@ -3,6 +3,7 @@ import "./globals.css";
 import { Providers } from "@/components/providers";
 import { AppShell } from "@/components/layout/app-shell";
 import { LocaleProvider } from "@/lib/i18n";
+import { ThemeProvider } from "@/lib/theme";
 
 export const metadata: Metadata = {
   title: "AI Publisher Pro",
@@ -26,9 +27,11 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className="antialiased">
         <Providers>
-          <LocaleProvider>
-            <AppShell>{children}</AppShell>
-          </LocaleProvider>
+          <ThemeProvider>
+            <LocaleProvider>
+              <AppShell>{children}</AppShell>
+            </LocaleProvider>
+          </ThemeProvider>
         </Providers>
       </body>
     </html>

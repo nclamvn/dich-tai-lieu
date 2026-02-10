@@ -69,6 +69,9 @@ from api.routes.jobs import router as jobs_router
 # --- Sprint 14 routes ---
 from api.routes.dashboard import router as dashboard_router
 
+# --- Book Writer ---
+from api.book_writer_router import router as book_writer_router
+
 # =============================================================================
 # CSRF Protection Configuration
 # =============================================================================
@@ -168,6 +171,9 @@ app.include_router(jobs_router)
 # Sprint 14 routers
 app.include_router(dashboard_router)
 
+# Book Writer
+app.include_router(book_writer_router)
+
 # =============================================================================
 # Startup / Shutdown Events
 # =============================================================================
@@ -183,6 +189,17 @@ async def startup_resume_jobs():
             logger.info(f"Startup: Resumed {resumed} pending jobs")
     except Exception as e:
         logger.error(f"Startup: Failed to resume jobs: {e}")
+
+
+@app.on_event("startup")
+async def startup_resume_book_projects():
+    """Resume book writer pipelines interrupted by server restart."""
+    try:
+        from api.book_writer_router import get_service
+        service = get_service()
+        await service.resume_stalled_projects()
+    except Exception as e:
+        logger.error(f"Startup: Failed to resume book projects: {e}")
 
 
 @app.on_event("startup")

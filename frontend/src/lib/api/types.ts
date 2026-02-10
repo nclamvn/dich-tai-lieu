@@ -254,6 +254,138 @@ export type ReaderFontSize = 0 | 1 | 2 | 3 | 4;
 
 // ─── Output Formats ───
 
+// ─── Book Writer ───
+
+export type InputMode = "seeds" | "messy_draft" | "enrich";
+export type Genre = "fiction" | "non_fiction" | "self_help" | "technical" | "academic" | "memoir" | "business" | "children" | "poetry" | "other";
+export type OutputFormat = "docx" | "epub" | "pdf" | "markdown" | "txt";
+
+export type BookStatus =
+  | "created" | "analyzing" | "analysis_ready"
+  | "architecting" | "outlining" | "outline_ready"
+  | "writing" | "enriching" | "editing"
+  | "compiling" | "complete" | "failed" | "paused";
+
+export interface CreateBookRequest {
+  title?: string;
+  input_mode: InputMode;
+  ideas?: string;
+  draft_content?: string;
+  draft_file_id?: string;
+  language: string;
+  target_pages: number;
+  genre?: string;
+  tone?: string;
+  model?: string;
+  output_formats: OutputFormat[];
+  custom_instructions?: string;
+  reference_style?: string;
+}
+
+export interface PipelineProgress {
+  status: BookStatus;
+  current_agent: string;
+  current_chapter: number;
+  total_chapters: number;
+  chapters_written: number;
+  chapters_enriched: number;
+  chapters_edited: number;
+  total_words: number;
+  elapsed_seconds: number;
+  estimated_remaining_seconds: number;
+  total_tokens_in: number;
+  total_tokens_out: number;
+  estimated_cost_usd: number;
+}
+
+export interface AnalysisReport {
+  input_mode: InputMode;
+  genre: string;
+  detected_language: string;
+  target_audience: string;
+  core_thesis: string;
+  tone: string;
+  strengths: string[];
+  gaps: string[];
+  estimated_chapters: number;
+  estimated_words: number;
+  key_themes: string[];
+  voice_profile: string;
+  recommendations: string[];
+}
+
+export interface ChapterOutlineSection {
+  section_id: string;
+  title: string;
+  content_brief: string;
+  word_target: number;
+  includes: string[];
+  source_material?: string;
+  is_from_user: boolean;
+}
+
+export interface ChapterOutline {
+  chapter_number: number;
+  title: string;
+  summary: string;
+  word_target: number;
+  opening_hook: string;
+  closing_hook: string;
+  sections: ChapterOutlineSection[];
+  transition_from_previous: string;
+  transition_to_next: string;
+}
+
+export interface BookChapter {
+  chapter_number: number;
+  title: string;
+  status: string;
+  content: string;
+  enriched_content?: string;
+  edited_content?: string;
+  final_content?: string;
+  summary: string;
+  word_count: number;
+  user_edits?: string;
+}
+
+export interface BookProject {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  title?: string;
+  status: BookStatus;
+  input_mode: InputMode;
+  progress: PipelineProgress;
+  analysis?: AnalysisReport;
+  blueprint?: any;
+  outlines: ChapterOutline[];
+  chapters: BookChapter[];
+  chapter_count: number;
+  total_words: number;
+  output_files: Array<{ format: string; path: string; filename: string }>;
+  error?: string;
+}
+
+export interface BookListItem {
+  id: string;
+  title?: string;
+  status: BookStatus;
+  input_mode: InputMode;
+  created_at: string;
+  updated_at: string;
+  chapter_count: number;
+  total_words: number;
+}
+
+export interface ApproveOutlineRequest {
+  approved: boolean;
+  chapter_adjustments?: Record<number, Record<string, any>>;
+  custom_notes?: string;
+}
+
+// ─── Output Formats ───
+
 export const OUTPUT_FORMATS = [
   { value: "docx", label: "Word (.docx)" },
   { value: "pdf", label: "PDF (.pdf)" },
