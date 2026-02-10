@@ -16,10 +16,11 @@ from datetime import datetime
 # ─────────────────────────────────────────────────────────────────
 
 class InputMode(str, Enum):
-    """3 input modes for the book writer."""
+    """4 input modes for the book writer."""
     SEEDS = "seeds"          # Vài ý tưởng → AI generate ~95%
     MESSY_DRAFT = "messy_draft"  # Bản thảo lộn xộn → restructure + expand
     ENRICH = "enrich"        # Bản thảo ok → thêm depth, ví dụ, data
+    CONTINUE_DRAFT = "continue_draft"  # Upload draft → AI continues writing
 
 
 class BookStatus(str, Enum):

@@ -92,11 +92,14 @@ export default function JobsPage() {
       </div>
 
       {/* Bulk Actions Bar */}
-      <div className="flex items-center gap-3">
+      <div
+        className="flex items-center gap-3 sticky top-0 z-10 py-2 -mx-2 px-2"
+        style={{ background: "var(--bg-primary)" }}
+      >
         <button
           onClick={toggleAll}
           className="flex items-center gap-2 text-sm px-2 py-1 transition-colors"
-          style={{ color: "var(--fg-secondary)" }}
+          style={{ color: "var(--fg-secondary)", cursor: "pointer" }}
         >
           {selected.size === jobList.length ? (
             <CheckSquare className="w-4 h-4" style={{ color: "var(--color-notion-blue)" }} strokeWidth={1.5} />
@@ -106,15 +109,18 @@ export default function JobsPage() {
           {selected.size > 0 ? `${selected.size} ${t.jobs.selected}` : t.jobs.selectAll}
         </button>
         {selected.size > 0 && (
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={handleBulkDelete}
-            loading={bulkDelete.isPending}
-          >
-            <Trash2 className="w-3.5 h-3.5 mr-1" strokeWidth={1.5} />
-            {t.jobs.delete} ({selected.size})
-          </Button>
+          <>
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={handleBulkDelete}
+              loading={bulkDelete.isPending}
+              style={{ color: "var(--color-notion-red)" }}
+            >
+              <Trash2 className="w-3.5 h-3.5 mr-1" strokeWidth={1.5} />
+              {t.jobs.delete} ({selected.size})
+            </Button>
+          </>
         )}
       </div>
 

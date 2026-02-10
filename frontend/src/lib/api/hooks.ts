@@ -7,7 +7,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobs, glossaries, dashboard, profiles, bookWriter, bookWriterV2, engines, settingsApi, tm, batch, editor } from "./client";
-import type { TranslateRequest, CreateBookRequest, ApproveOutlineRequest, BookV2CreateRequest, TMSegment } from "./types";
+import type { TranslateRequest, CreateBookRequest, ApproveOutlineRequest, BookV2CreateRequest, TMSegment, DraftUploadResponse, DraftAnalysisResponse } from "./types";
 
 const WS_URL =
   (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
@@ -521,6 +521,18 @@ export function usePauseBookV2() {
       queryClient.invalidateQueries({ queryKey: ["book-v2-project", projectId] });
       queryClient.invalidateQueries({ queryKey: ["book-v2-projects"] });
     },
+  });
+}
+
+export function useUploadDraftV2() {
+  return useMutation({
+    mutationFn: (file: File) => bookWriterV2.uploadDraft(file),
+  });
+}
+
+export function useAnalyzeDraftV2() {
+  return useMutation({
+    mutationFn: (file: File) => bookWriterV2.analyzeDraft(file),
   });
 }
 

@@ -70,7 +70,7 @@ export default function WritePage() {
   const [styleNotes, setStyleNotes] = useState("");
   const [uploading, setUploading] = useState(false);
 
-  const modeLabels: Record<InputMode, { label: string; desc: string }> = {
+  const modeLabels: Partial<Record<InputMode, { label: string; desc: string }>> = {
     seeds: { label: t.write.modeSeeds, desc: t.write.modeSeedsDesc },
     messy_draft: { label: t.write.modeMessyDraft, desc: t.write.modeMessyDraftDesc },
     enrich: { label: t.write.modeEnrich, desc: t.write.modeEnrichDesc },
@@ -167,11 +167,11 @@ export default function WritePage() {
                 className="text-sm font-semibold"
                 style={{ color: inputMode === mode ? color : "var(--fg-primary)" }}
               >
-                {modeLabels[mode].label}
+                {modeLabels[mode]?.label}
               </span>
             </div>
             <p className="text-xs" style={{ color: "var(--fg-tertiary)" }}>
-              {modeLabels[mode].desc}
+              {modeLabels[mode]?.desc}
             </p>
           </button>
         ))}

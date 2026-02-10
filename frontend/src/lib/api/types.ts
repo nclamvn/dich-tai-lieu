@@ -274,7 +274,7 @@ export type ReaderFontSize = 0 | 1 | 2 | 3 | 4;
 
 // ─── Book Writer ───
 
-export type InputMode = "seeds" | "messy_draft" | "enrich";
+export type InputMode = "seeds" | "messy_draft" | "enrich" | "continue_draft";
 export type Genre = "fiction" | "non_fiction" | "self_help" | "technical" | "academic" | "memoir" | "business" | "children" | "poetry" | "other";
 export type OutputFormat = "docx" | "epub" | "pdf" | "markdown" | "txt";
 
@@ -427,6 +427,28 @@ export interface BookV2CreateRequest {
   output_formats?: BookV2OutputFormat[];
   words_per_page?: number;
   sections_per_chapter?: number;
+  continue_from_draft?: boolean;
+  draft_file_id?: string;
+}
+
+export interface DraftChapterInfo {
+  chapter_number: number;
+  title: string;
+  word_count: number;
+}
+
+export interface DraftAnalysisResponse {
+  file_id: string;
+  filename: string;
+  total_chapters: number;
+  total_words: number;
+  chapters: DraftChapterInfo[];
+}
+
+export interface DraftUploadResponse {
+  file_id: string;
+  filename: string;
+  size: number;
 }
 
 export interface BookV2Project {

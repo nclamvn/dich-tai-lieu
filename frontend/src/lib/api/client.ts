@@ -26,6 +26,8 @@ import type {
   BookV2StructurePreview,
   BookV2Content,
   BookV2ReaderContent,
+  DraftUploadResponse,
+  DraftAnalysisResponse,
   AllSettings,
   TMItem,
   TMListResponse,
@@ -388,6 +390,34 @@ export const bookWriterV2 = {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
+  },
+
+  async uploadDraft(file: File): Promise<DraftUploadResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_BASE}/api/v2/books-v2/upload-draft`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new ApiError(res.status, data?.detail || res.statusText, data);
+    }
+    return res.json();
+  },
+
+  async analyzeDraft(file: File): Promise<DraftAnalysisResponse> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_BASE}/api/v2/books-v2/analyze-draft`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new ApiError(res.status, data?.detail || res.statusText, data);
+    }
+    return res.json();
   },
 };
 
