@@ -4,8 +4,11 @@ Google's open translation model optimized for Apple Silicon (MPS)
 """
 
 import asyncio
+import logging
 from typing import List, Optional
 from .base import TranslationEngine, TranslationResult, EngineStatus
+
+logger = logging.getLogger(__name__)
 from ..language_codes import TRANSLATEGEMMA_LANGUAGES
 
 
@@ -89,7 +92,7 @@ class TranslateGemmaEngine(TranslationEngine):
                 # The model loads but generates only pad tokens
                 # Until this is fixed, we recommend using Cloud API
                 # See: https://github.com/huggingface/transformers/issues
-                print("[TranslateGemma] WARNING: MPS support is experimental and may not work correctly")
+                logger.warning("MPS support is experimental and may not work correctly")
 
                 # Check macOS unified memory
                 result = subprocess.run(
@@ -166,9 +169,9 @@ class TranslateGemmaEngine(TranslationEngine):
             # Get HF token from environment
             hf_token = os.environ.get('HF_TOKEN') or os.environ.get('HUGGINGFACE_TOKEN')
 
-            print(f"[TranslateGemma] Loading {self.model_id} on {self._device}...")
+            logger.info("Loading %s on %s...", self.model_id, self._device)
             if hf_token:
-                print("[TranslateGemma] Using HF token for authentication")
+                logger.info("Using HF token for authentication")
 
             # Load processor with token
             self._processor = AutoProcessor.from_pretrained(
@@ -201,13 +204,13 @@ class TranslateGemmaEngine(TranslationEngine):
 
             self._loaded = True
             self._loading = False
-            print(f"[TranslateGemma] Model loaded successfully on {self._device}")
+            logger.info("Model loaded successfully on %s", self._device)
             return True
 
         except Exception as e:
             self._error = str(e)
             self._loading = False
-            print(f"[TranslateGemma] Failed to load model: {e}")
+            logger.warning("Failed to load model: %s", e)
             return False
 
     async def _load_model_async(self) -> bool:
@@ -367,7 +370,7 @@ class TranslateGemmaEngine(TranslationEngine):
         except Exception:
             pass
 
-        print("[TranslateGemma] Model unloaded, memory freed")
+        logger.info("Model unloaded, memory freed")
 
     def get_info(self) -> dict:
         """Get engine information"""

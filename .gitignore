@@ -38,6 +38,17 @@ data/*.db
 data/**/*.db
 *.pyc
 
+# Screenshots & runtime artifacts
+/*.png
+.playwright-mcp/
+outputs/batch/
+data/books/
+data/books_v2/
+data/provider_stats.json
+data/settings.json
+data/uploads/
+tests/output/*.docx
+
 # Environment
 .env
 .env.local

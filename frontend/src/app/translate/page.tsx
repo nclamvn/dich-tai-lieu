@@ -5,13 +5,14 @@ import { useRouter } from "next/navigation";
 import { Upload, FileText, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { useCreateJob, useProfiles, useGlossaries } from "@/lib/api/hooks";
+import { useCreateJob, useProfiles, useGlossaries, useTranslationEngines } from "@/lib/api/hooks";
 import { detectLanguage } from "@/lib/api/client";
 import {
   SUPPORTED_LANGUAGES,
   OUTPUT_FORMATS,
   type TranslateRequest,
 } from "@/lib/api/types";
+import { Cpu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useLocale } from "@/lib/i18n";
 
@@ -27,9 +28,11 @@ export default function TranslatePage() {
   const [selectedFormats, setSelectedFormats] = useState<string[]>(["docx"]);
   const [profileId, setProfileId] = useState("");
   const [selectedGlossaries, setSelectedGlossaries] = useState<string[]>([]);
+  const [engineId, setEngineId] = useState("auto");
   const [detecting, setDetecting] = useState(false);
 
   const { data: profilesData } = useProfiles();
+  const { data: enginesData } = useTranslationEngines();
   const { data: glossaryData } = useGlossaries(sourceLang, targetLang);
 
   const profileList = profilesData?.profiles || [];
@@ -90,6 +93,7 @@ export default function TranslatePage() {
       source_language: sourceLang,
       target_language: targetLang,
       output_formats: selectedFormats,
+      engine_id: engineId !== "auto" ? engineId : undefined,
       profile_id: profileId || undefined,
       glossary_ids:
         selectedGlossaries.length > 0 ? selectedGlossaries : undefined,
@@ -265,6 +269,44 @@ export default function TranslatePage() {
               })}
             </div>
           </div>
+
+          {/* Engine Selector */}
+          {enginesData && enginesData.length > 0 && (
+            <div>
+              <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
+                <span className="inline-flex items-center gap-1.5">
+                  <Cpu className="w-3.5 h-3.5" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
+                  {t.translate.engine}
+                </span>
+              </label>
+              <select
+                value={engineId}
+                onChange={(e) => setEngineId(e.target.value)}
+                className="w-full"
+              >
+                <option value="auto">{t.translate.engineAuto}</option>
+                {enginesData.map((eng) => (
+                  <option key={eng.id} value={eng.id} disabled={!eng.available}>
+                    {eng.offline ? "\uD83C\uDFE0" : "\u2601\uFE0F"} {eng.name}
+                    {!eng.available ? ` (${t.translate.engineUnavailable})` : ""}
+                  </option>
+                ))}
+              </select>
+              {engineId !== "auto" && (() => {
+                const sel = enginesData.find((e) => e.id === engineId);
+                if (!sel) return null;
+                return (
+                  <p className="text-xs mt-1" style={{ color: "var(--fg-tertiary)" }}>
+                    {sel.cost_per_token === 0 ? t.translate.engineFree : t.translate.enginePaid}
+                    {" \u00B7 "}
+                    {sel.languages_count} {t.translate.engineLangs}
+                    {sel.quality && <> {" \u00B7 "} {t.translate.engineQuality}: {sel.quality}</>}
+                    {sel.offline && <> {" \u00B7 "} {t.translate.engineOffline}</>}
+                  </p>
+                );
+              })()}
+            </div>
+          )}
 
           {/* Profile */}
           {profileList.length > 0 && (

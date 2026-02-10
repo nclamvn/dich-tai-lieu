@@ -68,8 +68,26 @@ export interface TranslateRequest {
   target_language: string;
   output_formats?: string[];
   provider?: string;
+  engine_id?: string;
   profile_id?: string;
   glossary_ids?: string[];
+}
+
+// ─── Translation Engines ───
+
+export interface TranslationEngine {
+  id: string;
+  name: string;
+  available: boolean;
+  status: "available" | "unavailable" | "loading" | "error";
+  languages_count: number;
+  offline?: boolean;
+  cost_per_token?: number;
+  cost_per_1k_tokens?: number;
+  quality?: string;
+  size_gb?: number;
+  model?: string;
+  error?: string;
 }
 
 export interface JobOutput {
@@ -382,6 +400,379 @@ export interface ApproveOutlineRequest {
   approved: boolean;
   chapter_adjustments?: Record<number, Record<string, any>>;
   custom_notes?: string;
+}
+
+// ─── Book Writer v2 (9-agent pipeline) ───
+
+export type BookV2Genre =
+  | "non-fiction" | "fiction" | "technical" | "business"
+  | "self-help" | "academic" | "memoir" | "guide";
+
+export type BookV2OutputFormat = "docx" | "markdown" | "pdf" | "html";
+
+export type BookV2Status =
+  | "created" | "analyzing" | "architecting" | "outlining"
+  | "writing" | "expanding" | "enriching" | "editing"
+  | "quality_check" | "publishing" | "completed" | "failed" | "paused";
+
+export interface BookV2CreateRequest {
+  title: string;
+  description: string;
+  target_pages?: number;
+  subtitle?: string;
+  genre?: BookV2Genre;
+  audience?: string;
+  author_name?: string;
+  language?: string;
+  output_formats?: BookV2OutputFormat[];
+  words_per_page?: number;
+  sections_per_chapter?: number;
+}
+
+export interface BookV2Project {
+  id: string;
+  status: string;
+  current_agent: string;
+  current_task: string;
+  sections_completed: number;
+  sections_total: number;
+  progress_percentage: number;
+  word_progress: number;
+  expansion_rounds: number;
+  blueprint?: BookV2Blueprint;
+  output_files: Record<string, string>;
+  created_at: string;
+  updated_at: string;
+  completed_at?: string;
+  errors: Array<{ message: string; agent?: string; timestamp?: string }>;
+}
+
+export interface BookV2Blueprint {
+  title: string;
+  subtitle?: string;
+  author: string;
+  genre: string;
+  language: string;
+  target_pages: number;
+  actual_pages: number;
+  target_words: number;
+  actual_words: number;
+  completion: number;
+  parts: BookV2Part[];
+  total_chapters: number;
+  total_sections: number;
+}
+
+export interface BookV2Part {
+  id: string;
+  number: number;
+  title: string;
+  word_count: BookV2WordCount;
+  chapters: BookV2Chapter[];
+  is_complete: boolean;
+  progress: number;
+}
+
+export interface BookV2Chapter {
+  id: string;
+  number: number;
+  title: string;
+  part_id: string;
+  word_count: BookV2WordCount;
+  sections: BookV2Section[];
+  is_complete: boolean;
+  progress: number;
+  introduction_preview?: string;
+  summary_preview?: string;
+  key_takeaways: string[];
+}
+
+export interface BookV2Section {
+  id: string;
+  number: number;
+  title: string;
+  chapter_id: string;
+  word_count: BookV2WordCount;
+  status: string;
+  content_preview?: string;
+  expansion_attempts: number;
+}
+
+export interface BookV2WordCount {
+  target: number;
+  actual: number;
+  completion: number;
+  remaining: number;
+  is_complete: boolean;
+}
+
+export interface BookV2ListResponse {
+  items: BookV2Project[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+export interface BookV2StructurePreview {
+  target_pages: number;
+  content_pages: number;
+  content_words: number;
+  num_parts: number;
+  total_chapters: number;
+  chapters_per_part: number;
+  total_sections: number;
+  words_per_chapter: number;
+  words_per_section: number;
+  estimated_time_minutes: number;
+}
+
+export interface BookV2Content {
+  title: string;
+  subtitle?: string;
+  author: string;
+  parts: Array<{
+    number: number;
+    title: string;
+    introduction: string;
+    chapters: Array<{
+      number: number;
+      title: string;
+      introduction: string;
+      sections: Array<{
+        number: number;
+        title: string;
+        content: string;
+        word_count: number;
+      }>;
+      summary: string;
+      key_takeaways: string[];
+    }>;
+  }>;
+  word_count: number;
+  page_count: number;
+}
+
+export interface BookV2ReaderContent {
+  title: string;
+  author: string;
+  chapters: Array<{
+    number: number;
+    title: string;
+    content: string;
+  }>;
+}
+
+// ─── Settings ───
+
+export interface GeneralSettings {
+  app_name: string;
+  source_lang: string;
+  target_lang: string;
+  quality_mode: string;
+  provider: string;
+  model: string;
+  theme: string;
+  locale: string;
+}
+
+export interface TranslationSettingsConfig {
+  concurrency: number;
+  chunk_size: number;
+  context_window: number;
+  max_retries: number;
+  retry_delay: number;
+  cache_enabled: boolean;
+  chunk_cache_enabled: boolean;
+  chunk_cache_ttl_days: number;
+  checkpoint_enabled: boolean;
+  checkpoint_interval: number;
+  tm_enabled: boolean;
+  tm_fuzzy_threshold: number;
+  glossary_enabled: boolean;
+  quality_validation: boolean;
+  quality_threshold: number;
+}
+
+export interface BookWriterSettingsConfig {
+  default_genre: string;
+  default_language: string;
+  default_output_formats: string[];
+  words_per_page: number;
+  sections_per_chapter: number;
+  max_expansion_rounds: number;
+  enable_enrichment: boolean;
+  enable_quality_check: boolean;
+}
+
+export interface ApiKeySettingsConfig {
+  openai_api_key: string;
+  anthropic_api_key: string;
+  google_api_key: string;
+  mathpix_app_id: string;
+  mathpix_app_key: string;
+}
+
+export interface ExportSettingsConfig {
+  default_format: string;
+  enable_beautification: boolean;
+  enable_advanced_book_layout: boolean;
+  streaming_enabled: boolean;
+  streaming_batch_size: number;
+  max_upload_size_mb: number;
+}
+
+export interface AdvancedSettingsConfig {
+  security_mode: string;
+  session_auth_enabled: boolean;
+  api_key_auth_enabled: boolean;
+  csrf_enabled: boolean;
+  rate_limit: string;
+  database_backend: string;
+  use_ast_pipeline: boolean;
+  cleanup_upload_retention_days: number;
+  cleanup_output_retention_days: number;
+  cleanup_temp_max_age_hours: number;
+  debug_mode: boolean;
+}
+
+export interface AllSettings {
+  general: GeneralSettings;
+  translation: TranslationSettingsConfig;
+  book_writer: BookWriterSettingsConfig;
+  api_keys: ApiKeySettingsConfig;
+  export: ExportSettingsConfig;
+  advanced: AdvancedSettingsConfig;
+}
+
+// ─── Translation Memory ───
+
+export interface TMItem {
+  id: string;
+  name: string;
+  description?: string;
+  source_language: string;
+  target_language: string;
+  domain: string;
+  segment_count: number;
+  total_words: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TMListResponse {
+  tms: TMItem[];
+  total: number;
+}
+
+export interface TMSegment {
+  id: string;
+  tm_id: string;
+  source_text: string;
+  target_text: string;
+  quality_score: number;
+  source_type: "ai" | "human" | "verified";
+  context_before?: string;
+  context_after?: string;
+  project_name?: string;
+  notes?: string;
+  source_length: number;
+  usage_count: number;
+  last_used_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TMSegmentListResponse {
+  segments: TMSegment[];
+  total: number;
+  page: number;
+  limit: number;
+  pages: number;
+}
+
+export interface TMMatch {
+  segment_id: string;
+  source_text: string;
+  target_text: string;
+  similarity: number;
+  match_type: "exact" | "near_exact" | "fuzzy" | "no_match";
+  quality_score: number;
+  source_type: string;
+  tm_id: string;
+  tm_name: string;
+}
+
+export interface TMLookupResponse {
+  matches: TMMatch[];
+  best_match?: TMMatch;
+  match_count: number;
+}
+
+export interface TMStats {
+  tm_id: string;
+  tm_name: string;
+  segment_count: number;
+  total_words: number;
+  source_language: string;
+  target_language: string;
+  domain: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// ─── Batch Processing ───
+
+export interface BatchFile {
+  file_id: string;
+  filename: string;
+  status: string;
+  progress: number;
+  job_id?: string;
+  error?: string;
+}
+
+export interface BatchJob {
+  batch_id: string;
+  status: "pending" | "processing" | "completed" | "failed" | "cancelled";
+  total_files: number;
+  completed_files: number;
+  failed_files: number;
+  overall_progress: number;
+  current_file?: string;
+  files: BatchFile[];
+  source_language: string;
+  target_language: string;
+  profile_id: string;
+  output_formats: string[];
+  created_at: string;
+  started_at?: string;
+  completed_at?: string;
+  zip_available: boolean;
+}
+
+export interface BatchListResponse {
+  batches: BatchJob[];
+  total: number;
+}
+
+// ─── Editor / CAT Tool ───
+
+export interface EditorSegment {
+  chunk_id: string;
+  index: number;
+  source: string;
+  translated: string;
+  quality_score: number;
+  is_edited: boolean;
+  warnings: string[];
+}
+
+export interface EditorJob {
+  job_id: string;
+  segments: EditorSegment[];
+  completion_percentage: number;
+  can_export: boolean;
 }
 
 // ─── Output Formats ───

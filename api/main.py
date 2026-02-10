@@ -72,6 +72,12 @@ from api.routes.dashboard import router as dashboard_router
 # --- Book Writer ---
 from api.book_writer_router import router as book_writer_router
 
+# --- Book Writer v2.0 ---
+from api.routes.book_writer_v2 import router as book_writer_v2_router
+
+# --- Settings Management ---
+from api.routes.settings import router as settings_router
+
 # =============================================================================
 # CSRF Protection Configuration
 # =============================================================================
@@ -132,6 +138,8 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:4000",
     "http://127.0.0.1:4000",
+    "http://localhost:3003",
+    "http://127.0.0.1:3003",
 ]
 app.add_middleware(
     CORSMiddleware,
@@ -174,6 +182,12 @@ app.include_router(dashboard_router)
 # Book Writer
 app.include_router(book_writer_router)
 
+# Book Writer v2.0 — Enhanced 9-agent pipeline
+app.include_router(book_writer_v2_router)
+
+# Settings Management
+app.include_router(settings_router)
+
 # =============================================================================
 # Startup / Shutdown Events
 # =============================================================================
@@ -200,6 +214,23 @@ async def startup_resume_book_projects():
         await service.resume_stalled_projects()
     except Exception as e:
         logger.error(f"Startup: Failed to resume book projects: {e}")
+
+
+@app.on_event("startup")
+async def startup_book_writer_v2():
+    """Initialize Book Writer v2.0 service with AI client."""
+    try:
+        from api.services.book_writer_v2_service import get_book_writer_v2_service
+        try:
+            from ai_providers.unified_client import get_unified_client
+            ai_client = get_unified_client()
+            get_book_writer_v2_service(ai_client)
+            logger.info("Book Writer v2.0 initialized with AI client")
+        except ImportError:
+            get_book_writer_v2_service()
+            logger.warning("Book Writer v2.0 initialized with mock AI client")
+    except Exception as e:
+        logger.error(f"Startup: Book Writer v2.0 init failed: {e}")
 
 
 @app.on_event("startup")

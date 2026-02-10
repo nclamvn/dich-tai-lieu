@@ -6,7 +6,8 @@ Khi quay lại dự án, chỉ cần nói: **"continue"** hoặc **"tiếp tục
 Claude sẽ tự động đọc HANDOVER document và tiếp tục công việc.
 
 ### Handover Files:
-- **Vision Fallback 2026-02-03:** `docs/HANDOVER_2026-02-03.md` (Latest)
+- **Sprint 15.5 2026-02-09:** `docs/HANDOVER_2026-02-09.md` (Latest)
+- **Vision Fallback 2026-02-03:** `docs/HANDOVER_2026-02-03.md`
 - **UI Redesign 2026:** `docs/HANDOVER_UI_2026.md`
 - **General:** `docs/HANDOVER_v2.7.md`
 

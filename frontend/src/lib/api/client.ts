@@ -7,6 +7,7 @@
 import type {
   TranslationJob,
   TranslateRequest,
+  TranslationEngine,
   ReaderContent,
   Glossary,
   GlossaryListItem,
@@ -19,6 +20,22 @@ import type {
   BookChapter,
   CreateBookRequest,
   ApproveOutlineRequest,
+  BookV2CreateRequest,
+  BookV2Project,
+  BookV2ListResponse,
+  BookV2StructurePreview,
+  BookV2Content,
+  BookV2ReaderContent,
+  AllSettings,
+  TMItem,
+  TMListResponse,
+  TMSegment,
+  TMSegmentListResponse,
+  TMLookupResponse,
+  TMStats,
+  BatchJob,
+  BatchListResponse,
+  EditorJob,
 } from "./types";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -61,6 +78,14 @@ async function apiFetch<T>(
 
   return res.json();
 }
+
+// ─── Translation Engines ───
+
+export const engines = {
+  async list(): Promise<TranslationEngine[]> {
+    return apiFetch<TranslationEngine[]>("/api/engines");
+  },
+};
 
 // ─── Language Detection ───
 
@@ -139,6 +164,8 @@ export const jobs = {
       request.output_formats ? request.output_formats.join(",") : "docx",
     );
     if (request.profile_id) formData.append("profile_id", request.profile_id);
+    if (request.engine_id && request.engine_id !== "auto")
+      formData.append("engine", request.engine_id);
 
     const res = await fetch(`${API_BASE}/api/v2/publish`, {
       method: "POST",
@@ -298,6 +325,94 @@ export const bookWriter = {
 
   getDownloadUrl(bookId: string, format: string = "docx"): string {
     return `${API_BASE}/api/v2/books/${bookId}/download/${format}`;
+  },
+};
+
+// ─── Book Writer v2 (9-agent pipeline) ───
+
+export const bookWriterV2 = {
+  async create(request: BookV2CreateRequest): Promise<BookV2Project> {
+    return apiFetch<BookV2Project>("/api/v2/books-v2/", {
+      method: "POST",
+      body: JSON.stringify(request),
+    });
+  },
+
+  async get(projectId: string, includeBlueprint = false): Promise<BookV2Project> {
+    const qs = includeBlueprint ? "?include_blueprint=true" : "";
+    return apiFetch<BookV2Project>(`/api/v2/books-v2/${projectId}${qs}`);
+  },
+
+  async list(page = 1, pageSize = 20, status?: string): Promise<BookV2ListResponse> {
+    const params = new URLSearchParams({ page: String(page), page_size: String(pageSize) });
+    if (status) params.set("status", status);
+    return apiFetch<BookV2ListResponse>(`/api/v2/books-v2/?${params}`);
+  },
+
+  async delete(projectId: string): Promise<void> {
+    await apiFetch(`/api/v2/books-v2/${projectId}`, { method: "DELETE" });
+  },
+
+  async previewStructure(targetPages: number): Promise<BookV2StructurePreview> {
+    return apiFetch<BookV2StructurePreview>(
+      `/api/v2/books-v2/preview-structure?target_pages=${targetPages}`,
+      { method: "POST" },
+    );
+  },
+
+  async pause(projectId: string): Promise<void> {
+    await apiFetch(`/api/v2/books-v2/${projectId}/pause`, { method: "POST" });
+  },
+
+  async getContent(projectId: string): Promise<BookV2Content> {
+    return apiFetch<BookV2Content>(`/api/v2/books-v2/${projectId}/content`);
+  },
+
+  async getReaderContent(projectId: string): Promise<BookV2ReaderContent> {
+    return apiFetch<BookV2ReaderContent>(`/api/v2/books-v2/${projectId}/reader-content`);
+  },
+
+  getDownloadUrl(projectId: string, format: string = "docx"): string {
+    return `${API_BASE}/api/v2/books-v2/${projectId}/download/${format}`;
+  },
+
+  async download(projectId: string, format: string, filename?: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/api/v2/books-v2/${projectId}/download/${format}`);
+    if (!res.ok) throw new ApiError(res.status, "Download failed");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || `book.${format}`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+};
+
+// ─── Settings ───
+
+export const settingsApi = {
+  async getAll(): Promise<AllSettings> {
+    return apiFetch<AllSettings>("/api/settings/");
+  },
+
+  async getSection<T = Record<string, unknown>>(section: string): Promise<T> {
+    return apiFetch<T>(`/api/settings/${section}`);
+  },
+
+  async updateSection<T = Record<string, unknown>>(section: string, data: T): Promise<T> {
+    return apiFetch<T>(`/api/settings/${section}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async resetSection<T = Record<string, unknown>>(section: string): Promise<T> {
+    return apiFetch<T>(`/api/settings/${section}/reset`, {
+      method: "POST",
+    });
   },
 };
 
@@ -539,5 +654,215 @@ export const profiles = {
 
   async get(id: string): Promise<{ profile: PublishingProfile }> {
     return apiFetch(`/api/v2/profiles/${id}`);
+  },
+};
+
+// ─── Translation Memory ───
+
+export const tm = {
+  async list(params?: {
+    source_language?: string;
+    target_language?: string;
+    domain?: string;
+    search?: string;
+  }): Promise<TMListResponse> {
+    const sp = new URLSearchParams();
+    if (params?.source_language) sp.set("source_language", params.source_language);
+    if (params?.target_language) sp.set("target_language", params.target_language);
+    if (params?.domain) sp.set("domain", params.domain);
+    if (params?.search) sp.set("search", params.search);
+    const qs = sp.toString();
+    return apiFetch<TMListResponse>(`/api/tm/${qs ? `?${qs}` : ""}`);
+  },
+
+  async get(tmId: string): Promise<TMItem> {
+    return apiFetch<TMItem>(`/api/tm/${tmId}`);
+  },
+
+  async create(data: {
+    name: string;
+    description?: string;
+    source_language?: string;
+    target_language?: string;
+    domain?: string;
+  }): Promise<TMItem> {
+    return apiFetch<TMItem>("/api/tm/", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(tmId: string, data: {
+    name?: string;
+    description?: string;
+    domain?: string;
+  }): Promise<TMItem> {
+    return apiFetch<TMItem>(`/api/tm/${tmId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(tmId: string): Promise<void> {
+    await apiFetch(`/api/tm/${tmId}`, { method: "DELETE" });
+  },
+
+  async listSegments(tmId: string, params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    sort?: string;
+    order?: string;
+  }): Promise<TMSegmentListResponse> {
+    const sp = new URLSearchParams();
+    if (params?.page) sp.set("page", String(params.page));
+    if (params?.limit) sp.set("limit", String(params.limit));
+    if (params?.search) sp.set("search", params.search);
+    if (params?.sort) sp.set("sort", params.sort);
+    if (params?.order) sp.set("order", params.order);
+    const qs = sp.toString();
+    return apiFetch<TMSegmentListResponse>(`/api/tm/${tmId}/segments${qs ? `?${qs}` : ""}`);
+  },
+
+  async addSegment(tmId: string, data: {
+    source_text: string;
+    target_text: string;
+    quality_score?: number;
+    source_type?: string;
+  }): Promise<TMSegment> {
+    return apiFetch<TMSegment>(`/api/tm/${tmId}/segments`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async updateSegment(tmId: string, segmentId: string, data: {
+    target_text?: string;
+    quality_score?: number;
+    source_type?: string;
+  }): Promise<TMSegment> {
+    return apiFetch<TMSegment>(`/api/tm/${tmId}/segments/${segmentId}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  },
+
+  async deleteSegment(tmId: string, segmentId: string): Promise<void> {
+    await apiFetch(`/api/tm/${tmId}/segments/${segmentId}`, { method: "DELETE" });
+  },
+
+  async lookup(tmIds: string[], sourceText: string, minSimilarity = 0.75): Promise<TMLookupResponse> {
+    return apiFetch<TMLookupResponse>("/api/tm/lookup", {
+      method: "POST",
+      body: JSON.stringify({ tm_ids: tmIds, source_text: sourceText, min_similarity: minSimilarity }),
+    });
+  },
+
+  async getStats(tmId: string): Promise<TMStats> {
+    return apiFetch<TMStats>(`/api/tm/${tmId}/stats`);
+  },
+
+  async importFile(tmId: string, file: File): Promise<{ status: string; added: number; skipped: number }> {
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(`${API_BASE}/api/tm/${tmId}/import`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new ApiError(res.status, data?.detail || "Import failed", data);
+    }
+    return res.json();
+  },
+
+  getExportUrl(tmId: string, format: string = "json"): string {
+    return `${API_BASE}/api/tm/${tmId}/export?format=${format}`;
+  },
+};
+
+// ─── Batch Processing ───
+
+export const batch = {
+  async create(
+    files: File[],
+    sourceLang: string,
+    targetLang: string,
+    outputFormats: string[] = ["docx"],
+    profileId?: string,
+  ): Promise<BatchJob> {
+    const formData = new FormData();
+    files.forEach((f) => formData.append("files", f));
+    formData.append("source_language", sourceLang);
+    formData.append("target_language", targetLang);
+    formData.append("output_formats", outputFormats.join(","));
+    if (profileId) formData.append("profile_id", profileId);
+
+    const res = await fetch(`${API_BASE}/api/v2/batch/create`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new ApiError(res.status, data?.detail || "Batch create failed", data);
+    }
+    return res.json();
+  },
+
+  async start(batchId: string): Promise<BatchJob> {
+    return apiFetch<BatchJob>(`/api/v2/batch/${batchId}/start`, { method: "POST" });
+  },
+
+  async getStatus(batchId: string): Promise<BatchJob> {
+    return apiFetch<BatchJob>(`/api/v2/batch/${batchId}/status`);
+  },
+
+  async cancel(batchId: string): Promise<void> {
+    await apiFetch(`/api/v2/batch/${batchId}/cancel`, { method: "POST" });
+  },
+
+  async list(): Promise<BatchListResponse> {
+    return apiFetch<BatchListResponse>("/api/v2/batch/");
+  },
+
+  async delete(batchId: string): Promise<void> {
+    await apiFetch(`/api/v2/batch/${batchId}`, { method: "DELETE" });
+  },
+
+  getDownloadUrl(batchId: string): string {
+    return `${API_BASE}/api/v2/batch/${batchId}/download`;
+  },
+
+  async download(batchId: string): Promise<void> {
+    const res = await fetch(`${API_BASE}/api/v2/batch/${batchId}/download`);
+    if (!res.ok) throw new ApiError(res.status, "Download failed");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `batch_${batchId}.zip`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  },
+};
+
+// ─── Editor / CAT Tool ───
+
+export const editor = {
+  async getSegments(jobId: string): Promise<EditorJob> {
+    return apiFetch<EditorJob>(`/editor/jobs/${jobId}/segments`);
+  },
+
+  async updateSegment(jobId: string, chunkId: string, translatedText: string): Promise<{ status: string }> {
+    return apiFetch(`/editor/jobs/${jobId}/segments/${chunkId}`, {
+      method: "PATCH",
+      body: JSON.stringify({ translated_text: translatedText }),
+    });
+  },
+
+  async regenerate(jobId: string): Promise<{ status: string; message: string }> {
+    return apiFetch(`/editor/jobs/${jobId}/regenerate`, { method: "POST" });
   },
 };

@@ -17,6 +17,10 @@ import {
   PanelLeftClose,
   PanelLeft,
   PenTool,
+  Wand2,
+  Database,
+  FolderUp,
+  FileEdit,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocale } from "@/lib/i18n";
@@ -26,8 +30,11 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 const NAV_KEYS = [
   { href: "/translate", key: "translate" as const, icon: Upload },
   { href: "/write", key: "write" as const, icon: PenTool },
+  { href: "/write-v2", key: "writeV2" as const, icon: Wand2 },
   { href: "/jobs", key: "jobs" as const, icon: List },
   { href: "/glossary", key: "glossary" as const, icon: BookOpen },
+  { href: "/tm", key: "tm" as const, icon: Database },
+  { href: "/batch", key: "batch" as const, icon: FolderUp },
   { href: "/dashboard", key: "dashboard" as const, icon: BarChart3 },
   { href: "/profiles", key: "profiles" as const, icon: Layers },
   { href: "/settings", key: "settings" as const, icon: Settings },
@@ -105,18 +112,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <>
               <Link
                 href="/"
-                className="flex items-center gap-2 py-1 px-2 no-underline"
+                className="flex items-center py-1 px-2 no-underline"
                 style={{ borderRadius: "var(--radius-sm)" }}
               >
-                <div
-                  className="w-5 h-5 flex items-center justify-center shrink-0"
-                  style={{
-                    borderRadius: "3px",
-                    background: "var(--fg-primary)",
-                  }}
-                >
-                  <span className="text-white text-[10px] font-bold">A</span>
-                </div>
                 <span
                   className="text-sm font-medium"
                   style={{ color: "var(--fg-primary)" }}
@@ -275,7 +273,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Page content */}
         <main className="flex-1 overflow-y-auto">
           <div
-            className="mx-auto px-6 md:px-12 lg:px-16 py-10 md:py-16"
+            className="mx-auto px-6 md:px-12 lg:px-16 py-5 md:py-8"
             style={{ maxWidth: "var(--content-width)" }}
           >
             {children}
