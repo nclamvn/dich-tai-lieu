@@ -45,6 +45,10 @@ class AIClientAdapter:
 
                 if isinstance(response, dict):
                     return response.get("content", response.get("text", str(response)))
+                if hasattr(response, 'content'):
+                    return response.content
+                if hasattr(response, 'text'):
+                    return response.text
                 return str(response)
 
             # Interface 2: generate_text style
