@@ -19,6 +19,7 @@ import {
   useImportGlossaryEntries,
 } from "@/lib/api/hooks";
 import { glossaries as glossaryApi } from "@/lib/api/client";
+import { useLocale } from "@/lib/i18n";
 
 export default function GlossaryDetailPage({
   params,
@@ -30,6 +31,7 @@ export default function GlossaryDetailPage({
   const addEntry = useAddGlossaryEntry(id);
   const removeEntry = useRemoveGlossaryEntry(id);
   const importEntries = useImportGlossaryEntries(id);
+  const { t } = useLocale();
 
   const [showAdd, setShowAdd] = useState(false);
   const [srcTerm, setSrcTerm] = useState("");
@@ -42,7 +44,7 @@ export default function GlossaryDetailPage({
     return <div className="h-40 skeleton" />;
   if (!glossary)
     return (
-      <p style={{ color: "var(--fg-tertiary)" }}>Glossary not found</p>
+      <p style={{ color: "var(--fg-tertiary)" }}>{t.glossary.notFound}</p>
     );
 
   const filteredEntries = searchQuery
@@ -89,7 +91,7 @@ export default function GlossaryDetailPage({
         const entries = parsed.entries || parsed;
         await importEntries.mutateAsync(entries);
       } catch {
-        alert("Invalid JSON file");
+        alert(t.glossary.invalidJson);
       }
     };
     input.click();
@@ -102,7 +104,7 @@ export default function GlossaryDetailPage({
         className="text-sm flex items-center gap-1 no-underline"
         style={{ color: "var(--fg-secondary)" }}
       >
-        <ArrowLeft className="w-3 h-3" /> Back to Glossaries
+        <ArrowLeft className="w-3 h-3" /> {t.glossary.backToGlossaries}
       </Link>
 
       <div className="flex items-start justify-between">
@@ -112,15 +114,15 @@ export default function GlossaryDetailPage({
             className="text-sm"
             style={{ color: "var(--fg-secondary)" }}
           >
-            {glossary.language_pair} &middot; {glossary.entry_count} terms
+            {glossary.language_pair} &middot; {glossary.entry_count} {t.glossary.terms}
           </p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={handleImport}>
-            <Upload className="w-3 h-3 mr-1" /> Import
+            <Upload className="w-3 h-3 mr-1" /> {t.glossary.import}
           </Button>
           <Button variant="secondary" size="sm" onClick={handleExport}>
-            <Download className="w-3 h-3 mr-1" /> Export
+            <Download className="w-3 h-3 mr-1" /> {t.glossary.export}
           </Button>
         </div>
       </div>
@@ -135,7 +137,7 @@ export default function GlossaryDetailPage({
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search terms..."
+            placeholder={t.glossary.searchTerms}
             className="w-full pl-9 pr-3 py-2 text-sm"
             style={{
               borderRadius: "var(--radius-md)",
@@ -146,7 +148,7 @@ export default function GlossaryDetailPage({
           />
         </div>
         <Button size="sm" onClick={() => setShowAdd(!showAdd)}>
-          <Plus className="w-4 h-4 mr-1" /> Add
+          <Plus className="w-4 h-4 mr-1" /> {t.glossary.add}
         </Button>
       </div>
 
@@ -162,7 +164,7 @@ export default function GlossaryDetailPage({
               <input
                 value={srcTerm}
                 onChange={(e) => setSrcTerm(e.target.value)}
-                placeholder="Source term"
+                placeholder={t.glossary.sourceTerm}
                 className="px-3 py-2 text-sm"
                 style={{
                   borderRadius: "var(--radius-md)",
@@ -175,7 +177,7 @@ export default function GlossaryDetailPage({
               <input
                 value={tgtTerm}
                 onChange={(e) => setTgtTerm(e.target.value)}
-                placeholder="Target term"
+                placeholder={t.glossary.targetTerm}
                 className="px-3 py-2 text-sm"
                 style={{
                   borderRadius: "var(--radius-md)",
@@ -192,7 +194,7 @@ export default function GlossaryDetailPage({
               className="mt-3"
               loading={addEntry.isPending}
             >
-              Add Entry
+              {t.glossary.addEntry}
             </Button>
           </CardContent>
         </Card>
@@ -207,19 +209,19 @@ export default function GlossaryDetailPage({
                   className="text-left px-5 py-3 font-medium"
                   style={{ color: "var(--fg-secondary)" }}
                 >
-                  Source
+                  {t.glossary.source}
                 </th>
                 <th
                   className="text-left px-5 py-3 font-medium"
                   style={{ color: "var(--fg-secondary)" }}
                 >
-                  Target
+                  {t.glossary.target}
                 </th>
                 <th
                   className="text-left px-5 py-3 font-medium"
                   style={{ color: "var(--fg-secondary)" }}
                 >
-                  Domain
+                  {t.glossary.domain}
                 </th>
                 <th className="w-10"></th>
               </tr>

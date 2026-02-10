@@ -13,10 +13,12 @@ import {
   type TranslateRequest,
 } from "@/lib/api/types";
 import { cn } from "@/lib/utils";
+import { useLocale } from "@/lib/i18n";
 
 export default function TranslatePage() {
   const router = useRouter();
   const createJob = useCreateJob();
+  const { t } = useLocale();
 
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -104,9 +106,9 @@ export default function TranslatePage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1>Translate Document</h1>
+        <h1>{t.translate.title}</h1>
         <p className="mt-2" style={{ color: "var(--fg-secondary)" }}>
-          Upload a document and configure translation settings
+          {t.translate.subtitle}
         </p>
       </div>
 
@@ -115,7 +117,7 @@ export default function TranslatePage() {
         <CardHeader>
           <h3 className="text-[15px] font-semibold flex items-center gap-2">
             <Upload className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
-            Upload Document
+            {t.translate.uploadDoc}
           </h3>
         </CardHeader>
         <CardContent>
@@ -158,11 +160,11 @@ export default function TranslatePage() {
                   <p className="font-medium" style={{ color: "var(--fg-primary)" }}>{file.name}</p>
                   <div className="flex items-center gap-2">
                     <p className="text-sm" style={{ color: "var(--color-notion-green)" }}>
-                      {(file.size / 1024).toFixed(1)} KB — Click to change
+                      {(file.size / 1024).toFixed(1)} KB — {t.translate.clickToChange}
                     </p>
                     {detecting && (
                       <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-notion-blue)" }}>
-                        <Loader2 className="w-3 h-3 animate-spin" /> Detecting language...
+                        <Loader2 className="w-3 h-3 animate-spin" /> {t.translate.detectingLang}
                       </span>
                     )}
                   </div>
@@ -172,10 +174,10 @@ export default function TranslatePage() {
               <>
                 <Upload className="w-10 h-10 mx-auto mb-3" style={{ color: "var(--fg-tertiary)" }} strokeWidth={1.25} />
                 <p className="font-medium" style={{ color: "var(--fg-primary)" }}>
-                  Drop file here or click to browse
+                  {t.translate.dropFile}
                 </p>
                 <p className="text-sm mt-1" style={{ color: "var(--fg-tertiary)" }}>
-                  PDF, DOCX, TXT, Markdown, EPUB
+                  {t.translate.fileTypes}
                 </p>
               </>
             )}
@@ -188,7 +190,7 @@ export default function TranslatePage() {
         <CardHeader>
           <h3 className="text-[15px] font-semibold flex items-center gap-2">
             <Sparkles className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
-            Translation Settings
+            {t.translate.settings}
           </h3>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -196,10 +198,10 @@ export default function TranslatePage() {
           <div className="grid grid-cols-[1fr_auto_1fr] gap-3 items-end">
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
-                Source Language
+                {t.translate.sourceLang}
                 {detecting && (
                   <span className="ml-2 text-xs font-normal" style={{ color: "var(--color-notion-blue)" }}>
-                    (auto-detecting...)
+                    {t.translate.autoDetecting}
                   </span>
                 )}
               </label>
@@ -220,7 +222,7 @@ export default function TranslatePage() {
 
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
-                Target Language
+                {t.translate.targetLang}
               </label>
               <select
                 value={targetLang}
@@ -239,7 +241,7 @@ export default function TranslatePage() {
           {/* Output Format — Multi-select */}
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
-              Output Formats (select one or more)
+              {t.translate.outputFormats}
             </label>
             <div className="flex gap-2 flex-wrap">
               {OUTPUT_FORMATS.map((f) => {
@@ -268,14 +270,14 @@ export default function TranslatePage() {
           {profileList.length > 0 && (
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
-                Publishing Profile (optional)
+                {t.translate.profile}
               </label>
               <select
                 value={profileId}
                 onChange={(e) => setProfileId(e.target.value)}
                 className="w-full"
               >
-                <option value="">Auto (QAPR routing)</option>
+                <option value="">{t.translate.profileAuto}</option>
                 {profileList.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name} — {p.description}
@@ -289,7 +291,7 @@ export default function TranslatePage() {
           {glossaryList.length > 0 && (
             <div>
               <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
-                Glossaries ({sourceLang}&rarr;{targetLang})
+                {t.translate.glossaries} ({sourceLang}&rarr;{targetLang})
               </label>
               <div className="space-y-1.5">
                 {glossaryList.map((g) => (
@@ -310,7 +312,7 @@ export default function TranslatePage() {
                     />
                     <span style={{ color: "var(--fg-primary)" }}>{g.name}</span>
                     <span style={{ color: "var(--fg-tertiary)" }}>
-                      ({g.entry_count} terms)
+                      ({g.entry_count} {t.translate.terms})
                     </span>
                   </label>
                 ))}
@@ -330,13 +332,13 @@ export default function TranslatePage() {
           loading={createJob.isPending}
         >
           <Upload className="w-4 h-4 mr-2" strokeWidth={1.5} />
-          Start Translation
+          {t.translate.startTranslation}
         </Button>
       </div>
 
       {createJob.isError && (
         <p className="text-sm" style={{ color: "var(--color-notion-red)" }}>
-          Error: {(createJob.error as Error).message}
+          {t.translate.error}: {(createJob.error as Error).message}
         </p>
       )}
     </div>

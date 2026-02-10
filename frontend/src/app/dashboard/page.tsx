@@ -21,6 +21,7 @@ import {
   Cell,
   Legend,
 } from "recharts";
+import { useLocale } from "@/lib/i18n";
 
 const CHART_COLORS = [
   "rgb(35,131,226)",
@@ -44,6 +45,7 @@ export default function DashboardPage() {
   const { data: overview } = useCostOverview();
   const { data: providers } = useProviderCosts();
   const { data: langPairs } = useLanguagePairCosts();
+  const { t } = useLocale();
 
   const providerList = Array.isArray(providers) ? providers : [];
   const langPairData = langPairs
@@ -55,27 +57,27 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-      <h1>Cost Dashboard</h1>
+      <h1>{t.dashboard.title}</h1>
 
       {/* Overview Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <StatCard
-          label="Total Cost"
+          label={t.dashboard.totalCost}
           value={formatCost(overview?.total_cost_usd || 0)}
           icon={DollarSign}
         />
         <StatCard
-          label="Total Calls"
+          label={t.dashboard.totalCalls}
           value={formatNumber(overview?.total_calls || 0)}
           icon={Cpu}
         />
         <StatCard
-          label="Avg Cost/Call"
+          label={t.dashboard.avgCostPerCall}
           value={formatCost(overview?.avg_cost_per_call || 0)}
           icon={TrendingDown}
         />
         <StatCard
-          label="Cost/1K Tokens"
+          label={t.dashboard.costPer1kTokens}
           value={formatCost(overview?.avg_cost_per_1k_tokens || 0)}
           icon={Globe}
         />
@@ -85,7 +87,7 @@ export default function DashboardPage() {
         {/* Provider Cost Chart */}
         <Card>
           <CardHeader>
-            <h3 className="text-[15px] font-semibold">Cost by Provider</h3>
+            <h3 className="text-[15px] font-semibold">{t.dashboard.costByProvider}</h3>
           </CardHeader>
           <CardContent>
             {providerList.length > 0 ? (
@@ -123,7 +125,7 @@ export default function DashboardPage() {
                 className="text-center py-8 text-sm"
                 style={{ color: "var(--fg-tertiary)" }}
               >
-                No data yet
+                {t.dashboard.noData}
               </p>
             )}
           </CardContent>
@@ -133,7 +135,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader>
             <h3 className="text-[15px] font-semibold">
-              Cost by Language Pair
+              {t.dashboard.costByLangPair}
             </h3>
           </CardHeader>
           <CardContent>
@@ -161,7 +163,7 @@ export default function DashboardPage() {
                 className="text-center py-8 text-sm"
                 style={{ color: "var(--fg-tertiary)" }}
               >
-                No data yet
+                {t.dashboard.noData}
               </p>
             )}
           </CardContent>
@@ -172,7 +174,7 @@ export default function DashboardPage() {
       {providerList.length > 0 && (
         <Card>
           <CardHeader>
-            <h3 className="text-[15px] font-semibold">Provider Details</h3>
+            <h3 className="text-[15px] font-semibold">{t.dashboard.providerDetails}</h3>
           </CardHeader>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -182,31 +184,31 @@ export default function DashboardPage() {
                     className="text-left px-5 py-3 font-medium"
                     style={{ color: "var(--fg-secondary)" }}
                   >
-                    Provider
+                    {t.dashboard.provider}
                   </th>
                   <th
                     className="text-right px-5 py-3 font-medium"
                     style={{ color: "var(--fg-secondary)" }}
                   >
-                    Cost
+                    {t.dashboard.cost}
                   </th>
                   <th
                     className="text-right px-5 py-3 font-medium"
                     style={{ color: "var(--fg-secondary)" }}
                   >
-                    Calls
+                    {t.dashboard.calls}
                   </th>
                   <th
                     className="text-right px-5 py-3 font-medium"
                     style={{ color: "var(--fg-secondary)" }}
                   >
-                    Tokens
+                    {t.dashboard.tokens}
                   </th>
                   <th
                     className="text-right px-5 py-3 font-medium"
                     style={{ color: "var(--fg-secondary)" }}
                   >
-                    Avg Quality
+                    {t.dashboard.avgQuality}
                   </th>
                 </tr>
               </thead>

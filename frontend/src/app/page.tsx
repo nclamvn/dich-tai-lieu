@@ -11,38 +11,15 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useLocale } from "@/lib/i18n";
 
-const FEATURES = [
-  {
-    icon: Shield,
-    title: "Extraction Quality Score",
-    desc: "6-signal quality grading (A\u2013F) with auto-retry when extraction falls below threshold.",
-  },
-  {
-    icon: Route,
-    title: "Smart Provider Routing",
-    desc: "QAPR selects the optimal AI provider per language pair and document type.",
-  },
-  {
-    icon: CheckCircle,
-    title: "Consistency Check",
-    desc: "Cross-chunk validation catches terminology, proper name, style, and number inconsistencies.",
-  },
-  {
-    icon: LayoutGrid,
-    title: "Layout DNA 2.0",
-    desc: "Structural analysis preserves tables, formulas, headings, lists, and code blocks.",
-  },
-  {
-    icon: FileText,
-    title: "Multi-Format Output",
-    desc: "Generate DOCX, PDF, or EPUB 3.0 \u2014 each layout-aware and publication-ready.",
-  },
-  {
-    icon: BookOpen,
-    title: "Custom Glossaries",
-    desc: "Define terminology per language pair. Automatically fed into translation and consistency checks.",
-  },
+const FEATURE_KEYS = [
+  { icon: Shield, key: "eqs" as const },
+  { icon: Route, key: "routing" as const },
+  { icon: CheckCircle, key: "consistency" as const },
+  { icon: LayoutGrid, key: "layout" as const },
+  { icon: FileText, key: "multiFormat" as const },
+  { icon: BookOpen, key: "glossaries" as const },
 ];
 
 const PIPELINE = [
@@ -59,31 +36,38 @@ const PIPELINE = [
 ];
 
 export default function HomePage() {
+  const { t } = useLocale();
+
+  const STATS = [
+    { number: "1,328", label: t.landing.stats.testsPassing },
+    { number: "19", label: t.landing.stats.serviceModules },
+    { number: "15", label: t.landing.stats.sprintsShipped },
+    { number: "0", label: t.landing.stats.breakingChanges },
+  ];
+
   return (
     <div className="space-y-20 pb-12">
       {/* Hero */}
       <section className="pt-8 md:pt-16">
         <h1 className="max-w-[640px]">
-          Translate &amp; publish with quality intelligence
+          {t.landing.title}
         </h1>
         <p
           className="mt-6 text-lg leading-relaxed max-w-[520px]"
           style={{ color: "var(--fg-secondary)" }}
         >
-          Upload a document, choose your language pair, and let the pipeline
-          handle extraction, translation, quality scoring, and output — all in
-          one workflow.
+          {t.landing.subtitle}
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link href="/translate">
             <Button size="lg">
-              Start Translating
+              {t.landing.startBtn}
               <ArrowRight className="w-4 h-4 ml-2" strokeWidth={1.5} />
             </Button>
           </Link>
           <Link href="/dashboard">
             <Button variant="secondary" size="lg">
-              View Dashboard
+              {t.landing.viewDashboard}
             </Button>
           </Link>
         </div>
@@ -126,13 +110,12 @@ export default function HomePage() {
 
       {/* Features */}
       <section>
-        <h2>How it works</h2>
+        <h2>{t.landing.howItWorks}</h2>
         <p
           className="mb-10 max-w-[480px]"
           style={{ color: "var(--fg-secondary)" }}
         >
-          Each document passes through a 10-stage pipeline with four automated
-          quality intelligence layers.
+          {t.landing.howItWorksDesc}
         </p>
 
         <div
@@ -143,9 +126,9 @@ export default function HomePage() {
             border: "1px solid var(--border-default)",
           }}
         >
-          {FEATURES.map(({ icon: Icon, title, desc }) => (
+          {FEATURE_KEYS.map(({ icon: Icon, key }) => (
             <div
-              key={title}
+              key={key}
               className="p-6 transition-colors duration-100"
               style={{ background: "var(--bg-primary)" }}
               onMouseEnter={(e) =>
@@ -164,13 +147,13 @@ export default function HomePage() {
                 className="text-[15px] font-semibold mb-1.5"
                 style={{ color: "var(--fg-primary)" }}
               >
-                {title}
+                {t.landing.features[key]}
               </h3>
               <p
                 className="text-sm leading-relaxed"
                 style={{ color: "var(--fg-tertiary)" }}
               >
-                {desc}
+                {t.landing.features[`${key}Desc` as keyof typeof t.landing.features]}
               </p>
             </div>
           ))}
@@ -179,12 +162,7 @@ export default function HomePage() {
 
       {/* Stats */}
       <section className="flex flex-wrap gap-10 text-center md:text-left">
-        {[
-          { number: "1,328", label: "Tests passing" },
-          { number: "19", label: "Service modules" },
-          { number: "15", label: "Sprints shipped" },
-          { number: "0", label: "Breaking changes" },
-        ].map(({ number, label }) => (
+        {STATS.map(({ number, label }) => (
           <div key={label}>
             <p
               className="text-[2.5rem] leading-none"
@@ -220,13 +198,13 @@ export default function HomePage() {
             color: "var(--fg-primary)",
           }}
         >
-          &ldquo;The best way to predict the future is to invent it.&rdquo;
+          &ldquo;{t.landing.quote}&rdquo;
         </p>
         <p
           className="mt-2 text-sm"
           style={{ color: "var(--fg-tertiary)" }}
         >
-          Alan Kay, computing pioneer
+          {t.landing.quoteAuthor}
         </p>
       </section>
     </div>

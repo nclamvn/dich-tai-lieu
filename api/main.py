@@ -344,6 +344,10 @@ async def websocket_endpoint(websocket: WebSocket):
     WebSocket endpoint for real-time updates
 
     Sends updates about job status changes, queue statistics, and system events.
+
+    Clients can send JSON messages:
+    - {"action": "subscribe", "job_id": "abc123"} to filter events for a specific job
+    - {"action": "unsubscribe"} to receive all events again
     """
     await manager.connect(websocket)
 
@@ -359,6 +363,17 @@ async def websocket_endpoint(websocket: WebSocket):
         while True:
             try:
                 data = await asyncio.wait_for(websocket.receive_text(), timeout=5.0)
+                # Handle incoming messages (subscribe/unsubscribe)
+                import json
+                try:
+                    msg = json.loads(data)
+                    if msg.get("action") == "subscribe" and msg.get("job_id"):
+                        await websocket.send_json({
+                            "event": "subscribed",
+                            "job_id": msg["job_id"],
+                        })
+                except (json.JSONDecodeError, KeyError):
+                    pass
             except asyncio.TimeoutError:
                 stats = queue.get_queue_stats()
                 await websocket.send_json({

@@ -10,12 +10,14 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { useJobs, useBulkDeleteJobs } from "@/lib/api/hooks";
 import { jobs as jobsApi } from "@/lib/api/client";
 import { formatDate, statusVariant } from "@/lib/utils";
+import { useLocale } from "@/lib/i18n";
 
 export default function JobsPage() {
   const { data, isLoading } = useJobs({ limit: 50 });
   const bulkDelete = useBulkDeleteJobs();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const jobList = data?.jobs || [];
+  const { t } = useLocale();
 
   const toggleSelect = (id: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -38,7 +40,7 @@ export default function JobsPage() {
 
   const handleBulkDelete = () => {
     if (selected.size === 0) return;
-    if (!confirm(`Delete ${selected.size} job(s)?`)) return;
+    if (!confirm(`${t.jobs.delete} ${selected.size}?`)) return;
     bulkDelete.mutate([...selected], {
       onSuccess: () => setSelected(new Set()),
     });
@@ -69,11 +71,11 @@ export default function JobsPage() {
     return (
       <EmptyState
         icon={List}
-        title="No translation jobs yet"
-        description="Upload a document to get started"
+        title={t.jobs.emptyTitle}
+        description={t.jobs.emptyDesc}
         action={
           <Link href="/translate">
-            <Button>New Translation</Button>
+            <Button>{t.jobs.newTranslation}</Button>
           </Link>
         }
       />
@@ -83,9 +85,9 @@ export default function JobsPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1>Translation Jobs</h1>
+        <h1>{t.jobs.title}</h1>
         <Link href="/translate">
-          <Button size="sm">New Job</Button>
+          <Button size="sm">{t.jobs.newJob}</Button>
         </Link>
       </div>
 
@@ -101,7 +103,7 @@ export default function JobsPage() {
           ) : (
             <Square className="w-4 h-4" strokeWidth={1.5} />
           )}
-          {selected.size > 0 ? `${selected.size} selected` : "Select all"}
+          {selected.size > 0 ? `${selected.size} ${t.jobs.selected}` : t.jobs.selectAll}
         </button>
         {selected.size > 0 && (
           <Button
@@ -111,7 +113,7 @@ export default function JobsPage() {
             loading={bulkDelete.isPending}
           >
             <Trash2 className="w-3.5 h-3.5 mr-1" strokeWidth={1.5} />
-            Delete ({selected.size})
+            {t.jobs.delete} ({selected.size})
           </Button>
         )}
       </div>
@@ -194,7 +196,7 @@ export default function JobsPage() {
                         style={{ color: "var(--fg-tertiary)" }}
                         onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-notion-blue)")}
                         onMouseLeave={(e) => (e.currentTarget.style.color = "var(--fg-tertiary)")}
-                        title="Download"
+                        title={t.jobs.download}
                       >
                         <Download className="w-4 h-4" strokeWidth={1.5} />
                       </button>

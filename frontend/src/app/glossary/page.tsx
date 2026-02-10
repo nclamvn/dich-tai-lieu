@@ -12,6 +12,7 @@ import {
   useDeleteGlossary,
 } from "@/lib/api/hooks";
 import { SUPPORTED_LANGUAGES } from "@/lib/api/types";
+import { useLocale } from "@/lib/i18n";
 
 export default function GlossaryPage() {
   const { data, isLoading } = useGlossaries();
@@ -21,6 +22,7 @@ export default function GlossaryPage() {
   const [newName, setNewName] = useState("");
   const [newSrc, setNewSrc] = useState("en");
   const [newTgt, setNewTgt] = useState("vi");
+  const { t } = useLocale();
 
   const list = data?.glossaries || [];
 
@@ -38,9 +40,9 @@ export default function GlossaryPage() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1>Glossaries</h1>
+        <h1>{t.glossary.title}</h1>
         <Button onClick={() => setShowCreate(!showCreate)} size="sm">
-          <Plus className="w-4 h-4 mr-1" /> New Glossary
+          <Plus className="w-4 h-4 mr-1" /> {t.glossary.newGlossary}
         </Button>
       </div>
 
@@ -55,7 +57,7 @@ export default function GlossaryPage() {
             <input
               value={newName}
               onChange={(e) => setNewName(e.target.value)}
-              placeholder="Glossary name"
+              placeholder={t.glossary.glossaryName}
               className="w-full px-3 py-2 text-sm"
               style={{
                 borderRadius: "var(--radius-md)",
@@ -107,14 +109,14 @@ export default function GlossaryPage() {
                 loading={createGlossary.isPending}
                 size="sm"
               >
-                Create
+                {t.glossary.create}
               </Button>
               <Button
                 variant="ghost"
                 onClick={() => setShowCreate(false)}
                 size="sm"
               >
-                Cancel
+                {t.glossary.cancel}
               </Button>
             </div>
           </CardContent>
@@ -130,8 +132,8 @@ export default function GlossaryPage() {
       ) : list.length === 0 ? (
         <EmptyState
           icon={BookOpen}
-          title="No glossaries yet"
-          description="Create a glossary to ensure consistent terminology"
+          title={t.glossary.emptyTitle}
+          description={t.glossary.emptyDesc}
         />
       ) : (
         <div className="space-y-2">
@@ -167,7 +169,7 @@ export default function GlossaryPage() {
                         className="text-xs"
                         style={{ color: "var(--fg-secondary)" }}
                       >
-                        {g.language_pair} &middot; {g.entry_count} terms
+                        {g.language_pair} &middot; {g.entry_count} {t.glossary.terms}
                         {g.project && ` \u00b7 ${g.project}`}
                       </p>
                     </div>
@@ -175,7 +177,7 @@ export default function GlossaryPage() {
                   <button
                     onClick={(e) => {
                       e.preventDefault();
-                      if (confirm("Delete this glossary?"))
+                      if (confirm(t.glossary.deleteConfirm))
                         deleteGlossary.mutate(g.id);
                     }}
                     className="p-1.5 transition-colors duration-100"

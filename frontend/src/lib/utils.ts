@@ -6,9 +6,11 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatCost(usd: number): string {
-  if (usd < 0.01) return `$${usd.toFixed(6)}`;
-  if (usd < 1) return `$${usd.toFixed(4)}`;
-  return `$${usd.toFixed(2)}`;
+  if (usd === 0) return "$0.00";
+  if (usd < 0.001) return "<$0.01";
+  if (usd < 0.01) return `$${usd.toFixed(3)}`;
+  if (usd < 1000) return `$${usd.toFixed(2)}`;
+  return `$${usd.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
 
 export function formatNumber(n: number): string {

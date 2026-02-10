@@ -5,17 +5,19 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { useProfiles } from "@/lib/api/hooks";
+import { useLocale } from "@/lib/i18n";
 
 export default function ProfilesPage() {
   const { data, isLoading } = useProfiles();
   const profileList = data?.profiles || [];
+  const { t } = useLocale();
 
   return (
     <div className="space-y-6">
       <div>
-        <h1>Publishing Profiles</h1>
+        <h1>{t.profiles.title}</h1>
         <p style={{ color: "var(--fg-secondary)" }}>
-          Reusable settings for translation + output formatting
+          {t.profiles.subtitle}
         </p>
       </div>
 
@@ -28,8 +30,8 @@ export default function ProfilesPage() {
       ) : profileList.length === 0 ? (
         <EmptyState
           icon={FileText}
-          title="No profiles found"
-          description="Profiles will appear here when available from the backend"
+          title={t.profiles.emptyTitle}
+          description={t.profiles.emptyDesc}
         />
       ) : (
         <div className="grid gap-4">

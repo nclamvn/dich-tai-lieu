@@ -9,8 +9,10 @@ import {
   CheckCircle,
   LayoutGrid,
   ArrowLeft,
+  ArrowRight,
   AlertTriangle,
   Clock,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -18,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { useJob } from "@/lib/api/hooks";
 import { jobs as jobsApi } from "@/lib/api/client";
 import { formatDate, statusVariant } from "@/lib/utils";
+import { useLocale } from "@/lib/i18n";
 
 function DownloadButton({ jobId, format, filename }: { jobId: string; format: string; filename: string }) {
   const handleDownload = async (e: React.MouseEvent) => {
@@ -59,6 +62,7 @@ export default function JobDetailPage({
 }) {
   const { id } = use(params);
   const { data: job, isLoading } = useJob(id);
+  const { t } = useLocale();
 
   if (isLoading) {
     return (
@@ -70,7 +74,7 @@ export default function JobDetailPage({
   }
 
   if (!job) {
-    return <p style={{ color: "var(--fg-tertiary)" }}>Job not found</p>;
+    return <p style={{ color: "var(--fg-tertiary)" }}>{t.jobs.notFound}</p>;
   }
 
   // Derive outputs from V2 output_paths
@@ -100,7 +104,7 @@ export default function JobDetailPage({
           className="text-sm flex items-center gap-1 mb-2 no-underline"
           style={{ color: "var(--fg-secondary)" }}
         >
-          <ArrowLeft className="w-3 h-3" /> Back to Jobs
+          <ArrowLeft className="w-3 h-3" /> {t.jobs.backToJobs}
         </Link>
         <div className="flex items-start justify-between">
           <div>
@@ -134,7 +138,7 @@ export default function JobDetailPage({
               className="text-sm font-medium"
               style={{ color: "var(--fg-primary)" }}
             >
-              {job._currentStage || "Processing..."}
+              {job._currentStage || t.jobs.processing}
             </span>
             <span
               className="text-sm"
@@ -173,10 +177,10 @@ export default function JobDetailPage({
             />
             <div>
               <p className="text-sm font-medium" style={{ color: "var(--fg-primary)" }}>
-                Translation Complete
+                {t.jobs.translationComplete}
               </p>
               <p className="text-xs" style={{ color: "var(--fg-secondary)" }}>
-                Quality: <span className="capitalize">{job._qualityLevel}</span>
+                {t.jobs.quality}: <span className="capitalize">{job._qualityLevel}</span>
                 {job._qualityScore !== undefined && ` (${Math.round(job._qualityScore * 100)}%)`}
               </p>
             </div>
@@ -195,7 +199,7 @@ export default function JobDetailPage({
             />
             <div>
               <p className="text-sm font-medium" style={{ color: "var(--fg-primary)" }}>
-                Translation Failed
+                {t.jobs.translationFailed}
               </p>
               <p className="text-xs" style={{ color: "var(--color-notion-red)" }}>
                 {job.error}
@@ -217,7 +221,7 @@ export default function JobDetailPage({
                   style={{ color: "var(--color-notion-blue)" }}
                   strokeWidth={1.5}
                 />
-                Extraction Quality
+                {t.jobs.extractionQuality}
               </h3>
             </CardHeader>
             <CardContent>
@@ -235,7 +239,7 @@ export default function JobDetailPage({
                   className="text-sm"
                   style={{ color: "var(--fg-secondary)" }}
                 >
-                  Score: {(job.eqs.score * 100).toFixed(0)}%
+                  {t.jobs.score}: {(job.eqs.score * 100).toFixed(0)}%
                 </span>
               </div>
               <p
@@ -291,7 +295,7 @@ export default function JobDetailPage({
                   style={{ color: "var(--color-notion-purple)" }}
                   strokeWidth={1.5}
                 />
-                Provider Routing
+                {t.jobs.providerRouting}
               </h3>
             </CardHeader>
             <CardContent>
@@ -324,7 +328,7 @@ export default function JobDetailPage({
                   style={{ color: "var(--color-notion-green)" }}
                   strokeWidth={1.5}
                 />
-                Consistency Check
+                {t.jobs.consistencyCheck}
               </h3>
             </CardHeader>
             <CardContent>
@@ -338,7 +342,7 @@ export default function JobDetailPage({
                 <Badge
                   variant={job.consistency.passed ? "success" : "warning"}
                 >
-                  {job.consistency.passed ? "Passed" : "Issues Found"}
+                  {job.consistency.passed ? t.jobs.passed : t.jobs.issuesFound}
                 </Badge>
               </div>
               {job.consistency.issues?.length > 0 && (
@@ -381,7 +385,7 @@ export default function JobDetailPage({
                   style={{ color: "var(--color-notion-orange)" }}
                   strokeWidth={1.5}
                 />
-                Document Structure
+                {t.jobs.documentStructure}
               </h3>
             </CardHeader>
             <CardContent>
@@ -397,7 +401,7 @@ export default function JobDetailPage({
                     className="text-xs"
                     style={{ color: "var(--fg-tertiary)" }}
                   >
-                    Regions
+                    {t.jobs.regions}
                   </p>
                 </div>
                 <div>
@@ -411,7 +415,7 @@ export default function JobDetailPage({
                     className="text-xs"
                     style={{ color: "var(--fg-tertiary)" }}
                   >
-                    Tables
+                    {t.jobs.tables}
                   </p>
                 </div>
                 <div>
@@ -425,7 +429,7 @@ export default function JobDetailPage({
                     className="text-xs"
                     style={{ color: "var(--fg-tertiary)" }}
                   >
-                    Formulas
+                    {t.jobs.formulas}
                   </p>
                 </div>
               </div>
@@ -434,13 +438,57 @@ export default function JobDetailPage({
         )}
       </div>
 
+      {/* Read in App */}
+      {job.status === "completed" && (
+        <Link href={`/jobs/${id}/read`} className="block no-underline">
+          <Card hover>
+            <CardContent className="py-5">
+              <div className="flex items-center gap-4">
+                <div
+                  className="w-10 h-10 flex items-center justify-center shrink-0"
+                  style={{
+                    borderRadius: "var(--radius-lg)",
+                    background: "var(--accent-blue-bg)",
+                  }}
+                >
+                  <BookOpen
+                    className="w-5 h-5"
+                    style={{ color: "var(--color-notion-blue)" }}
+                    strokeWidth={1.5}
+                  />
+                </div>
+                <div className="flex-1">
+                  <h3
+                    className="font-semibold text-[15px]"
+                    style={{ color: "var(--fg-primary)" }}
+                  >
+                    {t.jobs.readInApp}
+                  </h3>
+                  <p
+                    className="text-sm mt-0.5"
+                    style={{ color: "var(--fg-tertiary)" }}
+                  >
+                    {t.jobs.readInAppDesc}
+                  </p>
+                </div>
+                <ArrowRight
+                  className="w-4 h-4 shrink-0"
+                  style={{ color: "var(--fg-ghost)" }}
+                  strokeWidth={1.5}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+      )}
+
       {/* Download Outputs */}
       {outputs.length > 0 && (
         <Card>
           <CardHeader>
             <h3 className="text-[15px] font-semibold flex items-center gap-2">
               <Download className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
-              Download Outputs
+              {t.jobs.downloadOutputs}
             </h3>
           </CardHeader>
           <CardContent>

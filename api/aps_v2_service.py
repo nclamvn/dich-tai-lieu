@@ -365,6 +365,23 @@ class APSV2Service:
                     self._repo.update_progress(job_id, job["progress"], stage)
                     self._last_db_update[job_id] = now
 
+                    # Broadcast progress via WebSocket
+                    try:
+                        from api.deps import manager
+                        loop = asyncio.get_event_loop()
+                        loop.call_soon_threadsafe(
+                            asyncio.ensure_future,
+                            manager.broadcast({
+                                "event": "job_progress",
+                                "job_id": job_id,
+                                "progress": job["progress"],
+                                "stage": stage,
+                                "status": "running",
+                            })
+                        )
+                    except Exception:
+                        pass  # WebSocket broadcast is best-effort
+
             # Run the publisher pipeline (first format for main processing)
             first_format = job["output_formats"][0] if job["output_formats"] else "docx"
             # Use source filename (without extension) as title fallback

@@ -12,31 +12,53 @@ import {
   Menu,
   X,
   ChevronRight,
+  ChevronLeft,
   Layers,
+  PanelLeftClose,
+  PanelLeft,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocale } from "@/lib/i18n";
+import { LocaleToggle } from "@/components/ui/locale-toggle";
 
-const NAV_ITEMS = [
-  { href: "/translate", label: "Translate", icon: Upload },
-  { href: "/jobs", label: "Jobs", icon: List },
-  { href: "/glossary", label: "Glossary", icon: BookOpen },
-  { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
-  { href: "/profiles", label: "Profiles", icon: Layers },
-  { href: "/settings", label: "Settings", icon: Settings },
+const NAV_KEYS = [
+  { href: "/translate", key: "translate" as const, icon: Upload },
+  { href: "/jobs", key: "jobs" as const, icon: List },
+  { href: "/glossary", key: "glossary" as const, icon: BookOpen },
+  { href: "/dashboard", key: "dashboard" as const, icon: BarChart3 },
+  { href: "/profiles", key: "profiles" as const, icon: Layers },
+  { href: "/settings", key: "settings" as const, icon: Settings },
 ];
+
+const STORAGE_KEY = "aipub-sidebar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const { t } = useLocale();
+
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === "collapsed") setCollapsed(true);
+  }, []);
+
+  const toggleCollapsed = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    localStorage.setItem(STORAGE_KEY, next ? "collapsed" : "expanded");
+  };
+
+  const sidebarWidth = collapsed ? "w-[56px]" : "w-[240px]";
 
   return (
     <div className="min-h-screen flex">
       {/* Mobile overlay */}
-      {sidebarOpen && (
+      {mobileOpen && (
         <div
           className="fixed inset-0 z-40 md:hidden"
           style={{ background: "var(--bg-overlay)" }}
-          onClick={() => setSidebarOpen(false)}
+          onClick={() => setMobileOpen(false)}
         />
       )}
 
@@ -44,67 +66,108 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <aside
         className={cn(
           "fixed top-0 left-0 h-screen z-50 flex flex-col",
-          "w-[240px] transition-transform duration-200 ease-in-out",
+          "transition-all duration-200 ease-in-out",
           "md:translate-x-0 md:sticky md:z-auto",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
+          mobileOpen ? "translate-x-0 w-[240px]" : "-translate-x-full",
+          !mobileOpen && sidebarWidth,
         )}
         style={{
           background: "var(--bg-sidebar)",
           borderRight: "1px solid var(--border-default)",
         }}
       >
-        {/* Logo */}
+        {/* Logo + collapse toggle */}
         <div
-          className="px-3 flex items-center justify-between shrink-0"
+          className={cn(
+            "flex items-center shrink-0",
+            collapsed ? "px-2 justify-center" : "px-3 justify-between",
+          )}
           style={{ height: "var(--header-height)" }}
         >
-          <Link
-            href="/"
-            className="flex items-center gap-2 px-2 py-1 no-underline"
-            style={{ borderRadius: "var(--radius-sm)" }}
-          >
-            <div
-              className="w-5 h-5 flex items-center justify-center"
+          {collapsed ? (
+            /* Collapsed: only expand icon */
+            <button
+              onClick={toggleCollapsed}
+              className="hidden md:flex p-1.5 transition-colors duration-100 items-center justify-center"
               style={{
-                borderRadius: "3px",
-                background: "var(--fg-primary)",
+                borderRadius: "var(--radius-sm)",
+                color: "var(--fg-icon)",
               }}
+              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--fg-primary)")}
+              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--fg-icon)")}
             >
-              <span className="text-white text-[10px] font-bold">A</span>
-            </div>
-            <span
-              className="text-sm font-medium"
-              style={{ color: "var(--fg-primary)" }}
-            >
-              AI Publisher Pro
-            </span>
-          </Link>
-          <button
-            className="md:hidden p-1"
-            style={{ borderRadius: "var(--radius-sm)" }}
-            onClick={() => setSidebarOpen(false)}
-          >
-            <X
-              className="w-4 h-4"
-              style={{ color: "var(--fg-icon)" }}
-              strokeWidth={1.5}
-            />
-          </button>
+              <PanelLeft className="w-4 h-4" strokeWidth={1.5} />
+            </button>
+          ) : (
+            <>
+              <Link
+                href="/"
+                className="flex items-center gap-2 py-1 px-2 no-underline"
+                style={{ borderRadius: "var(--radius-sm)" }}
+              >
+                <div
+                  className="w-5 h-5 flex items-center justify-center shrink-0"
+                  style={{
+                    borderRadius: "3px",
+                    background: "var(--fg-primary)",
+                  }}
+                >
+                  <span className="text-white text-[10px] font-bold">A</span>
+                </div>
+                <span
+                  className="text-sm font-medium"
+                  style={{ color: "var(--fg-primary)" }}
+                >
+                  AI Publisher Pro
+                </span>
+              </Link>
+              <div className="flex items-center gap-0.5">
+                {/* Collapse toggle (desktop) */}
+                <button
+                  onClick={toggleCollapsed}
+                  className="hidden md:flex p-1 transition-colors duration-100 items-center justify-center"
+                  style={{
+                    borderRadius: "var(--radius-sm)",
+                    color: "var(--fg-icon)",
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--fg-primary)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--fg-icon)")}
+                >
+                  <PanelLeftClose className="w-4 h-4" strokeWidth={1.5} />
+                </button>
+                {/* Mobile close */}
+                <button
+                  className="md:hidden p-1"
+                  style={{ borderRadius: "var(--radius-sm)" }}
+                  onClick={() => setMobileOpen(false)}
+                >
+                  <X
+                    className="w-4 h-4"
+                    style={{ color: "var(--fg-icon)" }}
+                    strokeWidth={1.5}
+                  />
+                </button>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-2 py-2 space-y-0.5 overflow-y-auto">
-          {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
+        <nav className={cn("flex-1 py-2 space-y-0.5 overflow-y-auto", collapsed ? "px-1.5" : "px-2")}>
+          {NAV_KEYS.map(({ href, key, icon: Icon }) => {
             const isActive =
               pathname === href || pathname.startsWith(href + "/");
             return (
               <Link
                 key={href}
                 href={href}
-                onClick={() => setSidebarOpen(false)}
+                onClick={() => setMobileOpen(false)}
+                title={collapsed ? t.nav[key] : undefined}
                 className={cn(
-                  "flex items-center gap-2.5 px-2.5 py-[5px] text-sm no-underline",
-                  "transition-colors duration-100",
+                  "flex items-center text-sm no-underline transition-colors duration-100",
+                  collapsed
+                    ? "justify-center px-0 py-1.5"
+                    : "gap-2.5 px-2.5 py-[5px]",
                 )}
                 style={{
                   borderRadius: "var(--radius-sm)",
@@ -132,7 +195,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   }}
                   strokeWidth={1.5}
                 />
-                {label}
+                {!collapsed && t.nav[key]}
               </Link>
             );
           })}
@@ -140,15 +203,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
         {/* Footer */}
         <div
-          className="px-3 py-3 shrink-0"
+          className={cn(
+            "shrink-0 flex items-center",
+            collapsed ? "flex-col gap-2 px-1.5 py-3" : "justify-between px-3 py-3",
+          )}
           style={{ borderTop: "1px solid var(--border-default)" }}
         >
-          <p
-            className="text-[11px] px-2"
-            style={{ color: "var(--fg-tertiary)" }}
-          >
-            VIBECODE KIT V4
-          </p>
+          {!collapsed && (
+            <p
+              className="text-[11px] px-2"
+              style={{ color: "var(--fg-tertiary)" }}
+            >
+              VIBECODE KIT V4
+            </p>
+          )}
+          <LocaleToggle collapsed={collapsed} />
         </div>
       </aside>
 
@@ -164,7 +233,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }}
         >
           <button
-            onClick={() => setSidebarOpen(true)}
+            onClick={() => setMobileOpen(true)}
             className="p-1"
             style={{ borderRadius: "var(--radius-sm)" }}
           >
@@ -175,7 +244,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             />
           </button>
           <div
-            className="flex items-center gap-1 text-sm"
+            className="flex-1 flex items-center gap-1 text-sm"
             style={{ color: "var(--fg-tertiary)" }}
           >
             <span style={{ color: "var(--fg-secondary)" }}>
@@ -193,6 +262,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               </>
             )}
           </div>
+          <LocaleToggle />
         </header>
 
         {/* Page content */}

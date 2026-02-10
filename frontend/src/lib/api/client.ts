@@ -7,6 +7,7 @@
 import type {
   TranslationJob,
   TranslateRequest,
+  ReaderContent,
   Glossary,
   GlossaryListItem,
   GlossaryEntry,
@@ -202,6 +203,10 @@ export const jobs = {
 
   getDownloadUrl(jobId: string, format: string): string {
     return `${API_BASE}/api/v2/jobs/${jobId}/download/${format}`;
+  },
+
+  async getReaderContent(jobId: string): Promise<ReaderContent> {
+    return apiFetch<ReaderContent>(`/api/v2/jobs/${jobId}/reader-content`);
   },
 
   async download(jobId: string, format: string, filename?: string): Promise<void> {

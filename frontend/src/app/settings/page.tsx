@@ -2,11 +2,14 @@
 
 import { Settings } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { useLocale } from "@/lib/i18n";
 
 export default function SettingsPage() {
+  const { t } = useLocale();
+
   return (
     <div className="space-y-6">
-      <h1>Settings</h1>
+      <h1>{t.settings.title}</h1>
 
       <Card>
         <CardHeader>
@@ -16,7 +19,7 @@ export default function SettingsPage() {
               style={{ color: "var(--fg-icon)" }}
               strokeWidth={1.5}
             />
-            API Configuration
+            {t.settings.apiConfig}
           </h2>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -25,7 +28,7 @@ export default function SettingsPage() {
               className="block text-sm font-medium mb-1.5"
               style={{ color: "var(--fg-primary)" }}
             >
-              Backend API URL
+              {t.settings.backendUrl}
             </label>
             <input
               type="text"
@@ -45,7 +48,7 @@ export default function SettingsPage() {
               className="text-xs mt-1"
               style={{ color: "var(--fg-tertiary)" }}
             >
-              Set via NEXT_PUBLIC_API_URL environment variable
+              {t.settings.backendUrlHint}
             </p>
           </div>
 
@@ -54,13 +57,13 @@ export default function SettingsPage() {
               className="block text-sm font-medium mb-1.5"
               style={{ color: "var(--fg-primary)" }}
             >
-              Version
+              {t.settings.version}
             </label>
             <p
               className="text-sm"
               style={{ color: "var(--fg-secondary)" }}
             >
-              AI Publisher Pro v2.0 — 15 Sprints, 19 Service Modules
+              {t.settings.versionInfo}
             </p>
           </div>
         </CardContent>

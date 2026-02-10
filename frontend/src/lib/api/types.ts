@@ -200,6 +200,60 @@ export const SUPPORTED_LANGUAGES: Language[] = [
   { code: "pt", name: "Portuguese", native_name: "Português" },
 ];
 
+// ─── Reader ───
+
+export interface ReaderRegion {
+  type: "text" | "heading" | "table" | "formula" | "list" | "image" | "code";
+  content?: string;
+  style?: string;
+  level?: number;
+  html?: string;
+  caption?: string;
+  latex?: string;
+  display_text?: string;
+  inline?: boolean;
+  items?: string[];
+  ordered?: boolean;
+  alt_text?: string;
+}
+
+export interface ReaderChapter {
+  id: string;
+  title: string;
+  regions: ReaderRegion[];
+}
+
+export interface ReaderContent {
+  job_id: string;
+  title: string;
+  source_language: string;
+  target_language: string;
+  chapters: ReaderChapter[];
+  metadata: {
+    total_chapters: number;
+    total_words: number;
+    total_regions: number;
+    tables: number;
+    formulas: number;
+    has_layout_dna: boolean;
+    content_source?: string;
+  };
+  quality: {
+    eqs_grade?: string;
+    eqs_score?: number;
+    consistency_score?: number;
+    consistency_passed?: boolean;
+    provider?: string;
+    routing_mode?: string;
+  };
+}
+
+export type ReaderTheme = "light" | "dark" | "sepia";
+export type ReaderFont = "serif" | "sans";
+export type ReaderFontSize = 0 | 1 | 2 | 3 | 4;
+
+// ─── Output Formats ───
+
 export const OUTPUT_FORMATS = [
   { value: "docx", label: "Word (.docx)" },
   { value: "pdf", label: "PDF (.pdf)" },

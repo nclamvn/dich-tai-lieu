@@ -1,12 +1,84 @@
 /**
  * React Query hooks for all API endpoints.
- * Provides caching, polling, optimistic updates.
+ * Provides caching, polling, optimistic updates, and WebSocket real-time progress.
  */
 "use client";
 
+import { useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobs, glossaries, dashboard, profiles } from "./client";
 import type { TranslateRequest } from "./types";
+
+const WS_URL =
+  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
+    .replace(/^http/, "ws") + "/ws";
+
+// ─── WebSocket ───
+
+/**
+ * Hook for real-time job progress via WebSocket.
+ * Updates React Query cache on each `job_progress` event.
+ * Falls back to polling if WebSocket disconnects.
+ */
+export function useJobWebSocket(jobId: string | null) {
+  const queryClient = useQueryClient();
+  const wsRef = useRef<WebSocket | null>(null);
+  const reconnectTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  const connect = useCallback(() => {
+    if (!jobId) return;
+
+    try {
+      const ws = new WebSocket(WS_URL);
+      wsRef.current = ws;
+
+      ws.onopen = () => {
+        ws.send(JSON.stringify({ action: "subscribe", job_id: jobId }));
+      };
+
+      ws.onmessage = (evt) => {
+        try {
+          const data = JSON.parse(evt.data);
+          if (data.event === "job_progress" && data.job_id === jobId) {
+            // Update the React Query cache with latest progress
+            queryClient.setQueryData(["job", jobId], (old: any) => {
+              if (!old) return old;
+              return {
+                ...old,
+                progress: data.progress,
+                current_stage: data.stage,
+                status: data.status,
+              };
+            });
+          }
+        } catch {
+          // ignore parse errors
+        }
+      };
+
+      ws.onclose = () => {
+        wsRef.current = null;
+        // Reconnect after 3 seconds
+        reconnectTimer.current = setTimeout(connect, 3_000);
+      };
+
+      ws.onerror = () => {
+        ws.close();
+      };
+    } catch {
+      // WebSocket not available, fall back to polling
+    }
+  }, [jobId, queryClient]);
+
+  useEffect(() => {
+    connect();
+    return () => {
+      clearTimeout(reconnectTimer.current);
+      wsRef.current?.close();
+      wsRef.current = null;
+    };
+  }, [connect]);
+}
 
 // ─── Jobs ───
 
@@ -25,7 +97,7 @@ export function useJob(jobId: string | null) {
     enabled: !!jobId,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      if (status === "processing" || status === "pending") return 3_000;
+      if (status === "processing" || status === "pending") return 10_000;
       return false;
     },
   });
@@ -155,6 +227,17 @@ export function useLanguagePairCosts() {
   return useQuery({
     queryKey: ["dashboard-lang-pairs"],
     queryFn: dashboard.getLanguagePairs,
+  });
+}
+
+// ─── Reader ───
+
+export function useReaderContent(jobId: string | null) {
+  return useQuery({
+    queryKey: ["reader-content", jobId],
+    queryFn: () => jobs.getReaderContent(jobId!),
+    enabled: !!jobId,
+    staleTime: 5 * 60_000,
   });
 }
 
