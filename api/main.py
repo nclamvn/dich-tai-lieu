@@ -122,25 +122,9 @@ def csrf_protect_exception_handler(request: Request, exc: CsrfProtectError):
         content={"detail": "CSRF token validation failed. Please refresh the page and try again."}
     )
 
-# CORS middleware
-ALLOWED_ORIGINS = [
-    "https://prismy.in",
-    "https://www.prismy.in",
-    "https://ai-translator-api.onrender.com",
-    "https://ai-translator-ui.onrender.com",
-    "http://localhost:3001",
-    "http://localhost:8000",
-    "http://127.0.0.1:3001",
-    "http://127.0.0.1:8000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
-    "http://localhost:4000",
-    "http://127.0.0.1:4000",
-    "http://localhost:3003",
-    "http://127.0.0.1:3003",
-]
+# CORS middleware — origins from settings (env var) or dev defaults
+from config.settings import settings as _settings
+ALLOWED_ORIGINS = _settings.get_cors_origins()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
@@ -149,6 +133,21 @@ app.add_middleware(
     allow_headers=["*"],
     expose_headers=["Content-Disposition"],
 )
+
+
+# Security headers middleware
+from starlette.middleware.base import BaseHTTPMiddleware
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 # =============================================================================
 # Include Routers
@@ -257,7 +256,7 @@ async def shutdown_redis():
 
 @app.on_event("startup")
 async def startup_cleanup_scheduler():
-    """Start periodic file cleanup (every 6 hours)."""
+    """Start periodic file cleanup (every 6 hours) and job memory cleanup (every 1 hour)."""
     async def _cleanup_loop():
         while True:
             await asyncio.sleep(6 * 3600)
@@ -269,7 +268,20 @@ async def startup_cleanup_scheduler():
             except Exception as e:
                 logger.error(f"Scheduled cleanup failed: {e}")
 
+    async def _job_cleanup_loop():
+        while True:
+            await asyncio.sleep(3600)  # Every hour
+            try:
+                from api.aps_v2_service import get_v2_service
+                service = get_v2_service()
+                evicted = service.cleanup_old_jobs()
+                if evicted > 0:
+                    logger.info(f"Job cleanup: evicted {evicted} old jobs from memory")
+            except Exception as e:
+                logger.error(f"Job cleanup failed: {e}")
+
     asyncio.create_task(_cleanup_loop())
+    asyncio.create_task(_job_cleanup_loop())
 
 # =============================================================================
 # UI Page Routes
@@ -334,11 +346,13 @@ from api.security import security_manager, SessionInfo, get_optional_session
 
 
 @app.post("/api/auth/login")
-async def login(login_data: LoginRequest):
+@limiter.limit(_settings.auth_rate_limit)
+async def login(request: Request, login_data: LoginRequest):
     """
     Create a session (simple login for internal deployment)
 
-    Returns session token to use in X-Session-Token header
+    Returns session token to use in X-Session-Token header.
+    Rate-limited to prevent brute force attacks.
     """
     session_token = security_manager.create_session(
         user_id=login_data.username,

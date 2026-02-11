@@ -59,6 +59,9 @@ class Settings(BaseSettings):
     session_timeout_hours: int = 8  # Working day session
     # ⚠️ SECURITY: MUST be changed via SESSION_SECRET env var in production!
     session_secret: str = "INSECURE-DEV-SECRET-CHANGE-IN-PRODUCTION"
+    # Session backend: memory | file (file persists across restarts)
+    session_backend: str = "memory"
+    session_file_path: str = "data/sessions.json"
 
     # CSRF Protection (only for internet-facing deployments)
     csrf_enabled: bool = False  # Default OFF - not needed for internal
@@ -68,6 +71,12 @@ class Settings(BaseSettings):
     # API Key authentication (for API integrations)
     api_key_auth_enabled: bool = False
     api_keys: list = []  # List of valid API keys
+
+    # CORS origins (comma-separated in env, parsed to list)
+    cors_origins: str = ""  # Empty = use default dev origins
+
+    # Rate limiting for auth endpoints
+    auth_rate_limit: str = "5/minute"  # Prevent brute force
 
     # ========== Features ==========
     cache_enabled: bool = True
@@ -192,6 +201,12 @@ class Settings(BaseSettings):
                     "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
                 )
 
+            # Check session secret minimum length
+            if len(self.session_secret) < 32:
+                errors.append(
+                    "SESSION_SECRET must be at least 32 characters in production!"
+                )
+
             # Check CSRF secret if enabled
             if self.csrf_enabled and self.csrf_secret_key in insecure_secrets:
                 errors.append(
@@ -206,20 +221,56 @@ class Settings(BaseSettings):
                     "Enable SESSION_AUTH_ENABLED=true or API_KEY_AUTH_ENABLED=true"
                 )
 
+            # Check CORS origins are explicitly set
+            if not self.cors_origins:
+                errors.append(
+                    "CORS_ORIGINS must be explicitly set in production! "
+                    "Example: CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com"
+                )
+
             if errors:
                 raise ValueError(
-                    "🔒 SECURITY ERROR - Production mode requires secure configuration:\n"
-                    + "\n".join(f"  • {e}" for e in errors)
+                    "SECURITY ERROR - Production mode requires secure configuration:\n"
+                    + "\n".join(f"  - {e}" for e in errors)
+                )
+
+        elif self.security_mode == "internal":
+            # Internal mode: warn but don't block
+            if self.session_secret in insecure_secrets:
+                warnings.warn(
+                    "Running internal mode with default secrets. "
+                    "Set SESSION_SECRET env var for better security.",
+                    UserWarning
                 )
 
         elif self.security_mode == "development":
             # Warn about insecure defaults in development
             if self.session_secret in insecure_secrets:
                 warnings.warn(
-                    "⚠️  Running with default insecure secrets. "
+                    "Running with default insecure secrets. "
                     "Set SESSION_SECRET and CSRF_SECRET_KEY env vars for production.",
                     UserWarning
                 )
+
+    def get_cors_origins(self) -> list:
+        """Get CORS origins as a list. Falls back to dev defaults if empty."""
+        if self.cors_origins:
+            return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+        # Dev defaults
+        return [
+            "http://localhost:3001",
+            "http://localhost:8000",
+            "http://127.0.0.1:3001",
+            "http://127.0.0.1:8000",
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+            "http://localhost:4000",
+            "http://127.0.0.1:4000",
+            "http://localhost:3003",
+            "http://127.0.0.1:3003",
+        ]
 
     def get_api_key(self) -> str:
         """Get API key based on provider"""

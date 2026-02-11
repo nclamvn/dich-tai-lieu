@@ -276,7 +276,7 @@ class APSV2Service:
                 "calls_by_provider": {},
             },
             "job_start_time": time.time(),
-            "api_key": api_key,  # User-provided API key (not persisted to DB)
+            # NOTE: api_key intentionally NOT stored in job record (security)
             "eqs": self._last_eqs_report,  # EQS extraction quality (Sprint 9)
         }
 
@@ -1168,6 +1168,58 @@ class APSV2Service:
             "output_dir": str(self.output_dir),
             "upload_dir": str(self.upload_dir),
         }
+
+    # ==================== JOB CLEANUP ====================
+
+    MAX_MEMORY_JOBS = 200  # Max jobs kept in memory
+    JOB_TTL_HOURS = 72  # Jobs older than this are evicted from memory
+
+    def cleanup_old_jobs(self) -> int:
+        """
+        Evict completed/failed jobs older than TTL from memory.
+        Jobs remain in the database for historical queries.
+        Returns number of jobs evicted.
+        """
+        now = time.time()
+        ttl_seconds = self.JOB_TTL_HOURS * 3600
+        evicted = 0
+
+        for job_id in list(self._jobs.keys()):
+            job = self._jobs[job_id]
+            status = job.get("status")
+            status_val = status.value if hasattr(status, "value") else str(status)
+
+            # Only evict completed/failed/cancelled jobs
+            if status_val not in ("complete", "failed", "cancelled"):
+                continue
+
+            job_start = job.get("job_start_time", 0)
+            if job_start and (now - job_start) > ttl_seconds:
+                del self._jobs[job_id]
+                self._job_tasks.pop(job_id, None)
+                self._last_db_update.pop(job_id, None)
+                evicted += 1
+
+        # If still over capacity, evict oldest completed jobs
+        if len(self._jobs) > self.MAX_MEMORY_JOBS:
+            completed_jobs = [
+                (jid, j.get("job_start_time", 0))
+                for jid, j in self._jobs.items()
+                if (j.get("status", "").value if hasattr(j.get("status", ""), "value") else str(j.get("status", "")))
+                in ("complete", "failed", "cancelled")
+            ]
+            completed_jobs.sort(key=lambda x: x[1])  # oldest first
+            excess = len(self._jobs) - self.MAX_MEMORY_JOBS
+            for jid, _ in completed_jobs[:excess]:
+                del self._jobs[jid]
+                self._job_tasks.pop(jid, None)
+                self._last_db_update.pop(jid, None)
+                evicted += 1
+
+        if evicted > 0:
+            logger.info(f"Job cleanup: evicted {evicted} old jobs from memory (remaining: {len(self._jobs)})")
+
+        return evicted
 
     # ==================== HEALTH ====================
 
