@@ -37,6 +37,7 @@ class UserDatabase:
     def _init_database(self):
         """Initialize database schema."""
         self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+        self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.row_factory = sqlite3.Row
 
         cursor = self.conn.cursor()

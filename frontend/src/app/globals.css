@@ -349,6 +349,55 @@ hr {
   background: rgba(128, 128, 128, 0.04);
 }
 
+/* ─── Error Boundary ─── */
+
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 2rem;
+  text-align: center;
+}
+
+.error-container h2 {
+  font-family: var(--font-display);
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.error-container p {
+  color: var(--fg-secondary);
+  font-size: 0.875rem;
+  max-width: 480px;
+  margin-bottom: 1.5rem;
+}
+
+.error-container button {
+  padding: 6px 16px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: white;
+  background: var(--color-notion-blue);
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: opacity 100ms;
+}
+
+.error-container button:hover {
+  opacity: 0.85;
+}
+
+.error-global {
+  min-height: 80vh;
+}
+
+.error-global h2 {
+  font-size: 2rem;
+}
+
 .line-clamp-2 {
   display: -webkit-box;
   -webkit-line-clamp: 2;

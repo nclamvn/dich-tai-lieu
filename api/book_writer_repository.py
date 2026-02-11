@@ -26,6 +26,7 @@ class BookWriterRepository:
     def _init_db(self):
         """Create tables if not exist."""
         with sqlite3.connect(self.db_path) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS book_projects (
                     id TEXT PRIMARY KEY,

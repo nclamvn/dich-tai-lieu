@@ -38,7 +38,8 @@ class TranslationCache:
                 data = json.loads(self.cache_file.read_text(encoding="utf-8"))
                 logger.info(f" Loaded {len(data)} cached translations")
                 return data
-            except Exception:
+            except Exception as e:
+                logger.debug("Failed to load cache from disk: %s", e)
                 return {}
         return {}
 

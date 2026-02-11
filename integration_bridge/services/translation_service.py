@@ -1,8 +1,11 @@
 """Translation service - connects to AI Publisher Pro"""
 import httpx
 import asyncio
+import logging
 from typing import Optional
 from datetime import datetime
+
+logger = logging.getLogger(__name__)
 
 from ..models.schemas import (
     TranslationRequest,
@@ -215,7 +218,8 @@ class TranslationService:
                         # For docx, we can't extract text easily, skip
                         continue
                     return response.text
-            except:
+            except Exception as e:
+                logger.debug("Failed to download translation format %s: %s", fmt, e)
                 continue
         return None
 

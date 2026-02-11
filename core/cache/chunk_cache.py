@@ -144,6 +144,7 @@ class ChunkCache:
                 check_same_thread=False,
                 isolation_level=None  # Autocommit mode
             )
+            self._local.conn.execute("PRAGMA journal_mode=WAL")
             self._local.conn.row_factory = sqlite3.Row
         return self._local.conn
 
