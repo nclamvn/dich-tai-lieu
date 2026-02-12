@@ -21,6 +21,7 @@ import {
   Database,
   FolderUp,
   FileEdit,
+  Clapperboard,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocale } from "@/lib/i18n";
@@ -31,6 +32,7 @@ const NAV_KEYS = [
   { href: "/translate", key: "translate" as const, icon: Upload },
   { href: "/write", key: "write" as const, icon: PenTool },
   { href: "/write-v2", key: "writeV2" as const, icon: Wand2 },
+  { href: "/screenplay", key: "screenplay" as const, icon: Clapperboard },
   { href: "/jobs", key: "jobs" as const, icon: List },
   { href: "/glossary", key: "glossary" as const, icon: BookOpen },
   { href: "/tm", key: "tm" as const, icon: Database },

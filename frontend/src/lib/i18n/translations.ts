@@ -11,6 +11,7 @@ export const translations = {
       settings: "Settings",
       tm: "Translation Memory",
       batch: "Batch Upload",
+      screenplay: "Screenplay Studio",
       editor: "Editor",
     },
     landing: {
@@ -526,6 +527,7 @@ export const translations = {
       settings: "C\u00E0i \u0111\u1EB7t",
       tm: "B\u1ED9 nh\u1EDB d\u1ECBch",
       batch: "D\u1ECBch h\u00E0ng lo\u1EA1t",
+      screenplay: "K\u1ECBch b\u1EA3n",
       editor: "Bi\u00EAn t\u1EADp",
     },
     landing: {

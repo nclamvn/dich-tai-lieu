@@ -13,7 +13,7 @@ import {
   VideoProvider,
 } from './types';
 
-const API_BASE = '/api/screenplay';
+const API_BASE = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/api/screenplay`;
 
 async function fetchAPI<T>(
   endpoint: string,
