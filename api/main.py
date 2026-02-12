@@ -78,6 +78,9 @@ from api.routes.book_writer_v2 import router as book_writer_v2_router
 # --- Settings Management ---
 from api.routes.settings import router as settings_router
 
+# --- Screenplay Studio ---
+from api.routes.screenplay import router as screenplay_router
+
 # =============================================================================
 # CSRF Protection Configuration
 # =============================================================================
@@ -186,6 +189,9 @@ app.include_router(book_writer_v2_router)
 
 # Settings Management
 app.include_router(settings_router)
+
+# Screenplay Studio
+app.include_router(screenplay_router)
 
 # =============================================================================
 # Startup / Shutdown Events
