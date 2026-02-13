@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Globe, ChevronDown, Check, Upload, FileText, Loader2, X } from "lucide-react";
 import {
   CreateProjectInput,
   ProjectTier,
@@ -15,10 +16,75 @@ import {
   MAX_SOURCE_LENGTH,
   MIN_SOURCE_LENGTH,
 } from "@/lib/screenplay/constants";
-import { createProject, estimateCost } from "@/lib/screenplay/api";
+import { createProject, estimateCost, extractTextFromFile } from "@/lib/screenplay/api";
 import type { CostEstimate } from "@/lib/screenplay/types";
 
 type Step = "source" | "settings" | "review";
+
+function LanguageSelect({
+  value,
+  onChange,
+}: {
+  value: Language;
+  onChange: (lang: Language) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+  const selected = SUPPORTED_LANGUAGES.find((l) => l.code === value);
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, []);
+
+  return (
+    <div className="screenplay-form-group">
+      <label>Language</label>
+      <div ref={ref} className="sp-lang-select">
+        <button
+          type="button"
+          className="sp-lang-trigger"
+          onClick={() => setOpen(!open)}
+        >
+          <Globe size={16} className="sp-lang-icon" />
+          <span>{selected?.name}</span>
+          <ChevronDown
+            size={14}
+            className={`sp-lang-chevron ${open ? "sp-lang-chevron-open" : ""}`}
+          />
+        </button>
+        {open && (
+          <div className="sp-lang-dropdown">
+            {SUPPORTED_LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                type="button"
+                className={`sp-lang-option ${
+                  lang.code === value ? "sp-lang-option-active" : ""
+                }`}
+                onClick={() => {
+                  onChange(lang.code);
+                  setOpen(false);
+                }}
+              >
+                <Globe size={14} />
+                <span>{lang.name}</span>
+                {lang.code === value && (
+                  <Check size={14} className="sp-lang-check" />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function CreateWizard() {
   const router = useRouter();
@@ -26,6 +92,9 @@ export function CreateWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [costEstimate, setCostEstimate] = useState<CostEstimate | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [input, setInput] = useState<CreateProjectInput>({
     title: "",
@@ -33,6 +102,28 @@ export function CreateWizard() {
     language: "en",
     tier: "free",
   });
+
+  const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setError(null);
+    try {
+      const result = await extractTextFromFile(file);
+      setInput((prev) => ({
+        ...prev,
+        source_text: result.text,
+        title: prev.title || file.name.replace(/\.[^.]+$/, ""),
+      }));
+      setUploadedFile(result.filename);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to extract text");
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  }, []);
 
   const sourceLength = input.source_text.length;
   const isSourceValid =
@@ -121,11 +212,49 @@ export function CreateWizard() {
 
           <div className="screenplay-form-group">
             <label htmlFor="source">Source Text</label>
+            <div className="sp-upload-zone">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".pdf,.docx,.txt"
+                onChange={handleFileUpload}
+                className="sp-upload-hidden"
+              />
+              <button
+                type="button"
+                className="sp-upload-btn"
+                disabled={uploading}
+                onClick={() => fileInputRef.current?.click()}
+              >
+                {uploading ? (
+                  <Loader2 size={14} className="sp-upload-spinner" />
+                ) : (
+                  <Upload size={14} />
+                )}
+                <span>{uploading ? "Extracting..." : "Upload PDF / DOCX / TXT"}</span>
+              </button>
+              {uploadedFile && (
+                <span className="sp-upload-file">
+                  <FileText size={14} />
+                  <span>{uploadedFile}</span>
+                  <button
+                    type="button"
+                    className="sp-upload-clear"
+                    onClick={() => {
+                      setUploadedFile(null);
+                      setInput((prev) => ({ ...prev, source_text: "" }));
+                    }}
+                  >
+                    <X size={12} />
+                  </button>
+                </span>
+              )}
+            </div>
             <textarea
               id="source"
               className="screenplay-textarea"
               rows={12}
-              placeholder="Paste your story or novel text here..."
+              placeholder="Paste your story or novel text here, or upload a file above..."
               value={input.source_text}
               onChange={(e) =>
                 setInput((prev) => ({ ...prev, source_text: e.target.value }))
@@ -146,26 +275,12 @@ export function CreateWizard() {
             </div>
           </div>
 
-          <div className="screenplay-form-group">
-            <label htmlFor="language">Language</label>
-            <select
-              id="language"
-              className="screenplay-select"
-              value={input.language}
-              onChange={(e) =>
-                setInput((prev) => ({
-                  ...prev,
-                  language: e.target.value as Language,
-                }))
-              }
-            >
-              {SUPPORTED_LANGUAGES.map((lang) => (
-                <option key={lang.code} value={lang.code}>
-                  {lang.flag} {lang.name}
-                </option>
-              ))}
-            </select>
-          </div>
+          <LanguageSelect
+            value={input.language}
+            onChange={(lang) =>
+              setInput((prev) => ({ ...prev, language: lang }))
+            }
+          />
 
           <div className="screenplay-wizard-actions">
             <button

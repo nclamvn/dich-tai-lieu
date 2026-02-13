@@ -144,6 +144,28 @@ export function getVideoUrl(id: string): string {
   return `${API_BASE}/projects/${id}/export/video`;
 }
 
+// Text Extraction
+export async function extractTextFromFile(file: File): Promise<{
+  text: string;
+  filename: string;
+  characters: number;
+}> {
+  const formData = new FormData();
+  formData.append('file', file);
+
+  const response = await fetch(`${API_BASE}/extract-text`, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ detail: 'Upload failed' }));
+    throw new Error(error.detail || `Upload error: ${response.status}`);
+  }
+
+  return response.json();
+}
+
 // Providers Info
 export async function getProviders(): Promise<{
   tiers: Record<string, unknown>;

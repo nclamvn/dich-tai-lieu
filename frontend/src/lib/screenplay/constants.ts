@@ -118,6 +118,6 @@ export const MAX_SOURCE_LENGTH = 500000;
 export const MIN_SOURCE_LENGTH = 1000;
 
 export const SUPPORTED_LANGUAGES = [
-  { code: 'en' as const, name: 'English', flag: '\u{1F1FA}\u{1F1F8}' },
-  { code: 'vi' as const, name: 'Ti\u1EBFng Vi\u1EC7t', flag: '\u{1F1FB}\u{1F1F3}' },
+  { code: 'en' as const, name: 'English' },
+  { code: 'vi' as const, name: 'Tiếng Việt' },
 ];

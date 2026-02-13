@@ -196,7 +196,7 @@ export function BookCreateForm() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".txt,.md,.docx"
+                  accept=".txt,.md,.docx,.pdf"
                   onChange={handleFileSelect}
                   className="hidden"
                 />

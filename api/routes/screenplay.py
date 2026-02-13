@@ -7,7 +7,9 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query
+import tempfile
+
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks, Query, UploadFile, File as FileParam
 from fastapi.responses import FileResponse, Response
 
 from api.schemas.screenplay import (
@@ -43,6 +45,45 @@ repo = ScreenplayRepository()
 def get_user_id() -> str:
     """Get current user ID (placeholder - implement with auth)"""
     return "default_user"
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# FILE UPLOAD & TEXT EXTRACTION
+# ═══════════════════════════════════════════════════════════════════════════════
+
+@router.post("/extract-text")
+async def extract_text_from_file(file: UploadFile = FileParam(...)):
+    """Extract text from an uploaded PDF, DOCX, or TXT file."""
+    from core.batch_processor import read_document
+
+    allowed = {".pdf", ".docx", ".txt"}
+    ext = Path(file.filename).suffix.lower() if file.filename else ""
+    if ext not in allowed:
+        raise HTTPException(400, f"Unsupported file type. Allowed: {', '.join(allowed)}")
+
+    content = await file.read()
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(400, "File too large (max 50MB)")
+
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=ext) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+
+        text = read_document(Path(tmp_path))
+        return {
+            "text": text,
+            "filename": file.filename,
+            "characters": len(text),
+        }
+    except Exception as e:
+        logger.error(f"Text extraction failed: {e}")
+        raise HTTPException(500, f"Failed to extract text: {e}")
+    finally:
+        try:
+            Path(tmp_path).unlink(missing_ok=True)
+        except Exception:
+            pass
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

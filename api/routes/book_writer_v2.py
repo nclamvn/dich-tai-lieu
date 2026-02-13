@@ -118,7 +118,7 @@ async def delete_book(
 # === Draft Upload & Analysis ===
 
 UPLOAD_DIR = Path("data/uploads")
-ALLOWED_EXTENSIONS = {".txt", ".md", ".docx"}
+ALLOWED_EXTENSIONS = {".txt", ".md", ".docx", ".pdf"}
 MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 @router.post("/upload-draft")
