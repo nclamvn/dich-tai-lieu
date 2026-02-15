@@ -1,0 +1,34 @@
+{
+    "name": "Romantic Drama",
+    "description": "Romantic drama with warm tones, soft lighting, and emotional intimacy",
+    "visual_style": "Romantic atmosphere, warm soft tones, intimate framing, emotional depth",
+    "color_grading": "Warm golden tones, soft pastels, gentle contrast, dreamy highlights",
+    "lighting_style": "Golden hour lighting, soft diffused light, romantic backlighting, candle glow",
+    "camera_movements": [
+        "gentle dolly around couple",
+        "slow push into emotion",
+        "following walk together",
+        "intimate handheld",
+        "dreamy soft focus transitions"
+    ],
+    "default_shots": [
+        "two-shot intimate framing",
+        "close-up on eyes/emotion",
+        "silhouette at sunset",
+        "hands touching detail"
+    ],
+    "reference_films": [
+        "The Notebook",
+        "La La Land",
+        "Pride and Prejudice",
+        "Before Sunrise",
+        "Call Me By Your Name"
+    ],
+    "aspect_ratio": "2.39:1",
+    "default_fps": 24,
+    "default_transitions": "dissolve",
+    "prompt_prefix": "Romantic drama style, warm golden tones, soft lighting, emotional intimacy,",
+    "prompt_suffix": "dreamy atmosphere, beautiful cinematography, heartfelt, tender moments, love story",
+    "negative_prompt": "harsh lighting, action, horror, dark, cold colors, violent",
+    "music_style": "Romantic piano, gentle strings, emotional orchestral, acoustic guitar"
+}

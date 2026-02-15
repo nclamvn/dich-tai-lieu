@@ -1,0 +1,873 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book to Cinema - AI Movie Maker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --secondary: #f59e0b;
+            --bg-dark: #0f172a;
+            --bg-card: #1e293b;
+            --bg-input: #334155;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --border: #475569;
+            --success: #10b981;
+            --error: #ef4444;
+            --gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        .header h1 {
+            font-size: 3rem;
+            font-weight: 700;
+            background: var(--gradient);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        /* Main Layout */
+        .main-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 900px) {
+            .main-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Card */
+        .card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            border: 1px solid var(--border);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header h2 {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--gradient);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.25rem;
+        }
+
+        /* Form Elements */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+        }
+
+        input[type="text"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        /* File Upload */
+        .file-upload {
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.1);
+        }
+
+        .file-upload.dragover {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.15);
+        }
+
+        .file-upload-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .file-upload input[type="file"] {
+            display: none;
+        }
+
+        /* Style Selector */
+        .style-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 0.75rem;
+        }
+
+        .style-option {
+            padding: 1rem;
+            background: var(--bg-input);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s;
+        }
+
+        .style-option:hover {
+            border-color: var(--border);
+        }
+
+        .style-option.selected {
+            border-color: var(--primary);
+            background: rgba(99, 102, 241, 0.2);
+        }
+
+        .style-option .icon {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .style-option .name {
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        /* Button */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.875rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 600;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--gradient);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px -10px rgba(99, 102, 241, 0.5);
+        }
+
+        .btn-primary:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Progress Section */
+        .progress-section {
+            display: none;
+        }
+
+        .progress-section.active {
+            display: block;
+        }
+
+        .progress-bar {
+            height: 12px;
+            background: var(--bg-input);
+            border-radius: 6px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient);
+            border-radius: 6px;
+            transition: width 0.3s ease;
+        }
+
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+        }
+
+        /* Stage List */
+        .stage-list {
+            margin-top: 1.5rem;
+        }
+
+        .stage-item {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .stage-item:last-child {
+            border-bottom: none;
+        }
+
+        .stage-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            background: var(--bg-input);
+        }
+
+        .stage-icon.complete {
+            background: var(--success);
+            color: white;
+        }
+
+        .stage-icon.active {
+            background: var(--primary);
+            color: white;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .stage-info {
+            flex: 1;
+        }
+
+        .stage-name {
+            font-weight: 500;
+        }
+
+        .stage-desc {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Results */
+        .results-section {
+            display: none;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .result-card {
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid var(--success);
+            border-radius: 12px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .result-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 1.5rem;
+        }
+
+        .btn-download {
+            background: var(--bg-input);
+            color: var(--text-primary);
+            padding: 0.75rem 1.25rem;
+            border-radius: 8px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.2s;
+        }
+
+        .btn-download:hover {
+            background: var(--border);
+        }
+
+        /* Jobs List */
+        .jobs-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .job-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1rem;
+            background: var(--bg-input);
+            border-radius: 10px;
+            margin-bottom: 0.75rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .job-item:hover {
+            background: var(--border);
+        }
+
+        .job-status {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .job-status.complete { background: var(--success); }
+        .job-status.processing { background: var(--secondary); animation: pulse 1s infinite; }
+        .job-status.failed { background: var(--error); }
+        .job-status.pending { background: var(--text-secondary); }
+
+        .job-info {
+            flex: 1;
+        }
+
+        .job-id {
+            font-weight: 600;
+            font-family: monospace;
+        }
+
+        .job-date {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            border-radius: 10px;
+            color: white;
+            font-weight: 500;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .toast.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .toast.success { background: var(--success); }
+        .toast.error { background: var(--error); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>🎬 Book to Cinema</h1>
+            <p>Chuyển đổi sách thành phim điện ảnh bằng AI</p>
+        </header>
+
+        <div class="main-grid">
+            <!-- Left Column: Input -->
+            <div>
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-icon">📚</div>
+                        <h2>Tải lên tài liệu</h2>
+                    </div>
+
+                    <form id="cinemaForm">
+                        <div class="form-group">
+                            <label>Tiêu đề phim</label>
+                            <input type="text" id="title" placeholder="Nhập tiêu đề..." required>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Tác giả gốc</label>
+                            <input type="text" id="author" placeholder="Tên tác giả..." value="Unknown">
+                        </div>
+
+                        <div class="form-group">
+                            <label>File sách (PDF, DOCX, TXT, EPUB)</label>
+                            <div class="file-upload" id="fileUpload">
+                                <div class="file-upload-icon">📁</div>
+                                <p>Kéo thả file hoặc click để chọn</p>
+                                <p style="font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.5rem;">
+                                    Hỗ trợ: PDF, DOCX, TXT, EPUB
+                                </p>
+                                <input type="file" id="fileInput" accept=".pdf,.docx,.txt,.epub">
+                            </div>
+                            <p id="fileName" style="margin-top: 0.5rem; color: var(--primary);"></p>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Hoặc dán nội dung văn bản</label>
+                            <textarea id="textContent" placeholder="Dán nội dung sách tại đây..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Phong cách điện ảnh</label>
+                            <div class="style-grid">
+                                <div class="style-option selected" data-style="blockbuster">
+                                    <div class="icon">🎥</div>
+                                    <div class="name">Blockbuster</div>
+                                </div>
+                                <div class="style-option" data-style="anime">
+                                    <div class="icon">🎌</div>
+                                    <div class="name">Anime</div>
+                                </div>
+                                <div class="style-option" data-style="noir">
+                                    <div class="icon">🕵️</div>
+                                    <div class="name">Noir</div>
+                                </div>
+                                <div class="style-option" data-style="documentary">
+                                    <div class="icon">🎞️</div>
+                                    <div class="name">Documentary</div>
+                                </div>
+                                <div class="style-option" data-style="fantasy">
+                                    <div class="icon">🧙</div>
+                                    <div class="name">Fantasy</div>
+                                </div>
+                                <div class="style-option" data-style="horror">
+                                    <div class="icon">👻</div>
+                                    <div class="name">Horror</div>
+                                </div>
+                                <div class="style-option" data-style="romantic">
+                                    <div class="icon">💕</div>
+                                    <div class="name">Romantic</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span>🚀</span>
+                            <span>Bắt đầu chuyển đổi</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right Column: Progress & Results -->
+            <div>
+                <!-- Progress Card -->
+                <div class="card progress-section" id="progressSection">
+                    <div class="card-header">
+                        <div class="card-icon">⚡</div>
+                        <h2>Tiến trình xử lý</h2>
+                    </div>
+
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressBar" style="width: 0%"></div>
+                    </div>
+                    <div class="progress-text">
+                        <span id="progressPercent">0%</span>
+                        <span id="progressStage">Đang khởi tạo...</span>
+                    </div>
+
+                    <div class="stage-list">
+                        <div class="stage-item" data-stage="chunking">
+                            <div class="stage-icon">1</div>
+                            <div class="stage-info">
+                                <div class="stage-name">Chia phân cảnh</div>
+                                <div class="stage-desc">Phân tích và chia văn bản thành các scene</div>
+                            </div>
+                        </div>
+                        <div class="stage-item" data-stage="adapting">
+                            <div class="stage-icon">2</div>
+                            <div class="stage-info">
+                                <div class="stage-name">Trích xuất điện ảnh</div>
+                                <div class="stage-desc">Nhận diện nhân vật, bối cảnh, hành động</div>
+                            </div>
+                        </div>
+                        <div class="stage-item" data-stage="writing_screenplay">
+                            <div class="stage-icon">3</div>
+                            <div class="stage-info">
+                                <div class="stage-name">Viết kịch bản</div>
+                                <div class="stage-desc">Chuyển đổi sang format screenplay</div>
+                            </div>
+                        </div>
+                        <div class="stage-item" data-stage="generating_prompts">
+                            <div class="stage-icon">4</div>
+                            <div class="stage-info">
+                                <div class="stage-name">Tạo prompts</div>
+                                <div class="stage-desc">Sinh prompts cho AI video</div>
+                            </div>
+                        </div>
+                        <div class="stage-item" data-stage="rendering">
+                            <div class="stage-icon">5</div>
+                            <div class="stage-info">
+                                <div class="stage-name">Render video</div>
+                                <div class="stage-desc">Tạo video với Google Veo</div>
+                            </div>
+                        </div>
+                        <div class="stage-item" data-stage="assembling">
+                            <div class="stage-icon">6</div>
+                            <div class="stage-info">
+                                <div class="stage-name">Ghép phim</div>
+                                <div class="stage-desc">Nối các segment thành phim hoàn chỉnh</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Card -->
+                <div class="card results-section" id="resultsSection">
+                    <div class="result-card">
+                        <div class="result-icon">🎉</div>
+                        <h3>Hoàn thành!</h3>
+                        <p style="color: var(--text-secondary); margin-top: 0.5rem;">
+                            Phim của bạn đã sẵn sàng để tải xuống
+                        </p>
+                        <div class="download-buttons">
+                            <a href="#" class="btn-download" id="downloadVideo">
+                                <span>🎬</span> Tải Video
+                            </a>
+                            <a href="#" class="btn-download" id="downloadScreenplay">
+                                <span>📝</span> Tải Kịch bản
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Jobs History -->
+                <div class="card" style="margin-top: 1rem;">
+                    <div class="card-header">
+                        <div class="card-icon">📋</div>
+                        <h2>Lịch sử công việc</h2>
+                    </div>
+                    <div class="jobs-list" id="jobsList">
+                        <p style="color: var(--text-secondary); text-align: center; padding: 1rem;">
+                            Chưa có công việc nào
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // State
+        let selectedStyle = 'blockbuster';
+        let currentJobId = null;
+        let progressInterval = null;
+
+        // Elements
+        const form = document.getElementById('cinemaForm');
+        const fileUpload = document.getElementById('fileUpload');
+        const fileInput = document.getElementById('fileInput');
+        const fileName = document.getElementById('fileName');
+        const submitBtn = document.getElementById('submitBtn');
+        const progressSection = document.getElementById('progressSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const progressBar = document.getElementById('progressBar');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressStage = document.getElementById('progressStage');
+
+        // Style selection
+        document.querySelectorAll('.style-option').forEach(option => {
+            option.addEventListener('click', () => {
+                document.querySelectorAll('.style-option').forEach(o => o.classList.remove('selected'));
+                option.classList.add('selected');
+                selectedStyle = option.dataset.style;
+            });
+        });
+
+        // File upload
+        fileUpload.addEventListener('click', () => fileInput.click());
+        
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                fileInput.files = files;
+                fileName.textContent = `📄 ${files[0].name}`;
+            }
+        });
+
+        fileInput.addEventListener('change', () => {
+            if (fileInput.files.length > 0) {
+                fileName.textContent = `📄 ${fileInput.files[0].name}`;
+            }
+        });
+
+        // Form submit
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const title = document.getElementById('title').value;
+            const author = document.getElementById('author').value;
+            const textContent = document.getElementById('textContent').value;
+            const file = fileInput.files[0];
+
+            if (!file && !textContent) {
+                showToast('Vui lòng tải file hoặc nhập nội dung văn bản', 'error');
+                return;
+            }
+
+            // Prepare form data
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('author', author);
+            formData.append('style', selectedStyle);
+            
+            if (file) {
+                formData.append('file', file);
+            } else {
+                formData.append('text', textContent);
+            }
+
+            // Submit job
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>⏳</span><span>Đang gửi...</span>';
+
+            try {
+                const response = await fetch('/api/cinema/jobs', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create job');
+                }
+
+                const job = await response.json();
+                currentJobId = job.job_id;
+
+                // Show progress section
+                progressSection.classList.add('active');
+                resultsSection.classList.remove('active');
+
+                // Start polling for progress
+                startProgressPolling(currentJobId);
+
+                showToast('Đã bắt đầu xử lý!', 'success');
+
+            } catch (error) {
+                showToast('Lỗi: ' + error.message, 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<span>🚀</span><span>Bắt đầu chuyển đổi</span>';
+            }
+        });
+
+        // Progress polling
+        function startProgressPolling(jobId) {
+            if (progressInterval) {
+                clearInterval(progressInterval);
+            }
+
+            progressInterval = setInterval(async () => {
+                try {
+                    const response = await fetch(`/api/cinema/jobs/${jobId}/progress`);
+                    const progress = await response.json();
+
+                    updateProgress(progress);
+
+                    if (progress.status === 'complete') {
+                        clearInterval(progressInterval);
+                        showResults(jobId);
+                    } else if (progress.status === 'failed') {
+                        clearInterval(progressInterval);
+                        showToast('Lỗi: ' + (progress.error || 'Unknown error'), 'error');
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = '<span>🚀</span><span>Bắt đầu chuyển đổi</span>';
+                    }
+                } catch (error) {
+                    console.error('Progress polling error:', error);
+                }
+            }, 2000);
+        }
+
+        function updateProgress(progress) {
+            const percent = Math.round(progress.progress * 100);
+            progressBar.style.width = percent + '%';
+            progressPercent.textContent = percent + '%';
+            progressStage.textContent = getStageMessage(progress.current_stage);
+
+            // Update stage indicators
+            const stages = ['chunking', 'adapting', 'writing_screenplay', 'generating_prompts', 'rendering', 'assembling'];
+            const currentIndex = stages.indexOf(progress.current_stage);
+
+            document.querySelectorAll('.stage-item').forEach((item, index) => {
+                const icon = item.querySelector('.stage-icon');
+                if (index < currentIndex) {
+                    icon.classList.add('complete');
+                    icon.classList.remove('active');
+                    icon.textContent = '✓';
+                } else if (index === currentIndex) {
+                    icon.classList.add('active');
+                    icon.classList.remove('complete');
+                } else {
+                    icon.classList.remove('complete', 'active');
+                    icon.textContent = index + 1;
+                }
+            });
+        }
+
+        function getStageMessage(stage) {
+            const messages = {
+                'chunking': 'Đang chia văn bản thành phân cảnh...',
+                'adapting': 'Đang trích xuất yếu tố điện ảnh...',
+                'writing_screenplay': 'Đang viết kịch bản...',
+                'generating_prompts': 'Đang tạo prompts cho AI...',
+                'rendering': 'Đang render video với AI...',
+                'assembling': 'Đang ghép thành phim hoàn chỉnh...',
+                'complete': 'Hoàn thành!',
+            };
+            return messages[stage] || stage;
+        }
+
+        function showResults(jobId) {
+            resultsSection.classList.add('active');
+            progressSection.classList.remove('active');
+
+            document.getElementById('downloadVideo').href = `/api/cinema/jobs/${jobId}/video`;
+            document.getElementById('downloadScreenplay').href = `/api/cinema/jobs/${jobId}/screenplay`;
+
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<span>🚀</span><span>Tạo phim mới</span>';
+
+            loadJobsList();
+        }
+
+        // Load jobs list
+        async function loadJobsList() {
+            try {
+                const response = await fetch('/api/cinema/jobs');
+                const data = await response.json();
+
+                const jobsList = document.getElementById('jobsList');
+                
+                if (data.jobs.length === 0) {
+                    jobsList.innerHTML = '<p style="color: var(--text-secondary); text-align: center; padding: 1rem;">Chưa có công việc nào</p>';
+                    return;
+                }
+
+                jobsList.innerHTML = data.jobs.map(job => `
+                    <div class="job-item" onclick="viewJob('${job.job_id}')">
+                        <div class="job-status ${job.status}"></div>
+                        <div class="job-info">
+                            <div class="job-id">${job.job_id}</div>
+                            <div class="job-date">${new Date(job.created_at).toLocaleString('vi-VN')}</div>
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.875rem;">
+                            ${Math.round(job.progress * 100)}%
+                        </div>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load jobs:', error);
+            }
+        }
+
+        function viewJob(jobId) {
+            window.location.href = `/api/cinema/jobs/${jobId}`;
+        }
+
+        // Toast
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = `toast ${type} show`;
+            setTimeout(() => toast.classList.remove('show'), 3000);
+        }
+
+        // Initial load
+        loadJobsList();
+    </script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+[
+  {
+    "scene_id": "adapted_scene_670d0ace",
+    "provider": "mock",
+    "prompt": "High quality anime style, Studio Ghibli aesthetic, vibrant colors, detailed backgrounds, Japanese animation,, , anime art style, expressive characters, beautiful scenery, masterpiece anime quality",
+    "negative_prompt": "3D render, realistic, western cartoon, low quality, poorly drawn, bad anatomy",
+    "duration_seconds": 30,
+    "aspect_ratio": "16:9",
+    "style_preset": "anime",
+    "provider_params": {}
+  }
+]

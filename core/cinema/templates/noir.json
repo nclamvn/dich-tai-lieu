@@ -1,0 +1,34 @@
+{
+    "name": "Film Noir",
+    "description": "Classic 1940s detective film aesthetic with high contrast black and white",
+    "visual_style": "Film noir, black and white, high contrast, deep shadows, venetian blind lighting",
+    "color_grading": "Monochrome, high contrast black and white, occasional color accent",
+    "lighting_style": "Low-key lighting, harsh shadows, single source dramatic lighting",
+    "camera_movements": [
+        "static dramatic framing",
+        "slow push in",
+        "dutch angle",
+        "silhouette shots",
+        "shadow play"
+    ],
+    "default_shots": [
+        "silhouette in doorway",
+        "venetian blind shadows on face",
+        "low angle intimidating shot",
+        "reflection in mirror"
+    ],
+    "reference_films": [
+        "The Maltese Falcon",
+        "Double Indemnity",
+        "The Third Man",
+        "Chinatown",
+        "Sin City"
+    ],
+    "aspect_ratio": "4:3",
+    "default_fps": 24,
+    "default_transitions": "fade_black",
+    "prompt_prefix": "Film noir style, 1940s detective aesthetic, black and white, high contrast, dramatic shadows,",
+    "prompt_suffix": "moody atmosphere, venetian blind lighting, classic Hollywood noir, mysterious and suspenseful",
+    "negative_prompt": "color, bright, cheerful, modern, flat lighting, low contrast",
+    "music_style": "Jazz, saxophone, smoky bar atmosphere, 1940s big band"
+}

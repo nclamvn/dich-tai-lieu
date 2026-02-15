@@ -1,0 +1,34 @@
+{
+    "name": "Cinematic Blockbuster",
+    "description": "Hollywood-style epic cinematography with dramatic visuals",
+    "visual_style": "Epic cinematic, dramatic lighting, lens flares, shallow depth of field",
+    "color_grading": "Teal and orange color grade, high contrast",
+    "lighting_style": "Dramatic three-point lighting, volumetric rays",
+    "camera_movements": [
+        "sweeping crane shots",
+        "slow motion impact",
+        "dolly zoom",
+        "tracking shots",
+        "aerial establishing shots"
+    ],
+    "default_shots": [
+        "wide establishing shot",
+        "medium two-shot",
+        "close-up on emotion",
+        "over-the-shoulder"
+    ],
+    "reference_films": [
+        "Inception",
+        "Interstellar",
+        "Mad Max: Fury Road",
+        "The Dark Knight",
+        "Dune"
+    ],
+    "aspect_ratio": "2.39:1",
+    "default_fps": 24,
+    "default_transitions": "crossfade",
+    "prompt_prefix": "Cinematic Hollywood blockbuster style, epic cinematography, high production value, IMAX quality,",
+    "prompt_suffix": "8K resolution, lens flares, dramatic lighting, cinematic color grading, professional filmmaking",
+    "negative_prompt": "low quality, amateur, shaky camera, poor lighting, low budget, home video",
+    "music_style": "Orchestral, Hans Zimmer style, epic brass and strings"
+}

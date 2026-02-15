@@ -1,0 +1,34 @@
+{
+    "name": "Documentary",
+    "description": "Realistic documentary style with natural lighting and observational camera work",
+    "visual_style": "Documentary realism, natural lighting, authentic environments, handheld camera feel",
+    "color_grading": "Natural color grading, slightly desaturated, authentic look",
+    "lighting_style": "Natural available light, soft diffused lighting, realistic",
+    "camera_movements": [
+        "handheld observational",
+        "slow zoom in",
+        "panning across scene",
+        "static interview frame",
+        "following subject"
+    ],
+    "default_shots": [
+        "observational wide shot",
+        "intimate close-up",
+        "establishing location shot",
+        "candid moment"
+    ],
+    "reference_films": [
+        "Planet Earth",
+        "Free Solo",
+        "Won't You Be My Neighbor",
+        "Jiro Dreams of Sushi",
+        "The Social Dilemma"
+    ],
+    "aspect_ratio": "16:9",
+    "default_fps": 24,
+    "default_transitions": "cut",
+    "prompt_prefix": "Documentary style, realistic, natural lighting, authentic, observational cinematography,",
+    "prompt_suffix": "photorealistic, candid moments, journalistic quality, real world setting",
+    "negative_prompt": "fantasy, surreal, artificial, staged, special effects, CGI",
+    "music_style": "Ambient, subtle underscore, natural sounds, minimalist piano"
+}
