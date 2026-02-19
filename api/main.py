@@ -367,6 +367,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+
+# BIZ-04: Audit logging middleware
+@app.middleware("http")
+async def audit_logging_middleware(request: Request, call_next):
+    response = await call_next(request)
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        try:
+            from core.services.audit_log import get_audit_logger
+            audit = get_audit_logger()
+            audit.log(
+                action=f"{request.method} {request.url.path}",
+                user_id=getattr(request.state, "user_id", "anonymous"),
+                resource_type="api",
+                resource_id=str(request.url.path),
+                ip_address=request.client.host if request.client else None,
+            )
+        except Exception:
+            pass
+    return response
+
+
 # Phase 4.1: Include Author Mode routes
 app.include_router(author.router)
 app.include_router(editor_router)

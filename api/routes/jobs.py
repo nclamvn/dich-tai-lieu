@@ -72,6 +72,10 @@ async def create_job(
     """
     limiter = request.app.state.limiter
 
+    # QA-03: Same-language validation
+    if job_data.source_lang == job_data.target_lang:
+        raise HTTPException(status_code=400, detail=f"Source and target language cannot be the same ('{job_data.source_lang}')")
+
     # Check quota
     try:
         from core.usage.tracker import UsageTracker

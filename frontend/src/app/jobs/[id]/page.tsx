@@ -15,6 +15,7 @@ import {
   BookOpen,
   XCircle,
   RotateCcw,
+  Copy,
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -180,6 +181,16 @@ export default function JobDetailPage({
                 {t.jobs.restart || "Restart"}
               </Button>
             )}
+            {job.status === "completed" && (
+              <Link
+                href={`/translate?source=${encodeURIComponent(job.source_language)}&target=${encodeURIComponent(job.target_language)}&format=${encodeURIComponent(job.output_format)}`}
+              >
+                <Button variant="ghost" size="sm">
+                  <Copy className="w-4 h-4 mr-1" strokeWidth={1.5} />
+                  {t.jobs.clone || "Clone"}
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -194,12 +205,27 @@ export default function JobDetailPage({
             >
               {job._currentStage || t.jobs.processing}
             </span>
-            <span
-              className="text-sm"
-              style={{ color: "var(--fg-secondary)" }}
-            >
-              {Math.round(job.progress)}%
-            </span>
+            <div className="flex items-center gap-3">
+              {job.progress > 2 && job.created_at && (() => {
+                const elapsed = (Date.now() - new Date(job.created_at).getTime()) / 1000;
+                const totalEstimate = elapsed / (job.progress / 100);
+                const remaining = Math.max(0, totalEstimate - elapsed);
+                const mins = Math.floor(remaining / 60);
+                const secs = Math.floor(remaining % 60);
+                const eta = mins > 0 ? `~${mins}m ${secs}s` : `~${secs}s`;
+                return (
+                  <span className="text-xs" style={{ color: "var(--fg-tertiary)" }}>
+                    {eta} {t.jobs.remaining || "remaining"}
+                  </span>
+                );
+              })()}
+              <span
+                className="text-sm"
+                style={{ color: "var(--fg-secondary)" }}
+              >
+                {Math.round(job.progress)}%
+              </span>
+            </div>
           </div>
           <div
             className="h-2 overflow-hidden"

@@ -91,6 +91,7 @@ export const translations = {
       noResults: "No matching jobs found",
       loadMore: "Load More",
       remaining: "remaining",
+      clone: "Clone",
     },
     translate: {
       title: "Translate Document",
@@ -140,6 +141,9 @@ export const translations = {
       calls: "Calls",
       tokens: "Tokens",
       avgQuality: "Avg Quality",
+      activeJobs: "Active Jobs",
+      recentJobs: "Recent Jobs",
+      viewAll: "View all",
     },
     glossary: {
       title: "Glossaries",
@@ -513,6 +517,7 @@ export const translations = {
       edited: "Edited",
       warnings: "Warnings",
       qualityScore: "Quality",
+      revert: "Revert",
     },
     common: {
       loading: "Loading...",
@@ -616,6 +621,7 @@ export const translations = {
       noResults: "Kh\u00F4ng t\u00ECm th\u1EA5y c\u00F4ng vi\u1EC7c ph\u00F9 h\u1EE3p",
       loadMore: "Xem th\u00EAm",
       remaining: "c\u00F2n l\u1EA1i",
+      clone: "Nh\u00E2n b\u1EA3n",
     },
     translate: {
       title: "D\u1ECBch t\u00E0i li\u1EC7u",
@@ -665,6 +671,9 @@ export const translations = {
       calls: "L\u01B0\u1EE3t g\u1ECDi",
       tokens: "Token",
       avgQuality: "Ch\u1EA5t l\u01B0\u1EE3ng TB",
+      activeJobs: "\u0110ang x\u1EED l\u00FD",
+      recentJobs: "Ho\u00E0n th\u00E0nh g\u1EA7n \u0111\u00E2y",
+      viewAll: "Xem t\u1EA5t c\u1EA3",
     },
     glossary: {
       title: "Thu\u1EADt ng\u1EEF",
@@ -1023,6 +1032,7 @@ export const translations = {
       edited: "\u0110\u00E3 s\u1EEDa",
       warnings: "C\u1EA3nh b\u00E1o",
       qualityScore: "Ch\u1EA5t l\u01B0\u1EE3ng",
+      revert: "Ho\u00E0n t\u00E1c",
     },
     common: {
       loading: "\u0110ang t\u1EA3i...",

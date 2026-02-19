@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Upload, FileText, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -37,11 +37,20 @@ export default function TranslatePage() {
   const { data: enginesData } = useTranslationEngines();
   const { data: glossaryData } = useGlossaries(sourceLang, targetLang);
 
-  // Apply user's default languages from settings (once on load)
+  // Apply clone params from URL (e.g., /translate?source=en&target=vi&format=pdf)
+  const searchParams = useSearchParams();
+  const cloneSource = searchParams.get("source");
+  const cloneTarget = searchParams.get("target");
+  const cloneFormat = searchParams.get("format");
+
+  // Apply user's default languages from settings (once on load), then override with clone params
   useEffect(() => {
-    if (generalSettings?.source_lang) setSourceLang(generalSettings.source_lang);
-    if (generalSettings?.target_lang) setTargetLang(generalSettings.target_lang);
-  }, [generalSettings?.source_lang, generalSettings?.target_lang]);
+    if (cloneSource) setSourceLang(cloneSource);
+    else if (generalSettings?.source_lang) setSourceLang(generalSettings.source_lang);
+    if (cloneTarget) setTargetLang(cloneTarget);
+    else if (generalSettings?.target_lang) setTargetLang(generalSettings.target_lang);
+    if (cloneFormat) setSelectedFormats([cloneFormat]);
+  }, [generalSettings?.source_lang, generalSettings?.target_lang, cloneSource, cloneTarget, cloneFormat]);
 
   const profileList = profilesData?.profiles || [];
   const glossaryList = glossaryData?.glossaries || [];

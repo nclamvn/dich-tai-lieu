@@ -29,14 +29,17 @@ async def upload_file(
     """
     Upload file for translation
 
-    Accepts: TXT, PDF, DOCX, SRT
-    Max size: 50MB
+    Accepts: TXT, PDF, DOCX, SRT, MD, EPUB
+    Max size: 50MB (configurable)
     Returns: Server file path for job creation
+
+    BIZ-01: Streaming upload (1MB chunks, incremental size check)
+    BIZ-02: MIME magic-byte validation after write
     """
     limiter = request.app.state.limiter
 
-    # Validate file type
-    allowed_extensions = [".txt", ".pdf", ".docx", ".srt"]
+    # Validate file type (BIZ-01: added .md and .epub)
+    allowed_extensions = [".txt", ".pdf", ".docx", ".srt", ".md", ".epub"]
 
     file_ext = os.path.splitext(file.filename)[1].lower()
     if file_ext not in allowed_extensions:
@@ -45,14 +48,9 @@ async def upload_file(
             detail=f"Invalid file type. Allowed: {', '.join(allowed_extensions)}"
         )
 
-    # Read file
-    contents = await file.read()
-
-    # Check size (configurable via MAX_UPLOAD_SIZE_MB env var, default 50MB)
+    # Max size (configurable via MAX_UPLOAD_SIZE_MB env var, default 50MB)
     max_size_mb = int(os.getenv("MAX_UPLOAD_SIZE_MB", "50"))
     max_size_bytes = max_size_mb * 1024 * 1024
-    if len(contents) > max_size_bytes:
-        raise HTTPException(status_code=400, detail=f"File too large (max {max_size_mb}MB)")
 
     # Create uploads directory if not exists
     upload_dir = Path(__file__).parent.parent.parent / "uploads"
@@ -62,14 +60,52 @@ async def upload_file(
     unique_filename = f"{uuid.uuid4().hex}_{file.filename}"
     file_path = upload_dir / unique_filename
 
-    # Save file
-    with open(file_path, "wb") as f:
-        f.write(contents)
+    # BIZ-01: Stream file to disk in 1MB chunks with incremental size check
+    CHUNK_SIZE = 1024 * 1024  # 1MB
+    total_written = 0
+    try:
+        with open(file_path, "wb") as f:
+            while True:
+                chunk = await file.read(CHUNK_SIZE)
+                if not chunk:
+                    break
+                total_written += len(chunk)
+                if total_written > max_size_bytes:
+                    # Clean up oversized file
+                    f.close()
+                    file_path.unlink(missing_ok=True)
+                    raise HTTPException(status_code=400, detail=f"File too large (max {max_size_mb}MB)")
+                f.write(chunk)
+    except HTTPException:
+        raise
+    except Exception as e:
+        file_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+
+    # BIZ-02: Validate MIME magic bytes after writing
+    try:
+        with open(file_path, "rb") as f:
+            magic_bytes = f.read(8)
+
+        # PDF must start with %PDF
+        if file_ext == ".pdf" and not magic_bytes.startswith(b"%PDF"):
+            file_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=400, detail="Invalid PDF file (magic bytes mismatch)")
+
+        # DOCX and EPUB are ZIP archives — must start with PK
+        if file_ext in (".docx", ".epub") and not magic_bytes.startswith(b"PK"):
+            file_path.unlink(missing_ok=True)
+            raise HTTPException(status_code=400, detail=f"Invalid {file_ext.upper()} file (magic bytes mismatch)")
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.warning(f"MIME validation skipped: {e}")
 
     return {
         "filename": file.filename,
         "server_path": str(file_path),
-        "size": len(contents),
+        "size": total_written,
         "content_type": file.content_type
     }
 

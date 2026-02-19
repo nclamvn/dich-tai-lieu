@@ -79,6 +79,18 @@ async def get_cost_metrics(time_period_hours: int = 24):
         raise HTTPException(status_code=500, detail=f"Failed to get cost metrics: {str(e)}")
 
 
+@router.get("/api/monitoring/audit")
+async def get_audit_log(limit: int = 50):
+    """Get recent audit log entries."""
+    try:
+        from core.services.audit_log import get_audit_logger
+        audit = get_audit_logger()
+        entries = audit.get_recent(limit=limit)
+        return {"entries": entries, "count": len(entries)}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to get audit log: {str(e)}")
+
+
 @router.get("/api/monitoring/errors")
 async def get_error_stats(time_period_hours: int = 24):
     """

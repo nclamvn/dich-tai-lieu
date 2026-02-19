@@ -17,6 +17,7 @@ import {
   Keyboard,
   Database,
   Zap,
+  Undo2,
 } from "lucide-react";
 
 export default function EditorPage({ params }: { params: Promise<{ jobId: string }> }) {
@@ -411,6 +412,24 @@ export default function EditorPage({ params }: { params: Promise<{ jobId: string
                             <ChevronDown className="w-3.5 h-3.5" style={{ color: "var(--fg-icon)" }} />
                           </button>
                         </div>
+                        {isModified && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setEditValues((prev) => ({ ...prev, [seg.chunk_id]: seg.translated }));
+                            }}
+                            className="flex items-center gap-1.5 px-2 py-1.5 text-xs"
+                            style={{
+                              borderRadius: "var(--radius-sm)",
+                              border: "1px solid var(--border-default)",
+                              color: "var(--fg-secondary)",
+                            }}
+                            title={t.editor.revert || "Revert"}
+                          >
+                            <Undo2 className="w-3.5 h-3.5" />
+                            {t.editor.revert || "Revert"}
+                          </button>
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();

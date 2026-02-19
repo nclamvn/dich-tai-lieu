@@ -2,12 +2,12 @@
 
 import { useState, useMemo } from "react";
 import Link from "next/link";
-import { List, FileText, Trash2, Download, CheckSquare, Square, Loader2, Search } from "lucide-react";
+import { List, FileText, Trash2, Download, CheckSquare, Square, Loader2, Search, XCircle } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
-import { useJobs, useBulkDeleteJobs } from "@/lib/api/hooks";
+import { useJobs, useBulkDeleteJobs, useCancelJob } from "@/lib/api/hooks";
 import { jobs as jobsApi } from "@/lib/api/client";
 import { formatDate, statusVariant } from "@/lib/utils";
 import { useLocale } from "@/lib/i18n";
@@ -18,6 +18,7 @@ const JOBS_PER_PAGE = 20;
 export default function JobsPage() {
   const { data, isLoading } = useJobs({ limit: 200 });
   const bulkDelete = useBulkDeleteJobs();
+  const cancelJob = useCancelJob();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
@@ -81,6 +82,33 @@ export default function JobsPage() {
     bulkDelete.mutate([...selected], {
       onSuccess: () => setSelected(new Set()),
     });
+  };
+
+  const handleBulkCancel = async () => {
+    const activeIds = [...selected].filter((id) => {
+      const job = allJobs.find((j) => j.id === id);
+      return job && (job.status === "processing" || job.status === "pending");
+    });
+    if (activeIds.length === 0) return;
+    if (!confirm(`Cancel ${activeIds.length} active job(s)?`)) return;
+    for (const id of activeIds) {
+      cancelJob.mutate(id);
+    }
+    setSelected(new Set());
+  };
+
+  const handleBulkDownload = async () => {
+    const completedJobs = [...selected]
+      .map((id) => allJobs.find((j) => j.id === id))
+      .filter((j) => j && j.status === "completed" && j._outputPaths && Object.keys(j._outputPaths).length > 0);
+    for (const job of completedJobs) {
+      if (!job?._outputPaths) continue;
+      const fmt = Object.keys(job._outputPaths)[0];
+      const filename = job._outputPaths[fmt].split("/").pop() || `output.${fmt}`;
+      try {
+        await jobsApi.download(job.id, fmt, filename);
+      } catch { /* silently skip */ }
+    }
   };
 
   const handleDownload = async (jobId: string, format: string, outputPath: string, e: React.MouseEvent) => {
@@ -207,6 +235,24 @@ export default function JobsPage() {
               <Trash2 className="w-3.5 h-3.5 mr-1" strokeWidth={1.5} />
               {t.jobs.delete} ({selected.size})
             </Button>
+            {[...selected].some((id) => {
+              const j = allJobs.find((job) => job.id === id);
+              return j && (j.status === "processing" || j.status === "pending");
+            }) && (
+              <Button size="sm" variant="secondary" onClick={handleBulkCancel}>
+                <XCircle className="w-3.5 h-3.5 mr-1" strokeWidth={1.5} />
+                {t.jobs.cancel || "Cancel"}
+              </Button>
+            )}
+            {[...selected].some((id) => {
+              const j = allJobs.find((job) => job.id === id);
+              return j && j.status === "completed" && j._outputPaths && Object.keys(j._outputPaths).length > 0;
+            }) && (
+              <Button size="sm" variant="secondary" onClick={handleBulkDownload}>
+                <Download className="w-3.5 h-3.5 mr-1" strokeWidth={1.5} />
+                {t.jobs.download || "Download"}
+              </Button>
+            )}
           </>
         )}
         <span className="ml-auto text-xs" style={{ color: "var(--fg-tertiary)" }}>

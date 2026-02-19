@@ -185,7 +185,12 @@ def read_document(file_path: Path) -> str:
         if not HAS_PDF:
             raise ValueError("pypdf not installed. Install with: pip install pypdf")
 
-        reader = PdfReader(file_path)
+        try:
+            reader = PdfReader(file_path)
+        except Exception as e:
+            if "decrypt" in str(e).lower() or "password" in str(e).lower():
+                raise ValueError("PDF is password-protected. Please remove the password and try again.")
+            raise
         text_parts = []
         for page in reader.pages:
             text_parts.append(page.extract_text())

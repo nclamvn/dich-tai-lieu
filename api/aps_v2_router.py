@@ -94,6 +94,10 @@ async def publish_file(
     - `academic` - A4, formal styling, 1.5 line spacing, running headers
     - `business` - A4 narrow margins, sans-serif, blue accents
     """
+    # QA-03: Same-language validation
+    if source_language == target_language:
+        raise HTTPException(status_code=400, detail=f"Source and target language cannot be the same ('{source_language}')")
+
     service = get_v2_service()
 
     try:
@@ -201,6 +205,10 @@ async def publish_text(request: PublishTextRequest, user_id: str = Depends(get_c
     - Text from other sources
     - Testing
     """
+    # QA-03: Same-language validation
+    if request.source_language == request.target_language:
+        raise HTTPException(status_code=400, detail=f"Source and target language cannot be the same ('{request.source_language}')")
+
     service = get_v2_service()
 
     try:
@@ -576,7 +584,7 @@ def _text_to_chapters(text: str, title: str = "Document") -> list:
     "/jobs/{job_id}/download/{format_type}",
     summary="Download output file",
 )
-async def download_output(job_id: str, format_type: str):
+async def download_output(job_id: str, format_type: str, user_id: str = Depends(get_current_user_id)):
     """
     Download the generated output file.
 
@@ -589,6 +597,11 @@ async def download_output(job_id: str, format_type: str):
     job = service.get_job(job_id)
     if not job:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}")
+
+    # BIZ-13: User isolation — ensure the job belongs to the requesting user
+    job_owner = job.get("user_id", "default_user")
+    if job_owner != "default_user" and job_owner != user_id:
+        raise HTTPException(status_code=403, detail="Access denied: this job belongs to another user")
 
     # Check job is complete
     if job["status"] != JobStatusV2.COMPLETE:

@@ -88,6 +88,12 @@ class JobRepository:
                 ON aps_jobs(user_id)
             """)
 
+            # STR-04: Migration — add deleted_at column for soft deletes
+            try:
+                conn.execute("ALTER TABLE aps_jobs ADD COLUMN deleted_at TEXT")
+            except Exception:
+                pass  # Column already exists
+
             logger.info("Database schema initialized")
 
     def save(self, job: Dict) -> None:
@@ -148,10 +154,10 @@ class JobRepository:
             ))
 
     def get(self, job_id: str) -> Optional[Dict]:
-        """Get a job by ID."""
+        """Get a job by ID (excludes soft-deleted)."""
         with self._get_connection() as conn:
             row = conn.execute(
-                "SELECT * FROM aps_jobs WHERE job_id = ?",
+                "SELECT * FROM aps_jobs WHERE job_id = ? AND deleted_at IS NULL",
                 (job_id,)
             ).fetchone()
 
@@ -161,29 +167,31 @@ class JobRepository:
             return self._row_to_dict(row)
 
     def get_pending_jobs(self) -> List[Dict]:
-        """Get all pending/running jobs for recovery."""
+        """Get all pending/running jobs for recovery (excludes soft-deleted)."""
         with self._get_connection() as conn:
             rows = conn.execute("""
                 SELECT * FROM aps_jobs
                 WHERE status IN ('pending', 'running', 'vision_reading', 'translating')
+                  AND deleted_at IS NULL
                 ORDER BY created_at ASC
             """).fetchall()
 
             return [self._row_to_dict(row) for row in rows]
 
     def get_all_jobs(self, limit: int = 50, user_id: Optional[str] = None) -> List[Dict]:
-        """Get all jobs, most recent first. Optionally filter by user_id."""
+        """Get all jobs, most recent first (excludes soft-deleted). Optionally filter by user_id."""
         with self._get_connection() as conn:
             if user_id:
                 rows = conn.execute("""
                     SELECT * FROM aps_jobs
-                    WHERE user_id = ?
+                    WHERE user_id = ? AND deleted_at IS NULL
                     ORDER BY created_at DESC
                     LIMIT ?
                 """, (user_id, limit)).fetchall()
             else:
                 rows = conn.execute("""
                     SELECT * FROM aps_jobs
+                    WHERE deleted_at IS NULL
                     ORDER BY created_at DESC
                     LIMIT ?
                 """, (limit,)).fetchall()
@@ -191,11 +199,29 @@ class JobRepository:
             return [self._row_to_dict(row) for row in rows]
 
     def delete(self, job_id: str) -> bool:
-        """Delete a job."""
+        """Soft-delete a job (STR-04)."""
         with self._get_connection() as conn:
             cursor = conn.execute(
-                "DELETE FROM aps_jobs WHERE job_id = ?",
+                "UPDATE aps_jobs SET deleted_at = ?, updated_at = ? WHERE job_id = ? AND deleted_at IS NULL",
+                (datetime.now().isoformat(), datetime.now().isoformat(), job_id)
+            )
+            return cursor.rowcount > 0
+
+    def purge(self, job_id: str) -> bool:
+        """Permanently delete a soft-deleted job (STR-04)."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "DELETE FROM aps_jobs WHERE job_id = ? AND deleted_at IS NOT NULL",
                 (job_id,)
+            )
+            return cursor.rowcount > 0
+
+    def restore(self, job_id: str) -> bool:
+        """Restore a soft-deleted job (STR-04)."""
+        with self._get_connection() as conn:
+            cursor = conn.execute(
+                "UPDATE aps_jobs SET deleted_at = NULL, updated_at = ? WHERE job_id = ? AND deleted_at IS NOT NULL",
+                (datetime.now().isoformat(), job_id)
             )
             return cursor.rowcount > 0
 

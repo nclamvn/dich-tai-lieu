@@ -61,12 +61,12 @@ class PublishRequest(BaseModel):
 
 class PublishTextRequest(BaseModel):
     """Request to publish text directly (no file upload)"""
-    content: str = Field(..., description="Document content to publish")
-    source_language: str = Field(default="en")
-    target_language: str = Field(default="vi")
-    profile_id: str = Field(default="novel")
+    content: str = Field(..., max_length=5_000_000, description="Document content to publish")
+    source_language: str = Field(default="en", max_length=10)
+    target_language: str = Field(default="vi", max_length=10)
+    profile_id: str = Field(default="novel", max_length=100)
     output_formats: List[str] = Field(default=["docx"])
-    filename: str = Field(default="document", description="Base filename for outputs")
+    filename: str = Field(default="document", max_length=500, description="Base filename for outputs")
     docx_template: str = Field(
         default="auto",
         description="DOCX template: 'ebook', 'academic', 'business', or 'auto'"

@@ -26,12 +26,21 @@ logger = get_logger(__name__)
 
 SETTINGS_FILE = Path(__file__).resolve().parent.parent.parent / "data" / "settings.json"
 
-# Optional Fernet encryption for API keys
+# Optional Fernet encryption for API keys (BIZ-11: auto-generate if missing)
 _fernet = None
 try:
     from cryptography.fernet import Fernet
 
     key = os.environ.get("SETTINGS_ENCRYPTION_KEY")
+    if not key:
+        key_file = Path(__file__).resolve().parent.parent.parent / "data" / ".encryption_key"
+        if key_file.exists():
+            key = key_file.read_text().strip()
+        else:
+            key = Fernet.generate_key().decode()
+            key_file.parent.mkdir(parents=True, exist_ok=True)
+            key_file.write_text(key)
+            logger.info("Generated new encryption key for settings")
     if key:
         _fernet = Fernet(key.encode() if isinstance(key, str) else key)
 except ImportError:

@@ -12,11 +12,11 @@ from core.job_queue import JobPriority
 
 class JobCreate(BaseModel):
     """Request model for creating a job"""
-    job_name: str = Field(..., description="Human-readable job name")
-    input_file: str = Field(..., description="Path to input file")
-    output_file: str = Field(..., description="Path to output file")
-    source_lang: str = Field(default="en", description="Source language code")
-    target_lang: str = Field(default="vi", description="Target language code")
+    job_name: str = Field(..., max_length=500, description="Human-readable job name")
+    input_file: str = Field(..., max_length=1000, description="Path to input file")
+    output_file: str = Field(..., max_length=1000, description="Path to output file")
+    source_lang: str = Field(default="en", max_length=10, description="Source language code")
+    target_lang: str = Field(default="vi", max_length=10, description="Target language code")
     priority: int = Field(default=JobPriority.NORMAL, description="Job priority (1-50)")
     provider: str = Field(default="openai", description="AI provider")
     model: str = Field(default="gpt-4o-mini", description="Model name")
