@@ -14,6 +14,7 @@ import {
   Upload,
   X,
   FileText,
+  Search,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -69,6 +70,7 @@ export default function WritePage() {
   const [targetPages, setTargetPages] = useState(200);
   const [styleNotes, setStyleNotes] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const modeLabels: Partial<Record<InputMode, { label: string; desc: string }>> = {
     seeds: { label: t.write.modeSeeds, desc: t.write.modeSeedsDesc },
@@ -131,6 +133,11 @@ export default function WritePage() {
   };
 
   const bookList: BookListItem[] = projects || [];
+  const filteredBooks = searchQuery.trim()
+    ? bookList.filter((b) =>
+        (b.title || b.id).toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : bookList;
 
   return (
     <div className="space-y-8">
@@ -350,10 +357,35 @@ export default function WritePage() {
       {/* Project List */}
       {bookList.length > 0 ? (
         <div className="space-y-3">
-          <h2 className="text-lg font-semibold" style={{ color: "var(--fg-primary)" }}>
-            {t.write.yourProjects}
-          </h2>
-          {bookList.map((book) => (
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold" style={{ color: "var(--fg-primary)" }}>
+              {t.write.yourProjects}
+            </h2>
+            {bookList.length > 3 && (
+              <div className="relative">
+                <Search
+                  className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5"
+                  style={{ color: "var(--fg-tertiary)" }}
+                  strokeWidth={1.5}
+                />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={t.write.searchPlaceholder || "Search projects..."}
+                  className="pl-8 pr-3 py-1.5 text-sm"
+                  style={{
+                    width: 200,
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--border-default)",
+                    background: "var(--bg-primary)",
+                    color: "var(--fg-primary)",
+                  }}
+                />
+              </div>
+            )}
+          </div>
+          {filteredBooks.map((book) => (
             <Link key={book.id} href={`/write/${book.id}`} className="block no-underline">
               <Card hover>
                 <CardContent className="py-4">

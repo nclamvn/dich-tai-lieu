@@ -103,6 +103,12 @@ class Settings(BaseSettings):
     streaming_partial_export: bool = True  # Export partial files per batch (DOCX, PDF, TXT)
     streaming_memory_limit_mb: int = 500  # Max memory per batch (monitoring)
 
+    # BIZ-20: Configurable cost rates & budget alerts
+    cost_rate_input_per_1k: float = 0.003  # $ per 1K input tokens (default: GPT-4 class)
+    cost_rate_output_per_1k: float = 0.006  # $ per 1K output tokens
+    budget_limit_daily_usd: float = 0.0  # 0 = no limit; set e.g. 10.0 for $10/day
+    budget_alert_threshold: float = 0.8  # Alert at 80% of daily budget
+
     # Translation Memory
     tm_enabled: bool = True
     tm_fuzzy_threshold: float = 0.85  # 85% similarity for fuzzy matches

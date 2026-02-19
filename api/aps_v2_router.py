@@ -287,6 +287,14 @@ async def bulk_delete_jobs(job_ids: List[str] = Body(...)):
             deleted += 1
         except Exception:
             skipped.append(job_id)
+
+    # QA-20: Reclaim space after bulk delete
+    if deleted >= 5:
+        try:
+            service._repo.vacuum()
+        except Exception:
+            pass
+
     return {"deleted": deleted, "skipped": skipped}
 
 

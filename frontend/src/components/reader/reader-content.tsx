@@ -84,7 +84,7 @@ export function ReaderContentArea({
       }}
     >
       <div
-        className="max-w-[680px] mx-auto px-6 md:px-10 lg:px-16 pt-12 pb-24"
+        className="max-w-[680px] mx-auto px-4 md:px-10 lg:px-16 pt-8 md:pt-12 pb-24"
         style={{
           fontSize: FONT_SIZE_MAP[fontSize],
           fontFamily:

@@ -61,6 +61,7 @@ import time
 import sys
 import shutil
 import os
+import uuid
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -341,6 +342,36 @@ def csrf_protect_exception_handler(request: Request, exc: CsrfProtectError):
 #     csrf_protect.set_csrf_cookie(response)
 #     return response
 
+
+# QA-12: Global exception handler — sanitize error messages
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    if isinstance(exc, HTTPException):
+        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    error_id = str(uuid.uuid4())[:8]
+    logger.error(f"Unhandled error [{error_id}]: {exc}", exc_info=True)
+    return JSONResponse(status_code=500, content={
+        "detail": "An internal error occurred. Please try again or contact support.",
+        "error_id": error_id,
+    })
+
+
+# QA-16: Body size limit middleware — prevent DoS via large payloads
+@app.middleware("http")
+async def limit_body_size(request: Request, call_next):
+    content_length = request.headers.get("content-length")
+    if content_length:
+        max_size = 50 * 1024 * 1024  # 50MB default for file uploads
+        # Stricter limit for JSON text endpoints
+        if "/api/v2/publish-text" in request.url.path or "/api/v2/books" in request.url.path:
+            max_size = 5 * 1024 * 1024  # 5MB for text
+        if int(content_length) > max_size:
+            return JSONResponse(status_code=413, content={
+                "detail": f"Request too large. Max: {max_size // (1024 * 1024)}MB"
+            })
+    return await call_next(request)
+
+
 # CORS middleware - Restricted to allowed origins
 # Add more origins as needed for production
 ALLOWED_ORIGINS = [
@@ -466,6 +497,31 @@ async def startup_resume_jobs():
             logger.info(f"Startup: Resumed {resumed} pending jobs")
     except Exception as e:
         logger.error(f"Startup: Failed to resume jobs: {e}")
+
+
+@app.on_event("startup")
+async def startup_recover_stuck_v1_jobs():
+    """QA-24: Mark V1 jobs stuck as 'running' back to 'pending' on restart."""
+    # QA-17/QA-27: Start job timeout watchdog
+    try:
+        from core.services.watchdog import watchdog_loop
+        asyncio.create_task(watchdog_loop())
+        logger.info("Job timeout watchdog started")
+    except Exception as e:
+        logger.debug(f"Watchdog start skipped: {e}")
+
+    # QA-24: Recover stuck V1 jobs
+    try:
+        queue = JobQueue()
+        with queue._backend.connection() as conn:
+            cursor = conn.execute(
+                "UPDATE jobs SET status = 'pending', error = 'Server restarted — job re-queued' "
+                "WHERE status = 'running'"
+            )
+            if cursor.rowcount > 0:
+                logger.warning(f"Recovered {cursor.rowcount} stuck V1 jobs → pending")
+    except Exception as e:
+        logger.debug(f"V1 stuck job recovery skipped: {e}")
 
 
 # Batch Processing: Include batch job routes

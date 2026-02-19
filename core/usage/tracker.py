@@ -216,6 +216,39 @@ class UsageTracker:
         }
         return feature_map.get(feature, False)
 
+    # BIZ-20: Budget check
+    def check_budget(self, user_id: str = "default_user") -> Dict[str, Any]:
+        """
+        Check daily budget usage against configured limit.
+        Returns {within_budget, spent_today, limit, pct}.
+        """
+        from config.settings import Settings
+        settings = Settings()
+        limit = settings.budget_limit_daily_usd
+        if limit <= 0:
+            return {"within_budget": True, "spent_today": 0.0, "limit": 0.0, "pct": 0.0}
+
+        stats = self.get_stats(user_id, period="day")
+        spent = stats.total_cost_usd if hasattr(stats, "total_cost_usd") else 0.0
+        pct = spent / limit if limit > 0 else 0.0
+        alert = pct >= settings.budget_alert_threshold
+        return {
+            "within_budget": spent < limit,
+            "spent_today": round(spent, 4),
+            "limit": limit,
+            "pct": round(pct, 4),
+            "alert": alert,
+        }
+
+    @staticmethod
+    def compute_cost(input_tokens: int, output_tokens: int) -> float:
+        """Compute cost using configurable rates from settings."""
+        from config.settings import Settings
+        settings = Settings()
+        cost = (input_tokens / 1000) * settings.cost_rate_input_per_1k + \
+               (output_tokens / 1000) * settings.cost_rate_output_per_1k
+        return round(cost, 6)
+
 
 # Global instance
 _tracker: Optional[UsageTracker] = None

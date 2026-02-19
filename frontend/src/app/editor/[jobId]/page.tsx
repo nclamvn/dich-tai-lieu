@@ -28,6 +28,7 @@ export default function EditorPage({ params }: { params: Promise<{ jobId: string
   const [savingChunk, setSavingChunk] = useState<string | null>(null);
   const [savedChunk, setSavedChunk] = useState<string | null>(null);
   const [showKeyboard, setShowKeyboard] = useState(false);
+  const [showComparison, setShowComparison] = useState(false);
   const [tmMatches, setTmMatches] = useState<TMMatch[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -212,6 +213,19 @@ export default function EditorPage({ params }: { params: Promise<{ jobId: string
           </div>
           <div className="flex gap-2">
             <button
+              onClick={() => setShowComparison(!showComparison)}
+              className="p-2"
+              style={{
+                borderRadius: "var(--radius-sm)",
+                border: `1px solid ${showComparison ? "var(--color-notion-blue)" : "var(--border-default)"}`,
+                color: showComparison ? "var(--color-notion-blue)" : "var(--fg-secondary)",
+                background: showComparison ? "var(--accent-blue-bg)" : "transparent",
+              }}
+              title={t.editor.compare || "Compare"}
+            >
+              <span style={{ fontSize: 14 }}>&#9707;</span>
+            </button>
+            <button
               onClick={() => setShowKeyboard(!showKeyboard)}
               className="p-2"
               style={{
@@ -351,6 +365,8 @@ export default function EditorPage({ params }: { params: Promise<{ jobId: string
 
                 {/* Source + Translation */}
                 <div className={isActive ? "p-3 space-y-3" : "px-3 py-2"}>
+                  {/* UX-20: Side-by-side comparison when showComparison is on */}
+                  <div style={isActive && showComparison ? { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 } : undefined}>
                   {/* Source */}
                   <div>
                     {isActive && (
@@ -453,6 +469,7 @@ export default function EditorPage({ params }: { params: Promise<{ jobId: string
                       {currentText}
                     </p>
                   )}
+                  </div>{/* close comparison grid wrapper */}
                 </div>
               </div>
             );

@@ -2,6 +2,7 @@
 Health check and monitoring endpoints.
 """
 
+import shutil
 import time
 from typing import Optional
 
@@ -13,11 +14,19 @@ router = APIRouter(tags=["Health"])
 @router.get("/health")
 async def health_check():
     """Basic health check endpoint"""
-    return {
-        "status": "healthy",
+    # QA-21: Include disk space info and warn if low
+    total, used, free = shutil.disk_usage("/")
+    free_mb = free // (1024 * 1024)
+    status = "healthy" if free_mb > 100 else "degraded"
+    result = {
+        "status": status,
         "version": "3.3.1",
-        "timestamp": time.time()
+        "timestamp": time.time(),
+        "disk_free_mb": free_mb,
     }
+    if free_mb <= 100:
+        result["warnings"] = ["Low disk space — less than 100MB free"]
+    return result
 
 
 @router.get("/api/health/detailed")

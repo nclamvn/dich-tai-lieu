@@ -6,6 +6,7 @@ Service layer connecting API to core_v2 UniversalPublisher.
 
 import asyncio
 import logging
+import os
 import uuid
 import shutil
 import time
@@ -239,6 +240,15 @@ class APSV2Service:
         user_id: str = "default_user",  # Multi-tenancy: owner user
     ) -> Dict:
         """Create and start a new publishing job."""
+
+        # QA-15: Queue overflow protection
+        max_queued = int(os.getenv("MAX_QUEUED_JOBS", "100"))
+        active_jobs = self.repo.get_pending_jobs()
+        if len(active_jobs) >= max_queued:
+            raise ValueError(
+                f"Queue limit reached ({max_queued} active jobs). "
+                "Please wait for current jobs to complete."
+            )
 
         self._ensure_publisher()
 

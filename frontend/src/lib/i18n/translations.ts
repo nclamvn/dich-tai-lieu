@@ -92,6 +92,7 @@ export const translations = {
       loadMore: "Load More",
       remaining: "remaining",
       clone: "Clone",
+      share: "Share",
     },
     translate: {
       title: "Translate Document",
@@ -204,6 +205,7 @@ export const translations = {
         "E.g., Conversational tone, practical examples, for intermediate readers...",
       createBook: "Create Book",
       yourProjects: "Your Projects",
+      searchPlaceholder: "Search projects...",
       emptyTitle: "No book projects yet",
       emptyDesc: "Create your first AI book from a simple idea",
       backToBooks: "Back to books",
@@ -262,6 +264,7 @@ export const translations = {
       wordsPerSection: "Words/section",
       // Project list
       yourProjects: "Your Projects",
+      searchPlaceholder: "Search projects...",
       emptyTitle: "No book projects yet",
       emptyDesc: "Create your first professional book with the 9-agent pipeline",
       // Status
@@ -518,6 +521,7 @@ export const translations = {
       warnings: "Warnings",
       qualityScore: "Quality",
       revert: "Revert",
+      compare: "Compare",
     },
     common: {
       loading: "Loading...",
@@ -622,6 +626,7 @@ export const translations = {
       loadMore: "Xem th\u00EAm",
       remaining: "c\u00F2n l\u1EA1i",
       clone: "Nh\u00E2n b\u1EA3n",
+      share: "Chia s\u1EBB",
     },
     translate: {
       title: "D\u1ECBch t\u00E0i li\u1EC7u",
@@ -734,6 +739,7 @@ export const translations = {
         "VD: Gi\u1ECDng v\u0103n th\u00E2n m\u1EADt, c\u00F3 v\u00ED d\u1EE5 th\u1EF1c t\u1EBF, d\u00E0nh cho ng\u01B0\u1EDDi \u0111\u1ECDc trung c\u1EA5p...",
       createBook: "T\u1EA1o s\u00E1ch",
       yourProjects: "D\u1EF1 \u00E1n c\u1EE7a b\u1EA1n",
+      searchPlaceholder: "T\u00ECm d\u1EF1 \u00E1n...",
       emptyTitle: "Ch\u01B0a c\u00F3 d\u1EF1 \u00E1n s\u00E1ch",
       emptyDesc: "T\u1EA1o cu\u1ED1n s\u00E1ch AI \u0111\u1EA7u ti\u00EAn t\u1EEB m\u1ED9t \u00FD t\u01B0\u1EDFng \u0111\u01A1n gi\u1EA3n",
       backToBooks: "Quay l\u1EA1i danh s\u00E1ch",
@@ -789,6 +795,7 @@ export const translations = {
       wordsPerChapter: "T\u1EEB/ch\u01B0\u01A1ng",
       wordsPerSection: "T\u1EEB/m\u1EE5c",
       yourProjects: "D\u1EF1 \u00E1n c\u1EE7a b\u1EA1n",
+      searchPlaceholder: "T\u00ECm d\u1EF1 \u00E1n...",
       emptyTitle: "Ch\u01B0a c\u00F3 d\u1EF1 \u00E1n s\u00E1ch",
       emptyDesc: "T\u1EA1o cu\u1ED1n s\u00E1ch chuy\u00EAn nghi\u1EC7p \u0111\u1EA7u ti\u00EAn v\u1EDBi pipeline 9 agent",
       statusCreated: "\u0110\u00E3 t\u1EA1o",
@@ -1033,6 +1040,7 @@ export const translations = {
       warnings: "C\u1EA3nh b\u00E1o",
       qualityScore: "Ch\u1EA5t l\u01B0\u1EE3ng",
       revert: "Ho\u00E0n t\u00E1c",
+      compare: "So s\u00E1nh",
     },
     common: {
       loading: "\u0110ang t\u1EA3i...",

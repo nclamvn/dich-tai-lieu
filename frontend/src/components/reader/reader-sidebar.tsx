@@ -37,10 +37,16 @@ export function ReaderSidebar({
   quality,
   metadata,
 }: ReaderSidebarProps) {
-  const { theme, sidebarOpen } = useReaderSettings();
+  const { theme, sidebarOpen, toggleSidebar } = useReaderSettings();
   const { t } = useLocale();
 
   if (!sidebarOpen) return null;
+
+  const handleChapterClick = (i: number) => {
+    onSelectChapter(i);
+    // Close sidebar on mobile after selecting
+    if (typeof window !== "undefined" && window.innerWidth < 768) toggleSidebar();
+  };
 
   const gradeVariant = (grade?: string) => {
     if (!grade) return "default" as const;
@@ -50,8 +56,16 @@ export function ReaderSidebar({
   };
 
   return (
+    <>
+    {/* Mobile backdrop */}
+    <div
+      className="fixed inset-0 z-40 md:hidden"
+      style={{ background: "rgba(0,0,0,0.4)" }}
+      onClick={toggleSidebar}
+      aria-hidden
+    />
     <aside
-      className="w-[260px] shrink-0 flex flex-col overflow-hidden hidden md:flex"
+      className="w-[280px] md:w-[260px] shrink-0 flex flex-col overflow-hidden fixed inset-y-0 left-0 z-50 md:static md:z-auto"
       style={{
         background: SIDEBAR_BG[theme],
         borderRight: `1px solid ${SIDEBAR_BORDER[theme]}`,
@@ -75,8 +89,8 @@ export function ReaderSidebar({
         {chapters.map((ch, i) => (
           <button
             key={ch.id}
-            onClick={() => onSelectChapter(i)}
-            className="w-full text-left px-3 py-2 rounded text-sm transition-colors block cursor-pointer"
+            onClick={() => handleChapterClick(i)}
+            className="w-full text-left px-3 py-2.5 md:py-2 rounded text-sm transition-colors block cursor-pointer min-h-[44px] md:min-h-0"
             style={{
               background:
                 i === currentChapter
@@ -175,5 +189,6 @@ export function ReaderSidebar({
         </div>
       )}
     </aside>
+    </>
   );
 }

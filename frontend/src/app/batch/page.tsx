@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 
 const ACCEPTED_EXTS = [".pdf", ".docx", ".txt", ".md", ".epub"];
+const MAX_BATCH_FILES = 10;
 
 function formatFileSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -59,7 +60,7 @@ export default function BatchPage() {
     );
     setFiles((prev) => {
       const existing = new Set(prev.map((f) => f.name));
-      return [...prev, ...dropped.filter((f) => !existing.has(f.name))].slice(0, 10);
+      return [...prev, ...dropped.filter((f) => !existing.has(f.name))].slice(0, MAX_BATCH_FILES);
     });
   }, []);
 
@@ -67,7 +68,7 @@ export default function BatchPage() {
     const selected = Array.from(e.target.files || []);
     setFiles((prev) => {
       const existing = new Set(prev.map((f) => f.name));
-      return [...prev, ...selected.filter((f) => !existing.has(f.name))].slice(0, 10);
+      return [...prev, ...selected.filter((f) => !existing.has(f.name))].slice(0, MAX_BATCH_FILES);
     });
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -163,7 +164,7 @@ export default function BatchPage() {
             }}
           >
             <p className="text-sm font-medium" style={{ color: "var(--fg-primary)" }}>
-              {t.batch.selectedFiles} ({files.length})
+              {t.batch.selectedFiles} ({files.length}/{MAX_BATCH_FILES}){files.length >= MAX_BATCH_FILES && <span style={{ color: "var(--color-notion-orange)", marginLeft: 8, fontWeight: 400 }}>max reached</span>}
             </p>
             {files.map((f) => (
               <div

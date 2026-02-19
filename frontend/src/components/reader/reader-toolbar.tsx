@@ -75,13 +75,13 @@ export function ReaderToolbar({
   const { t } = useLocale();
 
   const btnCls =
-    "p-1.5 rounded transition-colors hover:opacity-70 cursor-pointer";
+    "p-2.5 md:p-1.5 rounded transition-colors hover:opacity-70 cursor-pointer min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center";
 
   const ThemeIcon = THEME_ICONS[theme];
 
   return (
     <header
-      className="h-11 flex items-center justify-between px-3 gap-2 shrink-0 select-none"
+      className="h-12 md:h-11 flex items-center justify-between px-2 md:px-3 gap-1.5 md:gap-2 shrink-0 select-none"
       style={{
         background: TOOLBAR_BG[theme],
         borderBottom: `1px solid ${TOOLBAR_BORDER[theme]}`,
@@ -115,19 +115,19 @@ export function ReaderToolbar({
         <button
           onClick={onPrevChapter}
           disabled={currentChapter <= 0}
-          className="p-1 rounded hover:opacity-70 disabled:opacity-30 cursor-pointer transition-colors"
+          className="p-2 md:p-1 rounded hover:opacity-70 disabled:opacity-30 cursor-pointer transition-colors min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center"
         >
-          <ChevronLeft className="w-3.5 h-3.5" strokeWidth={1.5} />
+          <ChevronLeft className="w-4 h-4 md:w-3.5 md:h-3.5" strokeWidth={1.5} />
         </button>
-        <span className="text-xs tabular-nums px-2 whitespace-nowrap">
+        <span className="text-xs tabular-nums px-1 md:px-2 whitespace-nowrap">
           {currentChapter + 1} / {totalChapters}
         </span>
         <button
           onClick={onNextChapter}
           disabled={currentChapter >= totalChapters - 1}
-          className="p-1 rounded hover:opacity-70 disabled:opacity-30 cursor-pointer transition-colors"
+          className="p-2 md:p-1 rounded hover:opacity-70 disabled:opacity-30 cursor-pointer transition-colors min-w-[44px] min-h-[44px] md:min-w-0 md:min-h-0 flex items-center justify-center"
         >
-          <ChevronRight className="w-3.5 h-3.5" strokeWidth={1.5} />
+          <ChevronRight className="w-4 h-4 md:w-3.5 md:h-3.5" strokeWidth={1.5} />
         </button>
       </div>
 
@@ -167,7 +167,7 @@ export function ReaderToolbar({
 
         <button
           onClick={toggleFullscreen}
-          className={`${btnCls} hidden md:block`}
+          className={`${btnCls} hidden sm:flex`}
           title={fullscreen ? t.reader.exitFullscreen : t.reader.fullscreen}
         >
           {fullscreen ? (

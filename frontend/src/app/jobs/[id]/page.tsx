@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef } from "react";
+import { use, useEffect, useRef, useState } from "react";
 import {
   Download,
   FileText,
@@ -16,6 +16,7 @@ import {
   XCircle,
   RotateCcw,
   Copy,
+  Share2,
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -182,14 +183,31 @@ export default function JobDetailPage({
               </Button>
             )}
             {job.status === "completed" && (
-              <Link
-                href={`/translate?source=${encodeURIComponent(job.source_language)}&target=${encodeURIComponent(job.target_language)}&format=${encodeURIComponent(job.output_format)}`}
-              >
-                <Button variant="ghost" size="sm">
-                  <Copy className="w-4 h-4 mr-1" strokeWidth={1.5} />
-                  {t.jobs.clone || "Clone"}
+              <>
+                <Link
+                  href={`/translate?source=${encodeURIComponent(job.source_language)}&target=${encodeURIComponent(job.target_language)}&format=${encodeURIComponent(job.output_format)}`}
+                >
+                  <Button variant="ghost" size="sm">
+                    <Copy className="w-4 h-4 mr-1" strokeWidth={1.5} />
+                    {t.jobs.clone || "Clone"}
+                  </Button>
+                </Link>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={async () => {
+                    const url = window.location.href;
+                    if (navigator.share) {
+                      await navigator.share({ title: job.source_filename || job.id, url });
+                    } else {
+                      await navigator.clipboard.writeText(url);
+                    }
+                  }}
+                >
+                  <Share2 className="w-4 h-4 mr-1" strokeWidth={1.5} />
+                  {t.jobs.share || "Share"}
                 </Button>
-              </Link>
+              </>
             )}
           </div>
         </div>
@@ -572,6 +590,21 @@ export default function JobDetailPage({
             </h3>
           </CardHeader>
           <CardContent>
+            {/* UX-22: PDF preview */}
+            {outputs.some((o) => o.format === "pdf") && (
+              <div className="mb-3">
+                <iframe
+                  src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/api/v2/jobs/${id}/download/pdf`}
+                  style={{
+                    width: "100%",
+                    height: 400,
+                    border: "1px solid var(--border-default)",
+                    borderRadius: "var(--radius-md)",
+                  }}
+                  title="PDF Preview"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               {outputs.map((output) => (
                 <DownloadButton

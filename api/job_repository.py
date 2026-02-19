@@ -7,6 +7,7 @@ Ensures jobs survive server restarts.
 import sqlite3
 import json
 import logging
+import shutil
 from pathlib import Path
 from typing import Dict, Optional, List
 from datetime import datetime
@@ -94,6 +95,23 @@ class JobRepository:
             except Exception:
                 pass  # Column already exists
 
+            # QA-23: Version history table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS job_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    job_id TEXT NOT NULL,
+                    field TEXT NOT NULL,
+                    old_value TEXT,
+                    new_value TEXT,
+                    changed_by TEXT DEFAULT 'system',
+                    changed_at TEXT NOT NULL
+                )
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_job_history_job_id
+                ON job_history(job_id)
+            """)
+
             logger.info("Database schema initialized")
 
     def save(self, job: Dict) -> None:
@@ -178,25 +196,55 @@ class JobRepository:
 
             return [self._row_to_dict(row) for row in rows]
 
+    # QA-18: Explicit column list for list queries (avoid SELECT *)
+    _LIST_COLUMNS = (
+        "job_id, source_file, source_language, target_language, profile_id, "
+        "output_formats, use_vision, status, progress, current_stage, error, "
+        "output_paths_json, created_at, updated_at, completed_at, user_id"
+    )
+
     def get_all_jobs(self, limit: int = 50, user_id: Optional[str] = None) -> List[Dict]:
         """Get all jobs, most recent first (excludes soft-deleted). Optionally filter by user_id."""
         with self._get_connection() as conn:
             if user_id:
-                rows = conn.execute("""
-                    SELECT * FROM aps_jobs
+                rows = conn.execute(f"""
+                    SELECT {self._LIST_COLUMNS} FROM aps_jobs
                     WHERE user_id = ? AND deleted_at IS NULL
                     ORDER BY created_at DESC
                     LIMIT ?
                 """, (user_id, limit)).fetchall()
             else:
-                rows = conn.execute("""
-                    SELECT * FROM aps_jobs
+                rows = conn.execute(f"""
+                    SELECT {self._LIST_COLUMNS} FROM aps_jobs
                     WHERE deleted_at IS NULL
                     ORDER BY created_at DESC
                     LIMIT ?
                 """, (limit,)).fetchall()
 
-            return [self._row_to_dict(row) for row in rows]
+            return [self._row_to_list_dict(row) for row in rows]
+
+    def _row_to_list_dict(self, row: sqlite3.Row) -> Dict:
+        """Convert list-query row to job dict (lighter, no dna_json/content_path)."""
+        return {
+            "job_id": row["job_id"],
+            "source_file": row["source_file"],
+            "source_language": row["source_language"],
+            "target_language": row["target_language"],
+            "profile_id": row["profile_id"],
+            "output_formats": json.loads(row["output_formats"]),
+            "use_vision": bool(row["use_vision"]),
+            "status": row["status"],
+            "progress": row["progress"],
+            "current_stage": row["current_stage"],
+            "error": row["error"],
+            "dna": None,
+            "output_paths": json.loads(row["output_paths_json"]),
+            "content_path": None,
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+            "completed_at": row["completed_at"],
+            "user_id": row["user_id"] if "user_id" in row.keys() else "default_user",
+        }
 
     def delete(self, job_id: str) -> bool:
         """Soft-delete a job (STR-04)."""
@@ -208,13 +256,50 @@ class JobRepository:
             return cursor.rowcount > 0
 
     def purge(self, job_id: str) -> bool:
-        """Permanently delete a soft-deleted job (STR-04)."""
+        """Permanently delete a soft-deleted job (STR-04) and clean orphaned files (QA-22)."""
         with self._get_connection() as conn:
+            # Get file paths before deleting
+            row = conn.execute(
+                "SELECT source_file, content_path, output_paths_json FROM aps_jobs WHERE job_id = ? AND deleted_at IS NOT NULL",
+                (job_id,)
+            ).fetchone()
+
             cursor = conn.execute(
                 "DELETE FROM aps_jobs WHERE job_id = ? AND deleted_at IS NOT NULL",
                 (job_id,)
             )
+            if cursor.rowcount > 0 and row:
+                self._cleanup_job_files(job_id, row)
             return cursor.rowcount > 0
+
+    def _cleanup_job_files(self, job_id: str, row) -> None:
+        """QA-22: Remove orphaned files for a deleted job."""
+        paths_to_clean = []
+        if row["content_path"]:
+            paths_to_clean.append(row["content_path"])
+        if row["source_file"]:
+            paths_to_clean.append(row["source_file"])
+        try:
+            output_paths = json.loads(row["output_paths_json"] or "{}")
+            paths_to_clean.extend(output_paths.values())
+        except (json.JSONDecodeError, AttributeError):
+            pass
+        # Also check common directories
+        for d in [f"uploads/v2/{job_id}", f"outputs/v2/{job_id}"]:
+            if Path(d).exists():
+                paths_to_clean.append(d)
+
+        for path in paths_to_clean:
+            if not path:
+                continue
+            p = Path(path)
+            try:
+                if p.is_dir():
+                    shutil.rmtree(p)
+                elif p.exists():
+                    p.unlink()
+            except OSError:
+                logger.warning(f"Failed to clean orphan file: {path}")
 
     def restore(self, job_id: str) -> bool:
         """Restore a soft-deleted job (STR-04)."""
@@ -224,6 +309,26 @@ class JobRepository:
                 (datetime.now().isoformat(), job_id)
             )
             return cursor.rowcount > 0
+
+    def vacuum(self) -> None:
+        """QA-20: Reclaim disk space after bulk deletes."""
+        with self._get_connection() as conn:
+            conn.execute("VACUUM")
+            logger.info("VACUUM completed on aps_jobs database")
+
+    def count_active_jobs(self, user_id: Optional[str] = None) -> int:
+        """Count pending/running jobs for queue overflow check."""
+        with self._get_connection() as conn:
+            if user_id:
+                row = conn.execute(
+                    "SELECT COUNT(*) FROM aps_jobs WHERE user_id = ? AND status IN ('pending', 'running') AND deleted_at IS NULL",
+                    (user_id,)
+                ).fetchone()
+            else:
+                row = conn.execute(
+                    "SELECT COUNT(*) FROM aps_jobs WHERE status IN ('pending', 'running') AND deleted_at IS NULL"
+                ).fetchone()
+            return row[0] if row else 0
 
     def update_progress(self, job_id: str, progress: float, stage: str) -> None:
         """Quick update for progress (optimized for frequent calls)."""
@@ -246,6 +351,7 @@ class JobRepository:
                     updated_at = ?, completed_at = ?
                 WHERE job_id = ?
             """, (json.dumps(output_paths), now, now, job_id))
+        self.record_history(job_id, "status", "running", "complete")
 
     def mark_failed(self, job_id: str, error: str) -> None:
         """Mark job as failed."""
@@ -255,6 +361,7 @@ class JobRepository:
                 SET status = 'failed', error = ?, updated_at = ?
                 WHERE job_id = ?
             """, (error, datetime.now().isoformat(), job_id))
+        self.record_history(job_id, "status", "running", "failed")
 
     def _row_to_dict(self, row: sqlite3.Row) -> Dict:
         """Convert database row to job dict."""
@@ -278,6 +385,27 @@ class JobRepository:
             "completed_at": row["completed_at"],
             "user_id": row["user_id"] if "user_id" in row.keys() else "default_user",
         }
+
+    # QA-23: Version history
+    def record_history(self, job_id: str, field: str, old_value: str, new_value: str, changed_by: str = "system") -> None:
+        """Record a change to a job field in the history table."""
+        with self._get_connection() as conn:
+            conn.execute(
+                "INSERT INTO job_history (job_id, field, old_value, new_value, changed_by, changed_at) VALUES (?, ?, ?, ?, ?, ?)",
+                (job_id, field, old_value, new_value, changed_by, datetime.now().isoformat()),
+            )
+
+    def get_history(self, job_id: str, limit: int = 50) -> List[Dict]:
+        """Retrieve version history for a job."""
+        with self._get_connection() as conn:
+            rows = conn.execute(
+                "SELECT field, old_value, new_value, changed_by, changed_at FROM job_history WHERE job_id = ? ORDER BY changed_at DESC LIMIT ?",
+                (job_id, limit),
+            ).fetchall()
+            return [
+                {"field": r[0], "old_value": r[1], "new_value": r[2], "changed_by": r[3], "changed_at": r[4]}
+                for r in rows
+            ]
 
 
 # Singleton instance

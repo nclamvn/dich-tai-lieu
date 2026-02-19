@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useProjects } from "@/hooks/screenplay/useProjects";
 import { ProjectCard } from "./ProjectCard";
@@ -16,6 +17,7 @@ export function ProjectList() {
     refresh,
     remove,
   } = useProjects({ autoRefresh: true, refreshInterval: 5000 });
+  const [searchQuery, setSearchQuery] = useState("");
 
   const totalPages = Math.ceil(total / pageSize);
 
@@ -51,19 +53,45 @@ export function ProjectList() {
     );
   }
 
+  const filteredProjects = searchQuery.trim()
+    ? projects.filter((p) =>
+        (p.title || p.id).toLowerCase().includes(searchQuery.toLowerCase()),
+      )
+    : projects;
+
   return (
     <div className="screenplay-project-list">
       <div className="screenplay-list-header">
         <h2>
           Projects <span className="screenplay-count">({total})</span>
         </h2>
-        <Link href="/screenplay/new" className="screenplay-btn screenplay-btn-primary">
-          + New Project
-        </Link>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          {projects.length > 3 && (
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search projects..."
+              className="screenplay-search-input"
+              style={{
+                padding: "6px 12px",
+                fontSize: 14,
+                borderRadius: 6,
+                border: "1px solid var(--border-default, #ddd)",
+                background: "var(--bg-primary, #fff)",
+                color: "var(--fg-primary, #333)",
+                width: 200,
+              }}
+            />
+          )}
+          <Link href="/screenplay/new" className="screenplay-btn screenplay-btn-primary">
+            + New Project
+          </Link>
+        </div>
       </div>
 
       <div className="screenplay-grid">
-        {projects.map((project) => (
+        {filteredProjects.map((project) => (
           <ProjectCard
             key={project.id}
             project={project}

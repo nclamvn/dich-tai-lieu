@@ -2,6 +2,8 @@
 Upload, analyze, and language detection endpoints.
 """
 
+import errno
+import hashlib
 import math
 import os
 import re
@@ -60,6 +62,11 @@ async def upload_file(
     unique_filename = f"{uuid.uuid4().hex}_{file.filename}"
     file_path = upload_dir / unique_filename
 
+    # QA-10: Reject 0-byte files early (check Content-Length header if available)
+    content_length = request.headers.get("content-length")
+    if content_length and int(content_length) == 0:
+        raise HTTPException(status_code=400, detail="File is empty (0 bytes)")
+
     # BIZ-01: Stream file to disk in 1MB chunks with incremental size check
     CHUNK_SIZE = 1024 * 1024  # 1MB
     total_written = 0
@@ -78,9 +85,20 @@ async def upload_file(
                 f.write(chunk)
     except HTTPException:
         raise
-    except Exception as e:
+    except OSError as e:
         file_path.unlink(missing_ok=True)
-        raise HTTPException(status_code=500, detail=f"Upload failed: {str(e)}")
+        # QA-21: Disk full → friendly error
+        if e.errno == errno.ENOSPC:
+            raise HTTPException(status_code=507, detail="Server disk is full. Please contact admin or delete old jobs.")
+        raise HTTPException(status_code=500, detail="Upload failed. Please try again.")
+    except Exception:
+        file_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=500, detail="Upload failed. Please try again.")
+
+    # QA-10: Reject 0-byte files after writing
+    if total_written == 0:
+        file_path.unlink(missing_ok=True)
+        raise HTTPException(status_code=400, detail="File is empty (0 bytes)")
 
     # BIZ-02: Validate MIME magic bytes after writing
     try:
@@ -101,6 +119,34 @@ async def upload_file(
         raise
     except Exception as e:
         logger.warning(f"MIME validation skipped: {e}")
+
+    # QA-14: SHA256 dedup — if identical file already exists, reuse it
+    try:
+        sha256 = hashlib.sha256()
+        with open(file_path, "rb") as f:
+            for block in iter(lambda: f.read(65536), b""):
+                sha256.update(block)
+        file_hash = sha256.hexdigest()
+
+        # Check if a file with same hash already exists in uploads dir
+        hash_marker = upload_dir / f".sha256_{file_hash}"
+        if hash_marker.exists():
+            existing_path = hash_marker.read_text().strip()
+            if Path(existing_path).exists():
+                # Remove the duplicate, reuse existing
+                file_path.unlink(missing_ok=True)
+                logger.info(f"Dedup: reusing existing upload {existing_path} (hash={file_hash[:12]})")
+                return {
+                    "filename": file.filename,
+                    "server_path": existing_path,
+                    "size": total_written,
+                    "content_type": file.content_type,
+                    "deduplicated": True,
+                }
+        # Store hash marker for future dedup
+        hash_marker.write_text(str(file_path))
+    except Exception as e:
+        logger.debug(f"Dedup check skipped: {e}")
 
     return {
         "filename": file.filename,

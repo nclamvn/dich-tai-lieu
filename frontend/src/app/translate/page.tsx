@@ -52,6 +52,30 @@ export default function TranslatePage() {
     if (cloneFormat) setSelectedFormats([cloneFormat]);
   }, [generalSettings?.source_lang, generalSettings?.target_lang, cloneSource, cloneTarget, cloneFormat]);
 
+  // UX-25: Auto-save form draft to localStorage
+  const DRAFT_KEY = "translate_form_draft";
+  useEffect(() => {
+    const saved = typeof window !== "undefined" ? localStorage.getItem(DRAFT_KEY) : null;
+    if (saved && !cloneSource && !cloneTarget) {
+      try {
+        const draft = JSON.parse(saved);
+        if (draft.sourceLang) setSourceLang(draft.sourceLang);
+        if (draft.targetLang) setTargetLang(draft.targetLang);
+        if (draft.formats?.length) setSelectedFormats(draft.formats);
+        if (draft.engineId) setEngineId(draft.engineId);
+      } catch { /* ignore corrupt draft */ }
+    }
+  }, []);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({
+        sourceLang, targetLang, formats: selectedFormats, engineId,
+      }));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [sourceLang, targetLang, selectedFormats, engineId]);
+
   const profileList = profilesData?.profiles || [];
   const glossaryList = glossaryData?.glossaries || [];
 
@@ -118,6 +142,7 @@ export default function TranslatePage() {
 
     try {
       const job = await createJob.mutateAsync({ file, request });
+      localStorage.removeItem(DRAFT_KEY);
       router.push(`/jobs/${job.id}`);
     } catch {
       // Error handled by mutation state

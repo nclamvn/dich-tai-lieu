@@ -201,7 +201,15 @@ def read_document(file_path: Path) -> str:
         if not HAS_DOCX:
             raise ValueError("python-docx not installed. Install with: pip install python-docx")
 
-        doc = Document(file_path)
+        # QA-11: Catch corrupted DOCX gracefully
+        import zipfile
+        try:
+            doc = Document(file_path)
+        except (zipfile.BadZipFile, KeyError, Exception) as e:
+            raise ValueError(
+                "File appears corrupted or is not a valid DOCX. "
+                "Please re-export from Word and try again."
+            )
         text_parts = []
         for para in doc.paragraphs:
             text_parts.append(para.text)

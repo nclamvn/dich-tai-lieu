@@ -28,6 +28,7 @@ import { useState, useEffect } from "react";
 import { useLocale } from "@/lib/i18n";
 import { LocaleToggle } from "@/components/ui/locale-toggle";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 
 const NAV_KEYS = [
   { href: "/translate", key: "translate" as const, icon: Upload },
@@ -51,6 +52,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const { t } = useLocale();
+  const { showHelp, setShowHelp } = useKeyboardShortcuts();
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -284,6 +286,53 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </main>
       </div>
+
+      {/* UX-24: Keyboard shortcuts help (press ?) */}
+      {showHelp && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.4)" }}
+          onClick={() => setShowHelp(false)}
+        >
+          <div
+            className="p-6 space-y-3"
+            style={{
+              background: "var(--bg-primary)",
+              borderRadius: "var(--radius-lg)",
+              border: "1px solid var(--border-default)",
+              minWidth: 320,
+              boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <h3 className="text-[15px] font-semibold" style={{ color: "var(--fg-primary)" }}>
+              Keyboard Shortcuts
+            </h3>
+            {[
+              ["Ctrl/Cmd + N", "New translation"],
+              ["Ctrl/Cmd + J", "Jobs list"],
+              ["Ctrl/Cmd + D", "Dashboard"],
+              ["?", "Toggle this help"],
+              ["Esc", "Close"],
+            ].map(([key, desc]) => (
+              <div key={key} className="flex items-center justify-between text-sm">
+                <span style={{ color: "var(--fg-secondary)" }}>{desc}</span>
+                <kbd
+                  className="px-2 py-0.5 text-xs"
+                  style={{
+                    background: "var(--bg-secondary)",
+                    borderRadius: "var(--radius-sm)",
+                    border: "1px solid var(--border-default)",
+                    color: "var(--fg-primary)",
+                  }}
+                >
+                  {key}
+                </kbd>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
