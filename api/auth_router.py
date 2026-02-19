@@ -132,12 +132,14 @@ async def request_password_reset(
     token = auth_service.create_password_reset_token(data.email)
 
     # In production, send email with reset link
-    # For now, return token directly (development only)
-    return {
-        "message": "If the email exists, a password reset link will be sent",
-        # Remove in production:
-        "_dev_token": token if token else None
-    }
+    response = {"message": "If the email exists, a password reset link will be sent"}
+
+    # Only expose token in development mode (NEVER in production)
+    from config.settings import get_settings
+    if get_settings().security_mode == "development":
+        response["_dev_token"] = token if token else None
+
+    return response
 
 
 @router.post("/password/reset-confirm")

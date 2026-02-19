@@ -85,6 +85,9 @@ class Settings(BaseSettings):
     glossary_enabled: bool = True
     glossary_name: Optional[str] = None
 
+    # Global concurrency limit (max simultaneous jobs across all users)
+    max_concurrent_jobs: int = 10  # Prevents API rate limit saturation
+
     # Phase 5.1: Chunk Cache Settings
     chunk_cache_enabled: bool = True  # Enable chunk-level translation caching
     chunk_cache_ttl_days: int = 30  # Cache entry TTL (for future eviction)

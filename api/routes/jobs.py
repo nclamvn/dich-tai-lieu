@@ -6,9 +6,9 @@ import time
 from pathlib import Path
 from typing import Optional, List
 
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Request
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks, Request
 
-from api.deps import queue, manager, get_processor, chunk_cache
+from api.deps import queue, manager, get_processor, chunk_cache, get_current_user_id
 from api.models import (
     JobCreate, JobUpdate, JobResponse, JobProgressResponse, ProgressStep
 )
@@ -24,7 +24,8 @@ router = APIRouter(tags=["Jobs"])
 async def list_jobs(
     status: Optional[str] = None,
     limit: int = 50,
-    offset: int = 0
+    offset: int = 0,
+    user_id: str = Depends(get_current_user_id),
 ):
     """
     List all jobs with optional filtering
@@ -33,7 +34,7 @@ async def list_jobs(
     - **limit**: Maximum number of jobs to return (default: 50)
     - **offset**: Number of jobs to skip (default: 0)
     """
-    jobs = queue.list_jobs(status=status, limit=limit, offset=offset)
+    jobs = queue.list_jobs(status=status, limit=limit, offset=offset, user_id=user_id)
 
     return [
         JobResponse(
@@ -70,6 +71,21 @@ async def create_job(
     UI v1.1: Supports ui_layout_mode, output_formats, and advanced_options.
     """
     limiter = request.app.state.limiter
+
+    # Check quota
+    try:
+        from core.usage.tracker import UsageTracker
+        tracker = UsageTracker()
+        quota_check = tracker.check_quota("default_user")
+        if not quota_check["allowed"]:
+            raise HTTPException(
+                status_code=429,
+                detail=f"Quota exceeded: {quota_check['reason']}"
+            )
+    except HTTPException:
+        raise
+    except Exception:
+        pass  # Quota check not critical for V1
 
     # Validate input file exists
     input_path = Path(job_data.input_file)
@@ -431,6 +447,42 @@ async def delete_job(
             status_code=400,
             detail="Cannot delete job (only completed/failed/cancelled jobs can be deleted)"
         )
+
+
+@router.post("/api/jobs/{job_id}/restart")
+async def restart_job(job_id: str):
+    """
+    Restart a failed or cancelled job.
+
+    Resets the job to pending status so it can be picked up by the processor.
+    """
+    job = queue.restart_job(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot restart job (only failed/cancelled jobs can be restarted)"
+        )
+
+    await manager.broadcast({
+        "event": "job_restarted",
+        "job_id": job.job_id
+    })
+
+    return JobResponse(
+        job_id=job.job_id,
+        job_name=job.job_name,
+        status=job.status,
+        priority=job.priority,
+        progress=job.progress,
+        source_lang=job.source_lang,
+        target_lang=job.target_lang,
+        created_at=job.created_at,
+        started_at=job.started_at,
+        completed_at=job.completed_at,
+        quality_score=job.avg_quality_score,
+        total_cost_usd=job.total_cost_usd,
+        error_message=job.error_message
+    )
 
 
 @router.post("/api/jobs/{job_id}/cancel")

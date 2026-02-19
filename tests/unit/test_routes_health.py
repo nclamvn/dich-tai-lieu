@@ -23,7 +23,7 @@ class TestHealthCheck:
     def test_health_response_fields(self, client):
         data = client.get("/health").json()
         assert data["status"] == "healthy"
-        assert data["version"] == "2.4.0"
+        assert data["version"] == "3.3.1"
         assert "timestamp" in data
         assert isinstance(data["timestamp"], float)
 

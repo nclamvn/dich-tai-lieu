@@ -15,7 +15,7 @@ async def health_check():
     """Basic health check endpoint"""
     return {
         "status": "healthy",
-        "version": "2.4.0",
+        "version": "3.3.1",
         "timestamp": time.time()
     }
 

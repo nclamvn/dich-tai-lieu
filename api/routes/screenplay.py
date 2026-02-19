@@ -34,6 +34,7 @@ from core.screenplay_studio import (
 )
 from core.screenplay_studio.agents.screenplay_formatter import ScreenplayFormatterAgent
 from core.screenplay_studio.formats.pdf_export import HAS_REPORTLAB
+from api.deps import get_current_user_id
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/screenplay", tags=["Screenplay Studio"])
@@ -41,10 +42,8 @@ router = APIRouter(prefix="/api/screenplay", tags=["Screenplay Studio"])
 # Initialize repository
 repo = ScreenplayRepository()
 
-
-def get_user_id() -> str:
-    """Get current user ID (placeholder - implement with auth)"""
-    return "default_user"
+# Alias for cleaner Depends() usage
+get_user_id = get_current_user_id
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -149,6 +149,14 @@ class APSV2Service:
 
         self.provider = provider
 
+        # Global concurrency limit — prevents API rate limit saturation
+        try:
+            from config.settings import get_settings
+            max_jobs = get_settings().max_concurrent_jobs
+        except Exception:
+            max_jobs = 10
+        self._global_semaphore = asyncio.Semaphore(max_jobs)
+
         # Job storage - now backed by SQLite
         self._jobs: Dict[str, Dict] = {}
         self._job_tasks: Dict[str, asyncio.Task] = {}
@@ -228,13 +236,14 @@ class APSV2Service:
         pdf_template: str = "auto",  # PDF template (ebook/academic/business/auto)
         provider: Optional[str] = None,  # AI provider: 'openai', 'anthropic'
         model: Optional[str] = None,  # Model name (e.g., 'gpt-4o', 'claude-sonnet-4-20250514')
+        user_id: str = "default_user",  # Multi-tenancy: owner user
     ) -> Dict:
         """Create and start a new publishing job."""
 
         self._ensure_publisher()
 
-        # Generate job ID
-        job_id = str(uuid.uuid4())[:8]
+        # Generate job ID (full UUID4 for sufficient entropy)
+        job_id = str(uuid.uuid4())
 
         # Save content to file for resume capability
         content_path = self.upload_dir / f"{job_id}_content.txt"
@@ -278,14 +287,15 @@ class APSV2Service:
             "job_start_time": time.time(),
             # NOTE: api_key intentionally NOT stored in job record (security)
             "eqs": self._last_eqs_report,  # EQS extraction quality (Sprint 9)
+            "user_id": user_id,
         }
 
         # Save to database FIRST
         self._repo.save(job_record)
         self._jobs[job_id] = job_record
 
-        # Start processing in background with Vision mode
-        task = asyncio.create_task(self._process_job(
+        # Start processing in background with Vision mode (respects global concurrency limit)
+        task = asyncio.create_task(self._process_job_with_limit(
             job_id, content, use_vision=use_vision, api_key=api_key,
             docx_template=docx_template, pdf_template=pdf_template,
             provider=provider, model=model
@@ -295,6 +305,11 @@ class APSV2Service:
         logger.info(f"[{job_id}] Job created: {source_file} ({profile_id}) vision={use_vision} provider={provider} model={model}")
 
         return job_record
+
+    async def _process_job_with_limit(self, job_id: str, content: str, **kwargs):
+        """Wrapper that enforces global concurrency limit before processing."""
+        async with self._global_semaphore:
+            await self._process_job(job_id, content, **kwargs)
 
     async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None, docx_template: str = "auto", pdf_template: str = "auto", provider: Optional[str] = None, model: Optional[str] = None):
         """Process job in background."""
@@ -726,6 +741,46 @@ class APSV2Service:
             return True
 
         return False
+
+    async def restart_job(self, job_id: str) -> Optional[Dict]:
+        """Restart a failed job by re-processing from saved content."""
+        job = self.get_job(job_id)
+        if not job:
+            return None
+
+        status = job.get("status")
+        status_val = status.value if hasattr(status, "value") else str(status)
+        if status_val not in ("failed", "cancelled"):
+            return None
+
+        # Read saved content
+        content_path = job.get("content_path")
+        if not content_path or not Path(content_path).exists():
+            return None
+
+        content = Path(content_path).read_text(encoding="utf-8")
+
+        # Reset job state
+        job["status"] = JobStatusV2.PENDING
+        job["progress"] = 0.0
+        job["current_stage"] = ""
+        job["error"] = None
+        job["completed_at"] = None
+        self._repo.save(job)
+
+        # Re-process in background
+        task = asyncio.create_task(self._process_job_with_limit(
+            job_id, content,
+            use_vision=job.get("use_vision", True),
+            docx_template=job.get("docx_template", "auto"),
+            pdf_template=job.get("pdf_template", "auto"),
+            provider=job.get("provider"),
+            model=job.get("model"),
+        ))
+        self._job_tasks[job_id] = task
+
+        logger.info(f"[{job_id}] Job restarted")
+        return job
 
     # ==================== FILE HANDLING ====================
 

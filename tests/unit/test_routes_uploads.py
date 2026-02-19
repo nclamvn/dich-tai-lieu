@@ -72,7 +72,8 @@ class TestAnalyzeFile:
         f = tmp_path / "test.txt"
         f.write_text("The quick brown fox jumps over the lazy dog. " * 100)
 
-        with patch("api.routes.uploads.read_document", return_value=f.read_text()):
+        with patch("api.routes.uploads.validate_project_path", return_value=f), \
+             patch("api.routes.uploads.read_document", return_value=f.read_text()):
             resp = client.post("/api/analyze", json={"file_path": str(f)})
 
         assert resp.status_code == 200
@@ -86,7 +87,8 @@ class TestAnalyzeFile:
         vi_text = "Đây là một đoạn văn bản tiếng Việt có nhiều ký tự đặc biệt như ăâêôơưđ " * 50
         f.write_text(vi_text)
 
-        with patch("api.routes.uploads.read_document", return_value=vi_text):
+        with patch("api.routes.uploads.validate_project_path", return_value=f), \
+             patch("api.routes.uploads.read_document", return_value=vi_text):
             resp = client.post("/api/analyze", json={"file_path": str(f)})
 
         assert resp.status_code == 200
@@ -97,7 +99,8 @@ class TestAnalyzeFile:
         zh_text = "这是一段中文文本用于测试语言检测功能" * 20
         f.write_text(zh_text)
 
-        with patch("api.routes.uploads.read_document", return_value=zh_text):
+        with patch("api.routes.uploads.validate_project_path", return_value=f), \
+             patch("api.routes.uploads.read_document", return_value=zh_text):
             resp = client.post("/api/analyze", json={"file_path": str(f)})
 
         assert resp.status_code == 200
@@ -105,7 +108,12 @@ class TestAnalyzeFile:
 
     def test_analyze_file_not_found(self, client):
         resp = client.post("/api/analyze", json={"file_path": "/nonexistent/file.txt"})
-        assert resp.status_code == 500  # wrapped in generic exception handler
+        assert resp.status_code == 403  # path traversal blocked (outside project root)
+
+    def test_analyze_path_traversal_blocked(self, client):
+        resp = client.post("/api/analyze", json={"file_path": "../../etc/passwd"})
+        assert resp.status_code == 403
+        assert "Access denied" in resp.json()["detail"]
 
 
 class TestDetectLanguage:

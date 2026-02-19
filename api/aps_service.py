@@ -151,7 +151,7 @@ class APSService:
         model: str = "gpt-4o-mini",
     ) -> APSJob:
         """Create a new APS processing job"""
-        job_id = str(uuid.uuid4())[:8]
+        job_id = str(uuid.uuid4())
 
         job = APSJob(
             job_id=job_id,

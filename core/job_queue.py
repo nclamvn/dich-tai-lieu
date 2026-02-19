@@ -103,6 +103,9 @@ class TranslationJob:
     tags: List[str] = field(default_factory=list)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
+    # Multi-tenancy
+    user_id: str = "default_user"
+
     def to_dict(self) -> dict:
         """Convert to dictionary for JSON serialization"""
         data = asdict(self)
@@ -253,7 +256,10 @@ class JobQueue:
 
                     -- Metadata (JSON)
                     tags TEXT,
-                    metadata TEXT
+                    metadata TEXT,
+
+                    -- Multi-tenancy
+                    user_id TEXT DEFAULT 'default_user'
                 )
             """)
 
@@ -271,6 +277,17 @@ class JobQueue:
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_status
                 ON jobs(status)
+            """)
+
+            # Migration: add user_id to existing databases
+            try:
+                conn.execute("ALTER TABLE jobs ADD COLUMN user_id TEXT DEFAULT 'default_user'")
+            except Exception:
+                pass  # Column already exists
+
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_user_id
+                ON jobs(user_id)
             """)
 
     def create_job(
@@ -337,8 +354,8 @@ class JobQueue:
                     avg_quality_score, total_cost_usd, tm_hits, cache_hits,
                     scheduled_at, created_at, started_at, completed_at, updated_at,
                     error_message, retry_count, max_retries,
-                    tags, metadata
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    tags, metadata, user_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, (
                 job.job_id, job.job_name, job.status, job.priority,
                 job.input_file, job.output_file, job.input_format, job.output_format,
@@ -348,7 +365,7 @@ class JobQueue:
                 job.avg_quality_score, job.total_cost_usd, job.tm_hits, job.cache_hits,
                 job.scheduled_at, job.created_at, job.started_at, job.completed_at, job.updated_at,
                 job.error_message, job.retry_count, job.max_retries,
-                json.dumps(job.tags), json.dumps(job.metadata)
+                json.dumps(job.tags), json.dumps(job.metadata), job.user_id
             ))
 
     def get_job(self, job_id: str) -> Optional[TranslationJob]:
@@ -422,7 +439,8 @@ class JobQueue:
         self,
         status: Optional[str] = None,
         limit: int = 100,
-        offset: int = 0
+        offset: int = 0,
+        user_id: Optional[str] = None
     ) -> List[TranslationJob]:
         """
         List jobs with optional filtering
@@ -431,24 +449,31 @@ class JobQueue:
             status: Filter by status (None = all)
             limit: Maximum number of jobs to return
             offset: Number of jobs to skip
+            user_id: Filter by user (None = all users)
 
         Returns:
             List of jobs
         """
         with self._backend.connection() as conn:
+            conditions = []
+            params = []
+
             if status:
-                rows = conn.execute("""
-                    SELECT * FROM jobs
-                    WHERE status = ?
-                    ORDER BY created_at DESC
-                    LIMIT ? OFFSET ?
-                """, (status, limit, offset)).fetchall()
-            else:
-                rows = conn.execute("""
-                    SELECT * FROM jobs
-                    ORDER BY created_at DESC
-                    LIMIT ? OFFSET ?
-                """, (limit, offset)).fetchall()
+                conditions.append("status = ?")
+                params.append(status)
+            if user_id:
+                conditions.append("user_id = ?")
+                params.append(user_id)
+
+            where_clause = f"WHERE {' AND '.join(conditions)}" if conditions else ""
+            params.extend([limit, offset])
+
+            rows = conn.execute(f"""
+                SELECT * FROM jobs
+                {where_clause}
+                ORDER BY created_at DESC
+                LIMIT ? OFFSET ?
+            """, tuple(params)).fetchall()
 
             return [self._row_to_job(row) for row in rows]
 
@@ -496,6 +521,27 @@ class JobQueue:
             return True
 
         return False
+
+    def restart_job(self, job_id: str) -> Optional[TranslationJob]:
+        """Restart a failed/cancelled job by resetting it to pending."""
+        job = self.get_job(job_id)
+        if not job:
+            return None
+
+        if job.status not in [JobStatus.FAILED, JobStatus.CANCELLED]:
+            return None
+
+        job.status = JobStatus.PENDING
+        job.progress = 0.0
+        job.completed_chunks = 0
+        job.failed_chunks = 0
+        job.error_message = None
+        job.started_at = None
+        job.completed_at = None
+        job.retry_count += 1
+        job.updated_at = time.time()
+        self._save_job(job)
+        return job
 
     def cleanup_old_jobs(self, days: int = 30) -> int:
         """

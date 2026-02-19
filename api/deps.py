@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import WebSocket
+from fastapi import Header, WebSocket
 
 from core.job_queue import JobQueue
 from core.cache.chunk_cache import ChunkCache
@@ -82,3 +82,31 @@ _aps_service = get_aps_service(
     websocket_manager=manager,
 )
 logger.info("APS Service pre-initialized (awaiting BatchProcessor)")
+
+
+# --- User ID helper (multi-tenancy) ---
+
+async def get_current_user_id(
+    x_session_token: Optional[str] = Header(None, alias="X-Session-Token"),
+) -> str:
+    """
+    FastAPI dependency: extract user_id from session token.
+
+    Returns "default_user" when auth is disabled or no token provided.
+    """
+    if not x_session_token:
+        return "default_user"
+
+    try:
+        from config.settings import get_settings
+        if not get_settings().session_auth_enabled:
+            return "default_user"
+    except Exception:
+        return "default_user"
+
+    try:
+        from api.security import security_manager
+        session = security_manager.validate_session(x_session_token)
+        return session.user_id
+    except Exception:
+        return "default_user"

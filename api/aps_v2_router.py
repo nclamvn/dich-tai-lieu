@@ -8,7 +8,7 @@ import logging
 from pathlib import Path
 from typing import List
 
-from fastapi import APIRouter, UploadFile, File, Form, HTTPException, Body, Request
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException, Body, Request
 from fastapi.responses import FileResponse
 
 from .aps_v2_models import (
@@ -21,6 +21,7 @@ from .aps_v2_models import (
 )
 from .aps_v2_service import get_v2_service
 from .rate_limiter import limiter, rate_limit_config
+from .deps import get_current_user_id
 
 # Import unified client for provider validation
 from ai_providers.unified_client import (
@@ -56,6 +57,7 @@ async def publish_file(
     pdf_template: str = Form(default="auto", description="PDF template: 'ebook', 'academic', 'business', or 'auto'"),
     provider: str = Form(default="auto", description="AI provider: 'auto', 'openai', 'anthropic'"),
     model: str = Form(default="", description="Model name (e.g., 'gpt-4o', 'claude-sonnet-4-20250514')"),
+    user_id: str = Depends(get_current_user_id),
 ):
     """
     Upload a document and start the publishing pipeline.
@@ -128,6 +130,21 @@ async def publish_file(
         if not content.strip():
             raise HTTPException(status_code=400, detail="Empty document")
 
+        # Check quota before creating job
+        try:
+            from core.usage.tracker import UsageTracker
+            tracker = UsageTracker()
+            quota_check = tracker.check_quota(user_id)
+            if not quota_check["allowed"]:
+                raise HTTPException(
+                    status_code=429,
+                    detail=f"Quota exceeded: {quota_check['reason']}. Remaining: {quota_check.get('remaining', {})}"
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(f"Quota check skipped: {e}")
+
         # Parse output formats
         formats = [f.strip() for f in output_formats.split(",") if f.strip()]
         if not formats:
@@ -147,6 +164,7 @@ async def publish_file(
             pdf_template=pdf_template,
             provider=provider if provider != "auto" else None,
             model=model if model else None,
+            user_id=user_id,
         )
 
         return service.get_job_response(job)
@@ -174,7 +192,7 @@ async def publish_file(
     responses={400: {"model": ErrorResponseV2}},
     summary="Start publishing job with text content",
 )
-async def publish_text(request: PublishTextRequest):
+async def publish_text(request: PublishTextRequest, user_id: str = Depends(get_current_user_id)):
     """
     Submit text content directly (no file upload).
 
@@ -199,6 +217,7 @@ async def publish_text(request: PublishTextRequest):
             output_formats=request.output_formats,
             docx_template=request.docx_template,
             pdf_template=request.pdf_template,
+            user_id=user_id,
         )
 
         return service.get_job_response(job)
@@ -217,10 +236,10 @@ async def publish_text(request: PublishTextRequest):
     response_model=List[JobResponseV2],
     summary="List all V2 jobs",
 )
-async def list_jobs(limit: int = 50):
+async def list_jobs(limit: int = 50, user_id: str = Depends(get_current_user_id)):
     """List all V2 publishing jobs, most recent first."""
     service = get_v2_service()
-    all_jobs = service._repo.get_all_jobs(limit=limit)
+    all_jobs = service._repo.get_all_jobs(limit=limit, user_id=user_id)
     results = []
     for job_data in all_jobs:
         # Ensure job is in memory cache for get_job_response
@@ -236,17 +255,31 @@ async def list_jobs(limit: int = 50):
     summary="Bulk delete V2 jobs",
 )
 async def bulk_delete_jobs(job_ids: List[str] = Body(...)):
-    """Delete multiple V2 jobs at once."""
+    """Delete multiple V2 jobs at once. Skips running jobs."""
     service = get_v2_service()
     deleted = 0
+    skipped = []
     for job_id in job_ids:
         try:
+            # Check if job is currently running — don't delete active jobs
+            job = service._jobs.get(job_id)
+            if job and job.get("status") in ("pending", "running", "processing"):
+                # Cancel the task first if it exists
+                task = service._job_tasks.get(job_id)
+                if task and not task.done():
+                    task.cancel()
+                # Mark as cancelled before deleting
+                if job:
+                    job["status"] = "cancelled"
+                    service._repo.save(job)
+
             service._repo.delete(job_id)
             service._jobs.pop(job_id, None)
+            service._job_tasks.pop(job_id, None)
             deleted += 1
         except Exception:
-            pass
-    return {"deleted": deleted}
+            skipped.append(job_id)
+    return {"deleted": deleted, "skipped": skipped}
 
 
 @router.get(
@@ -695,6 +728,30 @@ async def _convert_on_demand(job_id: str, target_format: str, service) -> Path:
     except Exception as e:
         logger.error(f"[{job_id}] On-demand conversion error: {e}")
         return None
+
+
+@router.post(
+    "/jobs/{job_id}/restart",
+    response_model=JobResponseV2,
+    responses={404: {"model": ErrorResponseV2}, 400: {"model": ErrorResponseV2}},
+    summary="Restart a failed job",
+)
+async def restart_job(job_id: str):
+    """
+    Restart a failed or cancelled publishing job.
+
+    Re-processes from saved content without requiring a new upload.
+    """
+    service = get_v2_service()
+
+    job = await service.restart_job(job_id)
+    if not job:
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot restart job (only failed/cancelled jobs with saved content can be restarted)"
+        )
+
+    return service.get_job_response(job)
 
 
 @router.post(

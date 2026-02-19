@@ -28,10 +28,11 @@ Khi quay lại dự án, chỉ cần nói: **"continue"** hoặc **"tiếp tục
 Claude sẽ tự động đọc HANDOVER document và tiếp tục công việc.
 
 ### Handover Files:
-- **Sprint 15.5 2026-02-09:** `docs/HANDOVER_2026-02-09.md` (Latest)
-- **Vision Fallback 2026-02-03:** `docs/HANDOVER_2026-02-03.md`
-- **UI Redesign 2026:** `docs/HANDOVER_UI_2026.md`
-- **General:** `docs/HANDOVER_v2.7.md`
+- **Full State 2026-02-19:** `docs/HANDOVER_2026-02-19.md` (Latest)
+- **Screenplay Studio 2026-02-12:** `docs/HANDOVER_2026-02-12.md`
+- **P0 Security 2026-02-11:** `docs/HANDOVER_2026-02-11_P0.md`
+- **Book Writer v2 2026-02-11:** `docs/HANDOVER_2026-02-11.md`
+- **Sprint 15.5 2026-02-09:** `docs/HANDOVER_2026-02-09.md`
 
 ## Quick Start
 ```bash

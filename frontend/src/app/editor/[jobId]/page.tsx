@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, use } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, use } from "react";
 import Link from "next/link";
 import { useLocale } from "@/lib/i18n";
 import { useEditorSegments, useUpdateEditorSegment, useRegenerateDocument, useTMs, useTMLookup } from "@/lib/api/hooks";
@@ -117,6 +117,43 @@ export default function EditorPage({ params }: { params: Promise<{ jobId: string
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [activeIndex, activeSegment, goToSegment, handleSave]);
+
+  // Track which segments have unsaved changes
+  const dirtyChunks = useMemo(() => {
+    const dirty = new Set<string>();
+    for (const s of segments) {
+      if (s.chunk_id in editValues && editValues[s.chunk_id] !== s.translated) {
+        dirty.add(s.chunk_id);
+      }
+    }
+    return dirty;
+  }, [segments, editValues]);
+
+  const hasDirty = dirtyChunks.size > 0;
+
+  // Warn before leaving with unsaved changes
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (hasDirty) {
+        e.preventDefault();
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [hasDirty]);
+
+  // Auto-save after 5 seconds of inactivity per segment
+  const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!activeSegment || !dirtyChunks.has(activeSegment.chunk_id)) return;
+    if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    autoSaveTimerRef.current = setTimeout(() => {
+      handleSave(activeSegment.chunk_id);
+    }, 5000);
+    return () => {
+      if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current);
+    };
+  }, [editValues[activeSegment?.chunk_id ?? ""], activeSegment?.chunk_id, dirtyChunks, handleSave]);
 
   const applyTMMatch = (match: TMMatch) => {
     if (!activeSegment) return;

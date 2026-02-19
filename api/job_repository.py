@@ -64,7 +64,10 @@ class JobRepository:
 
                     created_at TEXT NOT NULL,
                     updated_at TEXT NOT NULL,
-                    completed_at TEXT
+                    completed_at TEXT,
+
+                    -- Multi-tenancy
+                    user_id TEXT DEFAULT 'default_user'
                 )
             """)
 
@@ -72,6 +75,17 @@ class JobRepository:
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_aps_jobs_status
                 ON aps_jobs(status)
+            """)
+
+            # Migration: add user_id to existing databases
+            try:
+                conn.execute("ALTER TABLE aps_jobs ADD COLUMN user_id TEXT DEFAULT 'default_user'")
+            except Exception:
+                pass  # Column already exists
+
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_aps_jobs_user_id
+                ON aps_jobs(user_id)
             """)
 
             logger.info("Database schema initialized")
@@ -101,8 +115,8 @@ class JobRepository:
                     profile_id, output_formats, use_vision,
                     status, progress, current_stage, error,
                     dna_json, output_paths_json, content_path,
-                    created_at, updated_at, completed_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    created_at, updated_at, completed_at, user_id
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(job_id) DO UPDATE SET
                     status = excluded.status,
                     progress = excluded.progress,
@@ -130,6 +144,7 @@ class JobRepository:
                 created_at or now,
                 now,
                 completed_at,
+                job.get("user_id", "default_user"),
             ))
 
     def get(self, job_id: str) -> Optional[Dict]:
@@ -156,14 +171,22 @@ class JobRepository:
 
             return [self._row_to_dict(row) for row in rows]
 
-    def get_all_jobs(self, limit: int = 50) -> List[Dict]:
-        """Get all jobs, most recent first."""
+    def get_all_jobs(self, limit: int = 50, user_id: Optional[str] = None) -> List[Dict]:
+        """Get all jobs, most recent first. Optionally filter by user_id."""
         with self._get_connection() as conn:
-            rows = conn.execute("""
-                SELECT * FROM aps_jobs
-                ORDER BY created_at DESC
-                LIMIT ?
-            """, (limit,)).fetchall()
+            if user_id:
+                rows = conn.execute("""
+                    SELECT * FROM aps_jobs
+                    WHERE user_id = ?
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                """, (user_id, limit)).fetchall()
+            else:
+                rows = conn.execute("""
+                    SELECT * FROM aps_jobs
+                    ORDER BY created_at DESC
+                    LIMIT ?
+                """, (limit,)).fetchall()
 
             return [self._row_to_dict(row) for row in rows]
 
@@ -227,6 +250,7 @@ class JobRepository:
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
             "completed_at": row["completed_at"],
+            "user_id": row["user_id"] if "user_id" in row.keys() else "default_user",
         }
 
 

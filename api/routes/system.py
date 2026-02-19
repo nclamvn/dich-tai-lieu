@@ -43,7 +43,7 @@ async def get_system_info():
     processor = get_processor()
 
     return SystemInfo(
-        version="2.4.0",
+        version="3.3.1",
         uptime_seconds=time.time() - start_time,
         processor_running=processor is not None and processor.is_running,
         current_jobs=len(processor.current_jobs) if processor else 0,

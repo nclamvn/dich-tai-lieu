@@ -304,7 +304,7 @@ def get_csrf_config():
 app = FastAPI(
     title="AI Translator Pro API",
     description="REST API for professional translation system with batch processing",
-    version="2.4.0"
+    version="3.3.1"
 )
 
 # Rate limiting (configurable via RATE_LIMIT env var)
@@ -376,6 +376,64 @@ app.include_router(aps_v2_router)
 
 
 # Startup event to resume pending jobs
+@app.on_event("startup")
+async def startup_db_integrity_check():
+    """Run PRAGMA integrity_check on all SQLite databases at startup."""
+    import sqlite3
+    from pathlib import Path
+
+    db_dirs = [Path("data"), Path("data/cache"), Path("data/users")]
+    checked = 0
+    warnings = []
+
+    for db_dir in db_dirs:
+        if not db_dir.exists():
+            continue
+        for db_file in db_dir.glob("*.db"):
+            try:
+                conn = sqlite3.connect(str(db_file))
+                result = conn.execute("PRAGMA integrity_check").fetchone()
+                conn.close()
+                checked += 1
+                if result[0] != "ok":
+                    warnings.append(f"{db_file}: {result[0]}")
+            except Exception as e:
+                warnings.append(f"{db_file}: {e}")
+
+    if warnings:
+        logger.error("=" * 60)
+        logger.error("DATABASE INTEGRITY ISSUES DETECTED")
+        for w in warnings:
+            logger.error(f"  - {w}")
+        logger.error("=" * 60)
+    else:
+        logger.info(f"Database integrity check passed ({checked} databases)")
+
+
+@app.on_event("startup")
+async def startup_security_check():
+    """Log security warnings for insecure defaults."""
+    from config.settings import get_settings
+    s = get_settings()
+    warnings = []
+    if s.security_mode == "development":
+        warnings.append("SECURITY_MODE=development — authentication is DISABLED")
+    if not s.session_auth_enabled:
+        warnings.append("SESSION_AUTH_ENABLED=false — all endpoints are publicly accessible")
+    if s.session_secret == "INSECURE-DEV-SECRET-CHANGE-IN-PRODUCTION":
+        warnings.append("SESSION_SECRET is default insecure value — CHANGE for production")
+    if not s.csrf_enabled:
+        warnings.append("CSRF_ENABLED=false — CSRF protection is OFF")
+    if warnings:
+        border = "=" * 60
+        logger.warning(f"\n{border}")
+        logger.warning("SECURITY WARNINGS:")
+        for w in warnings:
+            logger.warning(f"  ⚠ {w}")
+        logger.warning(f"Set SECURITY_MODE=production in .env to enforce security.")
+        logger.warning(f"{border}")
+
+
 @app.on_event("startup")
 async def startup_resume_jobs():
     """Resume any pending jobs after server restart."""
@@ -2430,11 +2488,28 @@ async def websocket_endpoint(websocket: WebSocket):
     """
     WebSocket endpoint for real-time updates
 
-    Sends updates about:
-    - Job status changes
-    - Queue statistics
-    - System events
+    Sends updates about job status changes, queue statistics, and system events.
+
+    Clients can send JSON messages:
+    - {"action": "subscribe", "job_id": "abc123"} to filter events for a specific job
+    - {"action": "unsubscribe"} to receive all events again
+
+    Authentication: When session_auth_enabled, requires ?token=<session_token> query param.
     """
+    # Authenticate WebSocket connection when auth is enabled
+    from config.settings import get_settings
+    ws_settings = get_settings()
+    if ws_settings.session_auth_enabled:
+        token = websocket.query_params.get("token")
+        if not token:
+            await websocket.close(code=4001, reason="Authentication required")
+            return
+        try:
+            security_manager.validate_session(token)
+        except HTTPException:
+            await websocket.close(code=4001, reason="Invalid or expired session")
+            return
+
     await manager.connect(websocket)
 
     try:

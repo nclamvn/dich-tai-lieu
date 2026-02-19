@@ -12,6 +12,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, UploadFile, File, Request
 
 from api.models import AnalyzeRequest, AnalyzeResponse
+from api.services.file_handler import validate_project_path
 from core.batch_processor import read_document
 from config.logging_config import get_logger
 
@@ -82,10 +83,14 @@ async def analyze_file(
     Analyze uploaded file and return accurate word count and language detection
     """
     try:
-        # Check if file exists
-        file_path = Path(request.file_path)
+        # Validate path stays within project directory (prevent path traversal)
+        try:
+            file_path = validate_project_path(request.file_path)
+        except ValueError:
+            raise HTTPException(status_code=403, detail="Access denied: path outside project directory")
+
         if not file_path.exists():
-            raise HTTPException(status_code=404, detail=f"File not found: {request.file_path}")
+            raise HTTPException(status_code=404, detail="File not found")
 
         # Extract text from document
         text = read_document(file_path)
@@ -125,8 +130,11 @@ async def analyze_file(
             chunks_estimate=chunks_estimate
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        logger.error(f"Analysis failed for {request.file_path}: {e}")
+        raise HTTPException(status_code=500, detail="Analysis failed. Please check the file and try again.")
 
 
 @router.post("/api/v2/detect-language")

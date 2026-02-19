@@ -10,6 +10,7 @@ Provides persistent storage for users with proper indexing.
 import sqlite3
 import json
 import logging
+from contextlib import contextmanager
 from pathlib import Path
 from typing import Optional, List
 from datetime import datetime
@@ -38,6 +39,7 @@ class UserDatabase:
         """Initialize database schema."""
         self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         self.conn.execute("PRAGMA journal_mode=WAL")
+        self.conn.execute("PRAGMA foreign_keys=ON")
         self.conn.row_factory = sqlite3.Row
 
         cursor = self.conn.cursor()
@@ -99,36 +101,44 @@ class UserDatabase:
         self.conn.commit()
         logger.info(f"User database initialized at {self.db_path}")
 
+    @contextmanager
+    def _transaction(self):
+        """Context manager for atomic database operations with rollback on error."""
+        try:
+            yield self.conn.cursor()
+            self.conn.commit()
+        except Exception:
+            self.conn.rollback()
+            raise
+
     # ========================================================================
     # User CRUD Operations
     # ========================================================================
 
     def create_user(self, user: User) -> User:
         """Create a new user."""
-        cursor = self.conn.cursor()
-
         now = datetime.now().timestamp()
 
-        cursor.execute("""
-            INSERT INTO users (
-                email, username, password_hash, full_name, organization,
-                role, status, created_at, updated_at, preferences
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            user.email,
-            user.username,
-            user.password_hash,
-            user.full_name,
-            user.organization,
-            user.role.value,
-            user.status.value,
-            now,
-            now,
-            json.dumps(user.preferences)
-        ))
+        with self._transaction() as cursor:
+            cursor.execute("""
+                INSERT INTO users (
+                    email, username, password_hash, full_name, organization,
+                    role, status, created_at, updated_at, preferences
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, (
+                user.email,
+                user.username,
+                user.password_hash,
+                user.full_name,
+                user.organization,
+                user.role.value,
+                user.status.value,
+                now,
+                now,
+                json.dumps(user.preferences)
+            ))
+            user.id = cursor.lastrowid
 
-        self.conn.commit()
-        user.id = cursor.lastrowid
         user.created_at = datetime.fromtimestamp(now)
         user.updated_at = datetime.fromtimestamp(now)
 
@@ -158,66 +168,61 @@ class UserDatabase:
 
     def update_user(self, user: User) -> User:
         """Update user details."""
-        cursor = self.conn.cursor()
-
         now = datetime.now().timestamp()
 
-        cursor.execute("""
-            UPDATE users SET
-                full_name = ?,
-                organization = ?,
-                role = ?,
-                status = ?,
-                updated_at = ?,
-                preferences = ?,
-                jobs_count = ?,
-                tokens_used = ?
-            WHERE id = ?
-        """, (
-            user.full_name,
-            user.organization,
-            user.role.value,
-            user.status.value,
-            now,
-            json.dumps(user.preferences),
-            user.jobs_count,
-            user.tokens_used,
-            user.id
-        ))
+        with self._transaction() as cursor:
+            cursor.execute("""
+                UPDATE users SET
+                    full_name = ?,
+                    organization = ?,
+                    role = ?,
+                    status = ?,
+                    updated_at = ?,
+                    preferences = ?,
+                    jobs_count = ?,
+                    tokens_used = ?
+                WHERE id = ?
+            """, (
+                user.full_name,
+                user.organization,
+                user.role.value,
+                user.status.value,
+                now,
+                json.dumps(user.preferences),
+                user.jobs_count,
+                user.tokens_used,
+                user.id
+            ))
 
-        self.conn.commit()
         user.updated_at = datetime.fromtimestamp(now)
         return user
 
     def update_password(self, user_id: int, password_hash: str) -> bool:
         """Update user password."""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            UPDATE users SET password_hash = ?, updated_at = ?
-            WHERE id = ?
-        """, (password_hash, datetime.now().timestamp(), user_id))
-        self.conn.commit()
-        return cursor.rowcount > 0
+        with self._transaction() as cursor:
+            cursor.execute("""
+                UPDATE users SET password_hash = ?, updated_at = ?
+                WHERE id = ?
+            """, (password_hash, datetime.now().timestamp(), user_id))
+            return cursor.rowcount > 0
 
     def update_last_login(self, user_id: int) -> bool:
         """Update last login timestamp."""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            UPDATE users SET last_login = ?
-            WHERE id = ?
-        """, (datetime.now().timestamp(), user_id))
-        self.conn.commit()
-        return cursor.rowcount > 0
+        with self._transaction() as cursor:
+            cursor.execute("""
+                UPDATE users SET last_login = ?
+                WHERE id = ?
+            """, (datetime.now().timestamp(), user_id))
+            return cursor.rowcount > 0
 
     def delete_user(self, user_id: int) -> bool:
         """Delete user (soft delete by setting status to inactive)."""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            UPDATE users SET status = ?, updated_at = ?
-            WHERE id = ?
-        """, (UserStatus.INACTIVE.value, datetime.now().timestamp(), user_id))
-        self.conn.commit()
-        return cursor.rowcount > 0
+        with self._transaction() as cursor:
+            cursor.execute("""
+                UPDATE users SET status = ?, updated_at = ?
+                WHERE id = ?
+            """, (UserStatus.INACTIVE.value, datetime.now().timestamp(), user_id))
+            return cursor.rowcount > 0
 
     def list_users(
         self,
@@ -279,13 +284,12 @@ class UserDatabase:
         expires_at: datetime
     ) -> int:
         """Store a refresh token."""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            INSERT INTO refresh_tokens (user_id, token_hash, created_at, expires_at)
-            VALUES (?, ?, ?, ?)
-        """, (user_id, token_hash, datetime.now().timestamp(), expires_at.timestamp()))
-        self.conn.commit()
-        return cursor.lastrowid
+        with self._transaction() as cursor:
+            cursor.execute("""
+                INSERT INTO refresh_tokens (user_id, token_hash, created_at, expires_at)
+                VALUES (?, ?, ?, ?)
+            """, (user_id, token_hash, datetime.now().timestamp(), expires_at.timestamp()))
+            return cursor.lastrowid
 
     def get_refresh_token(self, token_hash: str) -> Optional[dict]:
         """Get refresh token by hash."""
@@ -309,33 +313,30 @@ class UserDatabase:
 
     def revoke_refresh_token(self, token_hash: str) -> bool:
         """Revoke a refresh token."""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            UPDATE refresh_tokens SET revoked = 1
-            WHERE token_hash = ?
-        """, (token_hash,))
-        self.conn.commit()
-        return cursor.rowcount > 0
+        with self._transaction() as cursor:
+            cursor.execute("""
+                UPDATE refresh_tokens SET revoked = 1
+                WHERE token_hash = ?
+            """, (token_hash,))
+            return cursor.rowcount > 0
 
     def revoke_all_user_tokens(self, user_id: int) -> int:
         """Revoke all refresh tokens for a user (logout everywhere)."""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            UPDATE refresh_tokens SET revoked = 1
-            WHERE user_id = ? AND revoked = 0
-        """, (user_id,))
-        self.conn.commit()
-        return cursor.rowcount
+        with self._transaction() as cursor:
+            cursor.execute("""
+                UPDATE refresh_tokens SET revoked = 1
+                WHERE user_id = ? AND revoked = 0
+            """, (user_id,))
+            return cursor.rowcount
 
     def cleanup_expired_tokens(self) -> int:
         """Remove expired tokens."""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            DELETE FROM refresh_tokens
-            WHERE expires_at < ? OR revoked = 1
-        """, (datetime.now().timestamp(),))
-        self.conn.commit()
-        return cursor.rowcount
+        with self._transaction() as cursor:
+            cursor.execute("""
+                DELETE FROM refresh_tokens
+                WHERE expires_at < ? OR revoked = 1
+            """, (datetime.now().timestamp(),))
+            return cursor.rowcount
 
     # ========================================================================
     # Password Reset Token Operations
@@ -348,13 +349,12 @@ class UserDatabase:
         expires_at: datetime
     ) -> int:
         """Store a password reset token."""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            INSERT INTO password_reset_tokens (user_id, token_hash, created_at, expires_at)
-            VALUES (?, ?, ?, ?)
-        """, (user_id, token_hash, datetime.now().timestamp(), expires_at.timestamp()))
-        self.conn.commit()
-        return cursor.lastrowid
+        with self._transaction() as cursor:
+            cursor.execute("""
+                INSERT INTO password_reset_tokens (user_id, token_hash, created_at, expires_at)
+                VALUES (?, ?, ?, ?)
+            """, (user_id, token_hash, datetime.now().timestamp(), expires_at.timestamp()))
+            return cursor.lastrowid
 
     def get_password_reset_token(self, token_hash: str) -> Optional[dict]:
         """Get password reset token by hash."""
@@ -377,13 +377,12 @@ class UserDatabase:
 
     def mark_password_reset_used(self, token_hash: str) -> bool:
         """Mark password reset token as used."""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            UPDATE password_reset_tokens SET used = 1
-            WHERE token_hash = ?
-        """, (token_hash,))
-        self.conn.commit()
-        return cursor.rowcount > 0
+        with self._transaction() as cursor:
+            cursor.execute("""
+                UPDATE password_reset_tokens SET used = 1
+                WHERE token_hash = ?
+            """, (token_hash,))
+            return cursor.rowcount > 0
 
     # ========================================================================
     # Helper Methods

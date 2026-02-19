@@ -1,6 +1,6 @@
 "use client";
 
-import { use } from "react";
+import { use, useEffect, useRef } from "react";
 import {
   Download,
   FileText,
@@ -13,11 +13,14 @@ import {
   AlertTriangle,
   Clock,
   BookOpen,
+  XCircle,
+  RotateCcw,
 } from "lucide-react";
 import Link from "next/link";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { useJob } from "@/lib/api/hooks";
+import { useJob, useCancelJob, useRestartJob } from "@/lib/api/hooks";
 import { jobs as jobsApi } from "@/lib/api/client";
 import { formatDate, statusVariant } from "@/lib/utils";
 import { useLocale } from "@/lib/i18n";
@@ -63,6 +66,31 @@ export default function JobDetailPage({
   const { id } = use(params);
   const { data: job, isLoading } = useJob(id);
   const { t } = useLocale();
+  const cancelJob = useCancelJob();
+  const restartJob = useRestartJob();
+
+  // Browser notification on job completion/failure
+  const prevStatusRef = useRef<string | undefined>(undefined);
+  useEffect(() => {
+    const prev = prevStatusRef.current;
+    const curr = job?.status;
+    prevStatusRef.current = curr;
+    if (!prev || !curr) return;
+    const wasActive = prev === "processing" || prev === "pending";
+    const isTerminal = curr === "completed" || curr === "failed";
+    if (wasActive && isTerminal && typeof Notification !== "undefined" && Notification.permission === "granted") {
+      const title = curr === "completed" ? "Translation Complete" : "Translation Failed";
+      const body = job?.source_filename || "Your translation job has finished";
+      new Notification(title, { body });
+    }
+  }, [job?.status, job?.source_filename]);
+
+  // Request notification permission on mount
+  useEffect(() => {
+    if (typeof Notification !== "undefined" && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -121,12 +149,38 @@ export default function JobDetailPage({
               {job.output_format} &middot; {formatDate(job.created_at)}
             </p>
           </div>
-          <Badge variant={statusVariant(job.status)}>
-            {job.status === "processing" && (
-              <Clock className="w-3 h-3 inline mr-1" strokeWidth={1.5} />
+          <div className="flex items-center gap-2">
+            <Badge variant={statusVariant(job.status)}>
+              {job.status === "processing" && (
+                <Clock className="w-3 h-3 inline mr-1" strokeWidth={1.5} />
+              )}
+              {job.status}
+            </Badge>
+            {(job.status === "processing" || job.status === "pending") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => cancelJob.mutate(id)}
+                disabled={cancelJob.isPending}
+                loading={cancelJob.isPending}
+              >
+                <XCircle className="w-4 h-4 mr-1" strokeWidth={1.5} />
+                {t.jobs.cancel || "Cancel"}
+              </Button>
             )}
-            {job.status}
-          </Badge>
+            {(job.status === "failed" || job.status === "cancelled") && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => restartJob.mutate(id)}
+                disabled={restartJob.isPending}
+                loading={restartJob.isPending}
+              >
+                <RotateCcw className="w-4 h-4 mr-1" strokeWidth={1.5} />
+                {t.jobs.restart || "Restart"}
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 

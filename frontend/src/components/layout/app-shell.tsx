@@ -22,6 +22,7 @@ import {
   FolderUp,
   FileEdit,
   Clapperboard,
+  Shield,
 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useLocale } from "@/lib/i18n";
@@ -40,6 +41,7 @@ const NAV_KEYS = [
   { href: "/dashboard", key: "dashboard" as const, icon: BarChart3 },
   { href: "/profiles", key: "profiles" as const, icon: Layers },
   { href: "/settings", key: "settings" as const, icon: Settings },
+  { href: "/admin", key: "admin" as const, icon: Shield },
 ];
 
 const STORAGE_KEY = "aipub-sidebar";

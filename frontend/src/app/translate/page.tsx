@@ -1,16 +1,17 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Upload, FileText, Sparkles, ArrowRight, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
-import { useCreateJob, useProfiles, useGlossaries, useTranslationEngines } from "@/lib/api/hooks";
+import { useCreateJob, useProfiles, useGlossaries, useTranslationEngines, useSettingsSection } from "@/lib/api/hooks";
 import { detectLanguage } from "@/lib/api/client";
 import {
   SUPPORTED_LANGUAGES,
   OUTPUT_FORMATS,
   type TranslateRequest,
+  type GeneralSettings,
 } from "@/lib/api/types";
 import { Cpu } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -31,9 +32,16 @@ export default function TranslatePage() {
   const [engineId, setEngineId] = useState("auto");
   const [detecting, setDetecting] = useState(false);
 
+  const { data: generalSettings } = useSettingsSection<GeneralSettings>("general");
   const { data: profilesData } = useProfiles();
   const { data: enginesData } = useTranslationEngines();
   const { data: glossaryData } = useGlossaries(sourceLang, targetLang);
+
+  // Apply user's default languages from settings (once on load)
+  useEffect(() => {
+    if (generalSettings?.source_lang) setSourceLang(generalSettings.source_lang);
+    if (generalSettings?.target_lang) setTargetLang(generalSettings.target_lang);
+  }, [generalSettings?.source_lang, generalSettings?.target_lang]);
 
   const profileList = profilesData?.profiles || [];
   const glossaryList = glossaryData?.glossaries || [];

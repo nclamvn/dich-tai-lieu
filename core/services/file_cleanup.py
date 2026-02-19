@@ -55,12 +55,14 @@ class FileCleanupService:
         output_retention_days: int | None = None,
         checkpoint_retention_days: int | None = None,
     ):
-        from config.settings import settings
+        from config.settings import settings, BASE_DIR
 
         self.temp_dir = settings.temp_dir
         self.input_dir = settings.input_dir
         self.output_dir = settings.output_dir
         self.checkpoint_dir = settings.checkpoint_dir
+        self.uploads_dir = BASE_DIR / "uploads"
+        self.uploads_v2_dir = BASE_DIR / "uploads" / "v2"
 
         self.temp_max_age_hours = temp_max_age_hours or settings.cleanup_temp_max_age_hours
         self.upload_retention_days = upload_retention_days or settings.cleanup_upload_retention_days
@@ -73,9 +75,11 @@ class FileCleanupService:
 
         self._clean_temp_files(result, dry_run)
         self._clean_orphaned_uploads(result, dry_run)
+        self._clean_upload_dirs(result, dry_run)
         self._clean_old_outputs(result, dry_run)
         self._clean_old_checkpoints(result, dry_run)
         self._clean_old_errors(result, dry_run)
+        self._clean_old_jobs(result, dry_run)
 
         logger.info(str(result))
         return result
@@ -132,6 +136,25 @@ class FileCleanupService:
         except Exception as e:
             result.errors.append(f"error cleanup: {e}")
             logger.warning(f"Error cleanup failed: {e}")
+
+    def _clean_upload_dirs(self, result: CleanupResult, dry_run: bool) -> None:
+        """Remove old files from uploads/ and uploads/v2/ directories."""
+        cutoff = time.time() - (self.upload_retention_days * 86400)
+        for attr in ("uploads_dir", "uploads_v2_dir"):
+            d = getattr(self, attr, None)
+            if d and d.exists():
+                self._remove_old_files(d, cutoff, result, "orphaned_uploads_removed", dry_run)
+
+    def _clean_old_jobs(self, result: CleanupResult, dry_run: bool) -> None:
+        """Clean up old completed/failed jobs from the V1 job queue."""
+        try:
+            from core.job_queue import JobQueue
+            q = JobQueue()
+            if not dry_run:
+                q.cleanup_old_jobs(days=30)
+        except Exception as e:
+            result.errors.append(f"job cleanup: {e}")
+            logger.warning(f"Job cleanup failed: {e}")
 
     def _remove_old_files(
         self,

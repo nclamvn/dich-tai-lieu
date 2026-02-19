@@ -68,7 +68,7 @@ async def batch_upload_files(
             continue
 
         # Generate job ID
-        job_id = str(uuid.uuid4())[:8]
+        job_id = str(uuid.uuid4())
 
         # Save file
         upload_dir = Path("./uploads/batch")

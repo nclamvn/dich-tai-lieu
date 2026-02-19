@@ -235,6 +235,14 @@ export const jobs = {
     });
   },
 
+  async cancel(jobId: string): Promise<void> {
+    await apiFetch(`/api/v2/jobs/${jobId}/cancel`, { method: "POST" });
+  },
+
+  async restart(jobId: string): Promise<void> {
+    await apiFetch(`/api/v2/jobs/${jobId}/restart`, { method: "POST" });
+  },
+
   getDownloadUrl(jobId: string, format: string): string {
     return `${API_BASE}/api/v2/jobs/${jobId}/download/${format}`;
   },
@@ -894,5 +902,37 @@ export const editor = {
 
   async regenerate(jobId: string): Promise<{ status: string; message: string }> {
     return apiFetch(`/editor/jobs/${jobId}/regenerate`, { method: "POST" });
+  },
+};
+
+// ─── Admin / Monitoring ───
+
+export const admin = {
+  async getHealth(): Promise<Record<string, unknown>> {
+    return apiFetch("/api/health/detailed");
+  },
+
+  async getSystemInfo(): Promise<Record<string, unknown>> {
+    return apiFetch("/api/system/info");
+  },
+
+  async getQueueStats(): Promise<Record<string, number>> {
+    return apiFetch("/api/queue/stats");
+  },
+
+  async getCostMetrics(hours: number = 24): Promise<Record<string, unknown>> {
+    return apiFetch(`/api/monitoring/costs?time_period_hours=${hours}`);
+  },
+
+  async getErrorStats(hours: number = 24): Promise<Record<string, unknown>> {
+    return apiFetch(`/api/monitoring/errors?time_period_hours=${hours}`);
+  },
+
+  async getRecentErrors(limit: number = 20): Promise<Array<Record<string, unknown>>> {
+    return apiFetch(`/api/monitoring/errors/recent?limit=${limit}`);
+  },
+
+  async getCacheStats(): Promise<Record<string, unknown>> {
+    return apiFetch("/api/cache/stats");
   },
 };

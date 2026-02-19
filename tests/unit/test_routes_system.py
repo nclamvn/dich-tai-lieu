@@ -37,7 +37,7 @@ class TestSystemInfo:
             resp = client.get("/api/system/info")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["version"] == "2.4.0"
+        assert data["version"] == "3.3.1"
         assert data["processor_running"] is False
         assert data["current_jobs"] == 0
         assert "queue_stats" in data
