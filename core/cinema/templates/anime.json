@@ -1,0 +1,34 @@
+{
+    "name": "Anime Style",
+    "description": "Japanese animation aesthetic with vibrant colors and expressive characters",
+    "visual_style": "High quality anime, vibrant saturated colors, clean line art, expressive characters",
+    "color_grading": "Saturated anime colors, bright highlights, soft shadows",
+    "lighting_style": "Anime cel shading, dramatic backlighting, rim lights",
+    "camera_movements": [
+        "speed lines zoom",
+        "dramatic camera shake",
+        "sakura petals floating",
+        "wind effect on hair",
+        "static dramatic poses"
+    ],
+    "default_shots": [
+        "dramatic close-up",
+        "wide scenic shot",
+        "action sequence",
+        "emotional reaction shot"
+    ],
+    "reference_films": [
+        "Your Name (Kimi no Na wa)",
+        "Spirited Away",
+        "Demon Slayer",
+        "Attack on Titan",
+        "Violet Evergarden"
+    ],
+    "aspect_ratio": "16:9",
+    "default_fps": 24,
+    "default_transitions": "cut",
+    "prompt_prefix": "High quality anime style, Studio Ghibli aesthetic, vibrant colors, detailed backgrounds, Japanese animation,",
+    "prompt_suffix": "anime art style, expressive characters, beautiful scenery, masterpiece anime quality",
+    "negative_prompt": "3D render, realistic, western cartoon, low quality, poorly drawn, bad anatomy",
+    "music_style": "Japanese orchestral, J-pop, emotional piano, anime OST style"
+}

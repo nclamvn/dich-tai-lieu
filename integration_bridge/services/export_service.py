@@ -1,9 +1,12 @@
 """Export service - unified export from both systems"""
 import httpx
 import asyncio
+import logging
 from typing import Optional, List
 from datetime import datetime
 import base64
+
+logger = logging.getLogger(__name__)
 
 from ..models.schemas import (
     ExportRequest,
@@ -168,8 +171,8 @@ class ExportService:
                 if response.status_code == 200:
                     data = response.json()
                     return data.get("result", {}).get("translated_content")
-        except:
-            pass
+        except Exception as e:
+            logger.debug("Failed to fetch content from %s: %s", source, e)
         return None
 
     async def _export_via_app(
@@ -278,8 +281,8 @@ class ExportService:
                 download_url=download_url,
                 size_bytes=len(text_content.encode('utf-8'))
             )
-        except:
-            pass
+        except Exception as e:
+            logger.debug("Failed to export text format %s: %s", fmt, e)
         return None
 
     def get_job_status(self, job_id: str) -> Optional[BridgeJob]:

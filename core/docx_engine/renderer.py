@@ -14,6 +14,7 @@ from .normalizer import DocumentNormalizer
 from .style_mapper import StyleMapper, RenderContext
 from .layout_engine import LayoutEngine
 from .templates.base import DocxTemplate, create_template
+from core.i18n import get_string, format_chapter_title
 
 logger = logging.getLogger(__name__)
 
@@ -118,11 +119,12 @@ class DocxRenderer:
         layout_engine.add_header_footer(doc.meta)
 
         # Render title page
+        lang = doc.meta.language or "en"
         self._render_title_page(docx, doc, style_mapper)
 
         # Render TOC
         if include_toc and doc.toc.items:
-            layout_engine.generate_toc(doc.toc)
+            layout_engine.generate_toc(doc.toc, lang=lang)
 
         # Render front matter
         if doc.front_matter.items:
@@ -130,7 +132,7 @@ class DocxRenderer:
 
         # Render chapters
         for i, chapter in enumerate(doc.chapters):
-            self._render_chapter(docx, chapter, style_mapper, layout_engine, i == 0)
+            self._render_chapter(docx, chapter, style_mapper, layout_engine, i == 0, lang=lang)
 
         # Render glossary
         if include_glossary and doc.glossary and doc.glossary.items:
@@ -210,8 +212,10 @@ class DocxRenderer:
 
         # Translator
         if doc.meta.translator:
+            lang = doc.meta.language or "en"
+            translator_label = get_string("translator", lang)
             para = docx.add_paragraph()
-            run = para.add_run(f"Dịch giả: {doc.meta.translator}")
+            run = para.add_run(f"{translator_label}: {doc.meta.translator}")
 
         # Page break after title
         docx.add_page_break()
@@ -246,7 +250,8 @@ class DocxRenderer:
         chapter: Chapter,
         style_mapper: StyleMapper,
         layout_engine: LayoutEngine,
-        is_first_chapter: bool
+        is_first_chapter: bool,
+        lang: str = "en",
     ):
         """Render a single chapter"""
         styles = self.template.get_styles()
@@ -260,7 +265,7 @@ class DocxRenderer:
                 layout_engine.add_section_break('odd_page')
 
         # Chapter title
-        chapter_title = f"Chương {chapter.number}: {chapter.title}" if chapter.number else chapter.title
+        chapter_title = format_chapter_title(chapter.number, chapter.title, lang) if chapter.number else chapter.title
         heading_spec = styles.get('heading_1')
 
         if heading_spec:

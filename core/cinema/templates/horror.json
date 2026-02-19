@@ -1,0 +1,34 @@
+{
+    "name": "Horror",
+    "description": "Psychological horror with unsettling atmosphere and tension building",
+    "visual_style": "Horror atmosphere, unsettling visuals, psychological tension, creeping dread",
+    "color_grading": "Desaturated with sickly green/yellow tints, deep blacks, harsh contrast",
+    "lighting_style": "Low-key lighting, practical sources, flickering lights, deep shadows",
+    "camera_movements": [
+        "slow creeping dolly",
+        "sudden snap zoom",
+        "tilted dutch angle",
+        "static long take",
+        "POV stalking shot"
+    ],
+    "default_shots": [
+        "long dark corridor",
+        "face emerging from shadow",
+        "wide isolation shot",
+        "extreme close-up on fear"
+    ],
+    "reference_films": [
+        "The Shining",
+        "Hereditary",
+        "The Conjuring",
+        "A Quiet Place",
+        "Get Out"
+    ],
+    "aspect_ratio": "2.39:1",
+    "default_fps": 24,
+    "default_transitions": "cut",
+    "prompt_prefix": "Horror movie style, unsettling atmosphere, psychological tension, creeping dread,",
+    "prompt_suffix": "dark shadows, eerie lighting, horror cinematography, suspenseful, ominous",
+    "negative_prompt": "bright, cheerful, comedic, safe, cartoon, anime, colorful",
+    "music_style": "Dissonant strings, subtle drones, silence with sudden stings, unsettling ambience"
+}

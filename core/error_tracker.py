@@ -23,7 +23,6 @@ from enum import Enum
 # ============================================================================
 
 ERROR_DB_PATH = Path("data/errors/error_tracker.db")
-ERROR_DB_PATH.parent.mkdir(parents=True, exist_ok=True)
 
 
 class ErrorSeverity(Enum):
@@ -94,15 +93,19 @@ class ErrorRecord:
 class ErrorTracker:
     """SQLite-based error tracking system."""
 
-    def __init__(self, db_path: Path = ERROR_DB_PATH):
+    def __init__(self, db_path: Path | None = None):
         """Initialize error tracker."""
+        if db_path is None:
+            db_path = ERROR_DB_PATH
         self.db_path = db_path
+        self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = None
         self._init_database()
 
     def _init_database(self):
         """Initialize database schema."""
         self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+        self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.row_factory = sqlite3.Row
 
         cursor = self.conn.cursor()

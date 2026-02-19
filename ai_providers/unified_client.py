@@ -57,6 +57,9 @@ class UsageStats:
         "claude-sonnet-4-20250514": (3.00, 15.00),
         "claude-3.5-sonnet": (3.00, 15.00),
         "deepseek-chat": (0.14, 0.28),
+        "gemini-2.0-flash-exp": (0.10, 0.40),
+        "gemini-1.5-pro": (1.25, 5.00),
+        "gemini-1.5-flash": (0.075, 0.30),
     }
 
     @property
@@ -174,10 +177,10 @@ class UnifiedLLMClient:
     ]
 
     # Provider priority order (will try in this order)
-    PROVIDER_ORDER = ["openai", "anthropic", "deepseek"]
+    PROVIDER_ORDER = ["openai", "anthropic", "deepseek", "gemini"]
 
-    # Vision provider priority (Claude Vision first, then OpenAI Vision)
-    VISION_PROVIDER_ORDER = ["anthropic", "openai"]
+    # Vision provider priority (Claude Vision first, then OpenAI, then Gemini)
+    VISION_PROVIDER_ORDER = ["anthropic", "openai", "gemini"]
 
     # Provider configurations
     PROVIDER_CONFIG = {
@@ -195,6 +198,11 @@ class UnifiedLLMClient:
             "env_key": "DEEPSEEK_API_KEY",
             "text_model": "deepseek-chat",
             "vision_model": None,  # DeepSeek doesn't support vision
+        },
+        "gemini": {
+            "env_key": "GOOGLE_API_KEY",
+            "text_model": "gemini-2.0-flash-exp",
+            "vision_model": "gemini-2.0-flash-exp",
         },
     }
 
@@ -270,6 +278,12 @@ class UnifiedLLMClient:
                 api_key=api_key,
                 base_url="https://api.deepseek.com/v1"
             )
+        elif provider == "gemini":
+            from openai import AsyncOpenAI
+            self._clients[provider] = AsyncOpenAI(
+                api_key=api_key,
+                base_url="https://generativelanguage.googleapis.com/v1beta/openai/"
+            )
         else:
             raise ValueError(f"Unknown provider: {provider}")
 
@@ -307,7 +321,7 @@ class UnifiedLLMClient:
                     status=ProviderStatus.AVAILABLE,
                     model=config["text_model"]
                 )
-            else:  # openai or deepseek
+            else:  # openai, deepseek, or gemini (OpenAI-compatible)
                 response = await client.chat.completions.create(
                     model=config["text_model"],
                     messages=[{"role": "user", "content": "Hi"}],
@@ -471,7 +485,7 @@ class UnifiedLLMClient:
                         api_key = self._get_api_key(p)
                         if api_key and self.PROVIDER_CONFIG[p].get("vision_model"):
                             self._current_provider = p
-                            logger.info(f"🔍 Vision request: using {p} (priority: Claude → OpenAI)")
+                            logger.info(f"🔍 Vision request: using {p} (priority: Claude → OpenAI → Gemini)")
                             break
         else:
             provider_order = self.PROVIDER_ORDER
@@ -582,7 +596,7 @@ class UnifiedLLMClient:
 
             return Response(response.content[0].text, usage)
 
-        else:  # openai or deepseek
+        else:  # openai, deepseek, or gemini (OpenAI-compatible)
             # Convert messages to OpenAI format
             converted_messages = []
             for msg in messages:
@@ -681,7 +695,7 @@ class UnifiedLLMClient:
             "vision_providers": {
                 "available": vision_available,
                 "priority_order": self.VISION_PROVIDER_ORDER,
-                "note": "Claude Vision (priority) → OpenAI Vision (fallback)"
+                "note": "Claude Vision (priority) → OpenAI Vision → Gemini Vision (fallback)"
             },
             "unavailable_providers": {
                 p: {"status": h.status.value, "error": h.error}

@@ -15,6 +15,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
 
+from core.database import get_db_backend
 from .models import UsageRecord, UsageStats, UserQuota, QuotaPlan
 
 logger = logging.getLogger(__name__)
@@ -30,29 +31,20 @@ class UsageDatabase:
 
         db_path.parent.mkdir(parents=True, exist_ok=True)
         self.db_path = db_path
+        self._backend = get_db_backend("usage", db_dir=db_path.parent)
         self._init_db()
 
     @contextmanager
     def _get_connection(self):
         """Get database connection with context manager."""
-        conn = sqlite3.connect(str(self.db_path))
-        conn.row_factory = sqlite3.Row
-        try:
+        with self._backend.connection() as conn:
             yield conn
-            conn.commit()
-        except Exception:
-            conn.rollback()
-            raise
-        finally:
-            conn.close()
 
     def _init_db(self):
         """Initialize database schema."""
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
             # Usage records table
-            cursor.execute("""
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS usage_records (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
@@ -75,7 +67,7 @@ class UsageDatabase:
             """)
 
             # User quotas table
-            cursor.execute("""
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS user_quotas (
                     user_id TEXT PRIMARY KEY,
                     plan TEXT DEFAULT 'free',
@@ -95,7 +87,7 @@ class UsageDatabase:
             """)
 
             # Monthly aggregates table (for fast queries)
-            cursor.execute("""
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS monthly_usage (
                     user_id TEXT NOT NULL,
                     period TEXT NOT NULL,
@@ -115,9 +107,9 @@ class UsageDatabase:
             """)
 
             # Indexes
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_usage_user_period ON usage_records(user_id, period)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_usage_timestamp ON usage_records(timestamp)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_usage_job ON usage_records(job_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_user_period ON usage_records(user_id, period)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_timestamp ON usage_records(timestamp)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_usage_job ON usage_records(job_id)")
 
     def record_usage(self, record: UsageRecord) -> str:
         """Record a usage event."""
@@ -132,10 +124,8 @@ class UsageDatabase:
         record.total_tokens = record.input_tokens + record.output_tokens
 
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
             # Insert record
-            cursor.execute("""
+            conn.execute("""
                 INSERT INTO usage_records (
                     id, user_id, timestamp, period, job_id, operation,
                     input_tokens, output_tokens, total_tokens,
@@ -162,7 +152,7 @@ class UsageDatabase:
             ))
 
             # Update monthly aggregate
-            cursor.execute("""
+            conn.execute("""
                 INSERT INTO monthly_usage (
                     user_id, period, total_jobs, total_tokens,
                     total_input_tokens, total_output_tokens,
@@ -202,15 +192,11 @@ class UsageDatabase:
             period = datetime.utcnow().strftime("%Y-%m")
 
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
             # Get monthly aggregate
-            cursor.execute("""
+            row = conn.execute("""
                 SELECT * FROM monthly_usage
                 WHERE user_id = ? AND period = ?
-            """, (user_id, period))
-
-            row = cursor.fetchone()
+            """, (user_id, period)).fetchone()
 
             if not row:
                 return UsageStats(user_id=user_id, period=period)
@@ -231,28 +217,24 @@ class UsageDatabase:
             )
 
             # Get breakdown by operation
-            cursor.execute("""
+            for row in conn.execute("""
                 SELECT operation, COUNT(*) as count, SUM(total_tokens) as tokens
                 FROM usage_records
                 WHERE user_id = ? AND period = ?
                 GROUP BY operation
-            """, (user_id, period))
-
-            for row in cursor.fetchall():
+            """, (user_id, period)).fetchall():
                 stats.jobs_by_operation[row["operation"]] = row["count"]
                 stats.tokens_by_operation[row["operation"]] = row["tokens"] or 0
 
             # Get breakdown by provider
-            cursor.execute("""
+            for row in conn.execute("""
                 SELECT provider, COUNT(*) as count,
                        SUM(total_tokens) as tokens,
                        SUM(cost_usd) as cost
                 FROM usage_records
                 WHERE user_id = ? AND period = ? AND provider IS NOT NULL
                 GROUP BY provider
-            """, (user_id, period))
-
-            for row in cursor.fetchall():
+            """, (user_id, period)).fetchall():
                 if row["provider"]:
                     stats.jobs_by_provider[row["provider"]] = row["count"]
                     stats.tokens_by_provider[row["provider"]] = row["tokens"] or 0
@@ -263,10 +245,9 @@ class UsageDatabase:
     def get_user_quota(self, user_id: str) -> UserQuota:
         """Get quota configuration for a user."""
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("SELECT * FROM user_quotas WHERE user_id = ?", (user_id,))
-            row = cursor.fetchone()
+            row = conn.execute(
+                "SELECT * FROM user_quotas WHERE user_id = ?", (user_id,)
+            ).fetchone()
 
             if not row:
                 # Return default free quota
@@ -290,9 +271,7 @@ class UsageDatabase:
     def set_user_quota(self, user_id: str, quota: UserQuota) -> None:
         """Set quota configuration for a user."""
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("""
+            conn.execute("""
                 INSERT INTO user_quotas (
                     user_id, plan, monthly_tokens, monthly_jobs, monthly_pages,
                     max_file_size_mb, max_pages_per_job, max_concurrent_jobs,
@@ -338,25 +317,23 @@ class UsageDatabase:
     ) -> List[UsageRecord]:
         """Get usage records for a user."""
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
             if period:
-                cursor.execute("""
+                rows = conn.execute("""
                     SELECT * FROM usage_records
                     WHERE user_id = ? AND period = ?
                     ORDER BY timestamp DESC
                     LIMIT ? OFFSET ?
-                """, (user_id, period, limit, offset))
+                """, (user_id, period, limit, offset)).fetchall()
             else:
-                cursor.execute("""
+                rows = conn.execute("""
                     SELECT * FROM usage_records
                     WHERE user_id = ?
                     ORDER BY timestamp DESC
                     LIMIT ? OFFSET ?
-                """, (user_id, limit, offset))
+                """, (user_id, limit, offset)).fetchall()
 
             records = []
-            for row in cursor.fetchall():
+            for row in rows:
                 records.append(UsageRecord(
                     id=row["id"],
                     user_id=row["user_id"],

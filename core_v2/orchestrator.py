@@ -19,7 +19,7 @@ from enum import Enum
 
 from .document_dna import DocumentDNA, extract_dna, quick_dna
 from .semantic_chunker import SemanticChunker, SemanticChunk
-from .publishing_profiles import PublishingProfile, PROFILES, get_profile
+from .publishing_profiles import PublishingProfile, PROFILES, get_profile, BASE_RENDERING_SKILL
 from .output_converter import OutputConverter, OutputFormat
 from .verifier import QualityVerifier, VerificationResult
 from .vision_reader import VisionReader, VisionDocument
@@ -157,6 +157,8 @@ DOCUMENT DNA:
 
 PUBLISHING PROFILE:
 {profile_prompt}
+
+{rendering_skill}
 
 TRANSLATED CHUNKS (in {target_lang}):
 {chunks_text}
@@ -299,6 +301,7 @@ class UniversalPublisher:
         use_vision: bool = True,  # NEW: Use Claude Vision for PDF reading
         docx_template: str = "auto",  # NEW: DOCX template (ebook/academic/business/auto)
         pdf_template: str = "auto",  # NEW: PDF template (ebook/academic/business/auto)
+        title_fallback: str = "",  # Fallback title (e.g. source filename without extension)
     ) -> PublishingJob:
         """
         Main publishing pipeline.
@@ -372,11 +375,14 @@ class UniversalPublisher:
             # Stage 3: Translate chunks (55% - 90%)
             update_progress(0.55, "Translating")
             job.status = JobStatus.TRANSLATING
+            # Use detected language from DNA if source_lang is 'auto'
+            actual_source_lang = job.dna.language if source_lang == "auto" and job.dna.language else source_lang
+            logger.info(f"Translation: {actual_source_lang} → {target_lang} (requested: {source_lang}, detected: {job.dna.language})")
             job.translated_chunks = await self._translate_chunks(
                 job.chunks,
                 job.dna,
                 profile_id,
-                source_lang,
+                actual_source_lang,
                 target_lang,
                 lambda p: update_progress(0.55 + p * 0.35, f"Translating chunk {int(p * len(job.chunks))}/{len(job.chunks)}"),
             )
@@ -397,12 +403,14 @@ class UniversalPublisher:
             job.output_path = await self._convert(
                 job.assembled_content,
                 output_format,
-                job.dna.title or "translated_document",
+                job.dna.title or title_fallback or "translated_document",
                 job.dna.author,
                 job.job_id,
                 dna=job.dna,  # Pass DNA for formula detection
                 docx_template=docx_template,  # Professional DOCX template
                 pdf_template=pdf_template,  # Professional PDF template
+                profile_id=profile_id,  # For profile-based template selection
+                target_lang=target_lang,  # For i18n in renderers
             )
 
             # Stage 6: Verify (98%)
@@ -475,7 +483,67 @@ class UniversalPublisher:
 
         # Sort by original index to maintain order
         results_with_index.sort(key=lambda x: x[0])
-        return [r[1] for r in results_with_index]
+        translated = [r[1] for r in results_with_index]
+
+        # Log translation language quality summary
+        correct_lang = sum(
+            1 for t in translated
+            if self._detect_language(t) in (target_lang, "unknown")
+        )
+        logger.info(
+            f"Translation quality: {correct_lang}/{total} chunks in target language '{target_lang}'"
+        )
+        if correct_lang < total:
+            wrong = [
+                i for i, t in enumerate(translated)
+                if self._detect_language(t) not in (target_lang, "unknown")
+            ]
+            logger.warning(f"Chunks still in source language: {wrong}")
+
+        return translated
+
+    @staticmethod
+    def _detect_language(text: str) -> str:
+        """Quick language detection based on character analysis.
+
+        Returns 'vi', 'zh', 'ja', 'en', or 'unknown'.
+        """
+        if not text or len(text) < 20:
+            return "unknown"
+
+        sample = text[:3000]
+        alpha_count = sum(1 for c in sample if c.isalpha())
+        if alpha_count == 0:
+            return "unknown"
+
+        # Vietnamese diacritical characters (unique to Vietnamese)
+        vi_diacriticals = set(
+            'àáảãạăắằẳẵặâấầẩẫậèéẻẽẹêếềểễệ'
+            'ìíỉĩịòóỏõọôốồổỗộơớờởỡợ'
+            'ùúủũụưứừửữựỳýỷỹỵđ'
+        )
+        vi_diacriticals |= {c.upper() for c in vi_diacriticals}
+
+        vi_count = sum(1 for c in sample if c in vi_diacriticals)
+
+        # CJK characters (Chinese/Japanese)
+        cjk_count = sum(
+            1 for c in sample
+            if '\u4e00' <= c <= '\u9fff'       # CJK Unified
+            or '\u3040' <= c <= '\u309f'        # Hiragana
+            or '\u30a0' <= c <= '\u30ff'        # Katakana
+        )
+
+        vi_ratio = vi_count / alpha_count
+        cjk_ratio = cjk_count / max(len(sample), 1)
+
+        if cjk_ratio > 0.1:
+            # Distinguish Chinese vs Japanese by kana presence
+            kana_count = sum(1 for c in sample if '\u3040' <= c <= '\u30ff')
+            return "ja" if kana_count > 5 else "zh"
+        if vi_ratio > 0.02:
+            return "vi"
+        return "en"
 
     async def _translate_chunk(
         self,
@@ -518,6 +586,39 @@ class UniversalPublisher:
                 # Verify LaTeX preservation if document has formulas
                 if dna.has_formulas:
                     translated = self._verify_latex_preservation(chunk.content, translated, chunk.index)
+
+                # Verify translation is in the target language
+                detected = self._detect_language(translated)
+                if detected != "unknown" and detected != target_lang:
+                    logger.warning(
+                        f"[Chunk {chunk.index}] Language mismatch: "
+                        f"expected '{target_lang}', detected '{detected}'. "
+                        f"Retrying with explicit instruction."
+                    )
+                    # Retry with a stronger, focused prompt
+                    retry_prompt = (
+                        f"CRITICAL INSTRUCTION: Translate the following text "
+                        f"from {source_lang} to {target_lang}.\n"
+                        f"Your output MUST be entirely in {target_lang}. "
+                        f"Do NOT include any {source_lang} text. "
+                        f"Do NOT echo the original. ONLY output the translation.\n\n"
+                        f"Text to translate:\n{chunk.content}"
+                    )
+                    retry_response = await self.llm_client.chat(
+                        messages=[{"role": "user", "content": retry_prompt}]
+                    )
+                    retranslated = retry_response.content.strip()
+
+                    detected2 = self._detect_language(retranslated)
+                    if detected2 == target_lang or detected2 == "unknown":
+                        logger.info(f"[Chunk {chunk.index}] Retry succeeded: now in '{target_lang}'")
+                        return retranslated
+                    else:
+                        logger.error(
+                            f"[Chunk {chunk.index}] Still wrong language after retry "
+                            f"(detected '{detected2}'). Using retry result anyway."
+                        )
+                        return retranslated
 
                 return translated
             except Exception as e:
@@ -594,9 +695,15 @@ class UniversalPublisher:
         # Join chunks with markers
         chunks_text = "\n\n---\n\n".join(translated_chunks)
 
+        # Build rendering skill from base + profile-specific instructions
+        rendering_skill = BASE_RENDERING_SKILL
+        if profile.rendering_instructions:
+            rendering_skill += "\n" + profile.rendering_instructions
+
         prompt = ASSEMBLY_PROMPT.format(
             dna_context=dna.to_context_prompt(),
             profile_prompt=profile.to_prompt(),
+            rendering_skill=rendering_skill,
             chunks_text=chunks_text,
             target_lang=target_lang,
         )
@@ -627,6 +734,8 @@ class UniversalPublisher:
         dna: Optional[DocumentDNA] = None,
         docx_template: str = "auto",
         pdf_template: str = "auto",
+        profile_id: str = "essay",
+        target_lang: str = "vi",
     ) -> Path:
         """Convert to final output format."""
         format_enum = OutputFormat(output_format.lower())
@@ -646,20 +755,33 @@ class UniversalPublisher:
         if has_formulas:
             logger.info(f"Document has formulas - using LaTeX-aware conversion")
 
+        # Resolve template from profile first, then DNA-based heuristic
+        profile = get_profile(profile_id)
+
+        def _resolve_template(requested: str) -> str:
+            """Resolve 'auto' template using profile, then DNA fallback."""
+            if requested != "auto":
+                return requested
+            # Try profile-based template first
+            if profile and profile.template_name != "auto":
+                logger.info(f"Template from profile '{profile_id}': {profile.template_name}")
+                return profile.template_name
+            # Fallback to DNA-based heuristic
+            if dna:
+                genre = (dna.genre or "").lower()
+                if any(kw in genre for kw in ["academic", "research", "paper", "thesis", "technical"]):
+                    return "academic"
+                elif any(kw in genre for kw in ["business", "report", "memo", "corporate"]):
+                    return "business"
+            return "ebook"
+
+        language = target_lang
+
         # Use professional DOCX rendering if template specified and format is docx
         if format_enum == OutputFormat.DOCX and docx_template:
             try:
-                # Auto-select template based on DNA genre if "auto"
-                template = docx_template
-                if template == "auto" and dna:
-                    genre = (dna.genre or "").lower()
-                    if any(kw in genre for kw in ["academic", "research", "paper", "thesis", "technical"]):
-                        template = "academic"
-                    elif any(kw in genre for kw in ["business", "report", "memo", "corporate"]):
-                        template = "business"
-                    else:
-                        template = "ebook"
-                    logger.info(f"Auto-selected DOCX template: {template} (genre: {dna.genre})")
+                template = _resolve_template(docx_template)
+                logger.info(f"DOCX template: {template}")
 
                 result_path = await self.converter.convert_markdown_to_docx_professional(
                     markdown_content=content,
@@ -667,6 +789,7 @@ class UniversalPublisher:
                     template=template,
                     title=title,
                     author=author or "Unknown",
+                    language=language,
                 )
                 logger.info(f"Professional DOCX created: {result_path}")
                 return result_path
@@ -677,17 +800,8 @@ class UniversalPublisher:
         # Use professional PDF rendering if template specified and format is pdf
         if format_enum == OutputFormat.PDF and pdf_template:
             try:
-                # Auto-select template based on DNA genre if "auto"
-                template = pdf_template
-                if template == "auto" and dna:
-                    genre = (dna.genre or "").lower()
-                    if any(kw in genre for kw in ["academic", "research", "paper", "thesis", "technical"]):
-                        template = "academic"
-                    elif any(kw in genre for kw in ["business", "report", "memo", "corporate"]):
-                        template = "business"
-                    else:
-                        template = "ebook"
-                    logger.info(f"Auto-selected PDF template: {template} (genre: {dna.genre})")
+                template = _resolve_template(pdf_template)
+                logger.info(f"PDF template: {template}")
 
                 result_path = await self.converter.convert_markdown_to_pdf_professional(
                     markdown_content=content,
@@ -695,6 +809,7 @@ class UniversalPublisher:
                     template=template,
                     title=title,
                     author=author or "Unknown",
+                    language=language,
                 )
                 logger.info(f"Professional PDF created: {result_path}")
                 return result_path

@@ -1,0 +1,33 @@
+exclude = [
+    ".git",
+    "__pycache__",
+    "legacy",
+    "htmlcov",
+    "data",
+    ".tox",
+]
+
+[lint]
+select = ["E", "F", "W"]
+ignore = [
+    "E501",   # line too long - existing codebase has long lines
+    "E402",   # module level import not at top - existing pattern
+    "E701",   # multiple statements on one line
+    "E712",   # comparison to True/False
+    "E722",   # bare except
+    "E741",   # ambiguous variable name
+    "F401",   # unused import - many conditional imports
+    "F403",   # wildcard import
+    "F541",   # f-string without placeholders - existing pattern
+    "F601",   # membership test with non-container
+    "F811",   # redefined unused name
+    "F821",   # undefined name - many conditional/dynamic imports
+    "F841",   # unused variable - existing pattern
+    "W291",   # trailing whitespace
+    "W292",   # no newline at end of file
+    "W293",   # whitespace before ':'
+]
+
+[lint.per-file-ignores]
+"__init__.py" = ["F401"]  # unused imports in __init__ are intentional
+"tests/*" = ["E", "F", "W"]  # relax rules for tests

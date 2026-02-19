@@ -60,6 +60,9 @@ class RateLimitConfig:
         "translate": "10/minute",
         "translate_batch": "5/minute",
 
+        # Vision API - expensive, rate-limited upstream
+        "vision": "30/minute",
+
         # Job management
         "job_create": "15/minute",
         "job_list": "60/minute",
@@ -260,6 +263,11 @@ def limit_auth(func):
 def limit_admin(func):
     """Apply admin rate limit."""
     return limiter.limit(rate_limit_config.get_limit("admin"))(func)
+
+
+def limit_vision(func):
+    """Apply vision API rate limit."""
+    return limiter.limit(rate_limit_config.get_limit("vision"))(func)
 
 
 # Rate limit middleware for specific paths

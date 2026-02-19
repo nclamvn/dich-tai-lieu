@@ -25,8 +25,10 @@ USER_DB_PATH = Path("data/users/users.db")
 class UserDatabase:
     """SQLite-based user storage."""
 
-    def __init__(self, db_path: Path = USER_DB_PATH):
+    def __init__(self, db_path: Path | None = None):
         """Initialize user database."""
+        if db_path is None:
+            db_path = USER_DB_PATH
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.conn = None
@@ -35,6 +37,7 @@ class UserDatabase:
     def _init_database(self):
         """Initialize database schema."""
         self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
+        self.conn.execute("PRAGMA journal_mode=WAL")
         self.conn.row_factory = sqlite3.Row
 
         cursor = self.conn.cursor()

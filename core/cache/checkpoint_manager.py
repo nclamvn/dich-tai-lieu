@@ -52,13 +52,17 @@ class CheckpointManager:
     - Resume capability after crashes/interruptions
     """
 
-    def __init__(self, db_path: Path):
+    def __init__(self, db_path: Path | None = None):
         """
         Initialize checkpoint manager
 
         Args:
-            db_path: Path to SQLite database file
+            db_path: Path to SQLite database file.
+                     If None, uses settings.checkpoint_dir / "checkpoints.db".
         """
+        if db_path is None:
+            from config.settings import settings
+            db_path = settings.checkpoint_dir / "checkpoints.db"
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._init_db()
@@ -66,6 +70,7 @@ class CheckpointManager:
     def _init_db(self):
         """Initialize database schema"""
         with sqlite3.connect(self.db_path) as conn:
+            conn.execute("PRAGMA journal_mode=WAL")
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS checkpoints (
                     job_id TEXT PRIMARY KEY,

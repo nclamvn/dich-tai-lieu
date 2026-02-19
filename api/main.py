@@ -76,7 +76,6 @@ from core.batch_processor import BatchProcessor, read_document
 # from core.ocr_deepseek import DeepseekOCR, OCRResult
 from core.post_formatting.heading_detector import HeadingDetector
 from core.cache.chunk_cache import ChunkCache
-from core.translation import get_engine_manager
 import re
 import math
 from docx import Document as DocxDocument
@@ -110,6 +109,9 @@ from api.error_dashboard_router import router as error_router
 from api.usage_router import router as usage_router
 from api.api_keys_router import router as api_keys_router
 from api.preview_router import router as preview_router
+
+# Book-to-Cinema: AI Movie Maker routes
+from api.cinema_api import router as cinema_router
 
 # P1: Error tracking integration
 from core.error_integration import (
@@ -156,13 +158,6 @@ class JobCreate(BaseModel):
     # MathPix credentials (optional per-job overrides, uses server .env defaults if not provided)
     mathpix_app_id: Optional[str] = Field(default=None, description="MathPix App ID (optional, overrides server default)")
     mathpix_app_key: Optional[str] = Field(default=None, description="MathPix App Key (optional, overrides server default)")
-
-    # Image Embedding (Phase 2026-01)
-    cover_image: Optional[str] = Field(default=None, description="Cover image as base64 string or data URI. Will be placed as Page 1 before title page.")
-    include_images: bool = Field(default=True, description="Extract and embed images from source PDF into output document")
-
-    # Translation Engine (Phase 2026-01)
-    engine: str = Field(default="auto", description="Translation engine: 'auto', 'translategemma_4b', 'cloud_api_auto'")
 
 
 class JobUpdate(BaseModel):
@@ -412,6 +407,9 @@ app.include_router(tm_router, prefix="/api/tm", tags=["Translation Memory"])
 app.include_router(usage_router)
 app.include_router(api_keys_router)
 app.include_router(preview_router)
+
+# Book-to-Cinema: AI Movie Maker
+app.include_router(cinema_router)
 
 # UI Page Routes (for clean URLs)
 ui_path = Path(__file__).parent.parent / "ui"
@@ -743,10 +741,7 @@ async def create_job(
         'cache_enabled': cache_enabled,
         'enable_book_layout': enable_book_layout,
         'output_formats_requested': output_formats_requested,
-        'ui_layout_mode': job_data.ui_layout_mode,  # Track original UI choice
-        # Phase 2026-01: Image Embedding
-        'cover_image': job_data.cover_image,  # Base64 cover image (Page 1)
-        'include_images': job_data.include_images,  # Extract/embed images from source
+        'ui_layout_mode': job_data.ui_layout_mode  # Track original UI choice
     }
     logger.debug(f"Creating job with metadata: {metadata_dict}")
 
@@ -1565,33 +1560,6 @@ async def get_system_info():
             cancelled=stats.get(JobStatus.CANCELLED, 0)
         )
     )
-
-
-@app.get("/api/engines")
-async def get_available_engines():
-    """
-    Get list of available translation engines.
-
-    Returns list of engines with their status and capabilities.
-    Used by UI to populate engine selector dropdown.
-    """
-    try:
-        manager = get_engine_manager()
-        return manager.get_available_engines()
-    except Exception as e:
-        logger.error(f"Failed to get engines: {e}")
-        # Return default fallback if engine manager fails
-        return [
-            {
-                "id": "cloud_api_auto",
-                "name": "Cloud API (Auto)",
-                "available": True,
-                "status": "available",
-                "languages_count": 55,
-                "offline": False,
-                "cost_per_token": 0.001
-            }
-        ]
 
 
 @app.get("/api/system/status")

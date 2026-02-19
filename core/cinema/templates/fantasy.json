@@ -1,0 +1,34 @@
+{
+    "name": "Fantasy Epic",
+    "description": "Epic fantasy style with magical atmosphere and sweeping landscapes",
+    "visual_style": "Epic fantasy, magical atmosphere, sweeping vistas, otherworldly beauty",
+    "color_grading": "Rich saturated colors, golden highlights, mystical blue shadows",
+    "lighting_style": "Magical golden hour, volumetric god rays, ethereal glow",
+    "camera_movements": [
+        "sweeping aerial shots",
+        "slow epic reveal",
+        "rising crane movement",
+        "majestic tracking shot",
+        "magical particle effects"
+    ],
+    "default_shots": [
+        "epic landscape vista",
+        "hero silhouette",
+        "magical moment close-up",
+        "battle wide shot"
+    ],
+    "reference_films": [
+        "Lord of the Rings",
+        "Game of Thrones",
+        "Harry Potter",
+        "The Witcher",
+        "Avatar"
+    ],
+    "aspect_ratio": "2.39:1",
+    "default_fps": 24,
+    "default_transitions": "crossfade",
+    "prompt_prefix": "Epic fantasy style, magical atmosphere, Lord of the Rings aesthetic, sweeping landscapes,",
+    "prompt_suffix": "mystical lighting, otherworldly beauty, high fantasy, epic scale, cinematic grandeur",
+    "negative_prompt": "modern, urban, realistic, mundane, everyday, contemporary",
+    "music_style": "Epic orchestral, Howard Shore style, celtic elements, choir"
+}

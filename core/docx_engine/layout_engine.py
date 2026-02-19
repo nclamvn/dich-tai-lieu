@@ -15,6 +15,7 @@ from docx.oxml import OxmlElement
 
 from .models import NormalizedDocument, DocumentMeta, TableOfContents, TocItem
 from .templates.base import DocxTemplate, PageSetup, HeaderFooterSpec, TocSpec, ParagraphSpec
+from core.i18n import format_chapter_title, get_string
 
 logger = logging.getLogger(__name__)
 
@@ -185,7 +186,7 @@ class LayoutEngine:
 
         return result
 
-    def generate_toc(self, toc: TableOfContents, insert_at_beginning: bool = True):
+    def generate_toc(self, toc: TableOfContents, insert_at_beginning: bool = True, lang: str = "en"):
         """
         Generate table of contents.
 
@@ -195,11 +196,12 @@ class LayoutEngine:
         """
         toc_spec = self.template.get_toc_spec()
 
-        # TOC title
+        # TOC title (localized)
+        toc_title = get_string("table_of_contents", lang)
         title_para = self.doc.add_paragraph()
         if toc_spec.title_style:
             self._apply_para_spec(title_para, toc_spec.title_style)
-        run = title_para.add_run(toc_spec.title)
+        run = title_para.add_run(toc_title)
         if toc_spec.title_style:
             self._apply_font_from_spec(run, toc_spec.title_style)
 
@@ -220,7 +222,7 @@ class LayoutEngine:
 
             # Chapter number + title
             if item.chapter_number:
-                text = f"Chương {item.chapter_number}: {item.title}"
+                text = format_chapter_title(item.chapter_number, item.title, lang)
             else:
                 text = item.title
 

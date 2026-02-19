@@ -13,6 +13,18 @@ from pathlib import Path
 from typing import Dict, Optional, List, Any
 from datetime import datetime
 
+from api.services.eqs import ExtractionQualityScorer
+from api.services.extraction_feedback import (
+    ExtractionFeedbackLoop,
+    ExtractionStrategy as EQSStrategy,
+    FeedbackAction,
+)
+from api.services.provider_stats import ProviderStatsTracker, CallRecord
+from api.services.provider_router import ProviderRouter, RoutingMode
+from api.services.consistency_checker import ConsistencyChecker
+from api.services.layout_analyzer import LayoutAnalyzer
+from api.services.epub_renderer import EpubRenderer, is_available as epub_available
+
 from .job_repository import get_job_repository, JobRepository
 
 from core_v2 import (
@@ -153,6 +165,29 @@ class APSV2Service:
         self._llm_client: Optional[LLMClientAdapter] = None
         self._publisher: Optional[UniversalPublisher] = None
 
+        # EQS — Extraction Quality Scoring (Sprint 9)
+        self._eqs_scorer = ExtractionQualityScorer()
+        self._eqs_feedback = ExtractionFeedbackLoop(
+            min_score=0.7, max_retries=3, scorer=self._eqs_scorer,
+        )
+        self._last_eqs_report: Optional[Dict] = None  # per-extraction metadata
+
+        # QAPR — Quality-Aware Provider Routing (Sprint 10)
+        self._provider_stats = ProviderStatsTracker(
+            persist_path=str(self.base_dir / "data" / "provider_stats.json"),
+        )
+        self._provider_router = ProviderRouter(
+            stats_tracker=self._provider_stats,
+            mode=RoutingMode.BALANCED,
+        )
+        self._last_routing_decision: Optional[Dict] = None
+
+        # Consistency Checker (Sprint 11)
+        self._consistency_checker = ConsistencyChecker()
+
+        # Layout Analyzer (Sprint 12)
+        self._layout_analyzer = LayoutAnalyzer()
+
         logger.info(f"APSV2Service initialized: output={self.output_dir}, jobs loaded: {len(self._jobs)}")
 
     def _load_jobs_from_db(self):
@@ -191,6 +226,8 @@ class APSV2Service:
         api_key: Optional[str] = None,  # User-provided API key
         docx_template: str = "auto",  # DOCX template (ebook/academic/business/auto)
         pdf_template: str = "auto",  # PDF template (ebook/academic/business/auto)
+        provider: Optional[str] = None,  # AI provider: 'openai', 'anthropic'
+        model: Optional[str] = None,  # Model name (e.g., 'gpt-4o', 'claude-sonnet-4-20250514')
     ) -> Dict:
         """Create and start a new publishing job."""
 
@@ -214,6 +251,8 @@ class APSV2Service:
             "use_vision": use_vision,
             "docx_template": docx_template,  # DOCX template (ebook/academic/business/auto)
             "pdf_template": pdf_template,  # PDF template (ebook/academic/business/auto)
+            "provider": provider,  # AI provider selection
+            "model": model,  # Model name
             "status": JobStatusV2.PENDING,
             "progress": 0.0,
             "current_stage": "",
@@ -237,7 +276,8 @@ class APSV2Service:
                 "calls_by_provider": {},
             },
             "job_start_time": time.time(),
-            "api_key": api_key,  # User-provided API key (not persisted to DB)
+            # NOTE: api_key intentionally NOT stored in job record (security)
+            "eqs": self._last_eqs_report,  # EQS extraction quality (Sprint 9)
         }
 
         # Save to database FIRST
@@ -247,26 +287,56 @@ class APSV2Service:
         # Start processing in background with Vision mode
         task = asyncio.create_task(self._process_job(
             job_id, content, use_vision=use_vision, api_key=api_key,
-            docx_template=docx_template, pdf_template=pdf_template
+            docx_template=docx_template, pdf_template=pdf_template,
+            provider=provider, model=model
         ))
         self._job_tasks[job_id] = task
 
-        logger.info(f"[{job_id}] Job created and saved to DB: {source_file} ({profile_id}) vision={use_vision} docx={docx_template} pdf={pdf_template}")
+        logger.info(f"[{job_id}] Job created: {source_file} ({profile_id}) vision={use_vision} provider={provider} model={model}")
 
         return job_record
 
-    async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None, docx_template: str = "auto", pdf_template: str = "auto"):
+    async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None, docx_template: str = "auto", pdf_template: str = "auto", provider: Optional[str] = None, model: Optional[str] = None):
         """Process job in background."""
         job = self._jobs.get(job_id)
         if not job:
             return
 
-        # If user provided API key, create a temporary client/publisher for this job
+        # Determine provider to use
+        use_provider = provider or self.provider
+        if model:
+            # Auto-detect provider from model name
+            if 'claude' in model.lower():
+                use_provider = 'anthropic'
+            elif 'gpt' in model.lower():
+                use_provider = 'openai'
+
+        # QAPR: data-driven provider routing when no explicit provider given
+        routing_decision = None
+        if not provider and not model:
+            try:
+                lang_pair = f"{job.get('source_language', '*')}→{job.get('target_language', '*')}"
+                doc_type = job.get("profile_id", "general")
+                routing_decision = self._provider_router.select(
+                    language_pair=lang_pair,
+                    document_type=doc_type,
+                )
+                use_provider = routing_decision.provider
+                self._last_routing_decision = routing_decision.to_dict()
+                logger.info(
+                    f"[{job_id}] QAPR selected provider={use_provider} "
+                    f"(score={routing_decision.score:.3f}, mode={routing_decision.mode.value})"
+                )
+            except Exception as exc:
+                logger.warning(f"[{job_id}] QAPR routing failed, using default: {exc}")
+                self._last_routing_decision = None
+
+        # If user provided API key or specific provider, create a temporary client/publisher for this job
         publisher = self._publisher
         llm_client = self._llm_client
-        if api_key:
-            logger.info(f"[{job_id}] Using user-provided API key")
-            llm_client = LLMClientAdapter(self.provider, api_key=api_key)
+        if api_key or provider:
+            logger.info(f"[{job_id}] Using provider={use_provider}, model={model or 'default'}")
+            llm_client = LLMClientAdapter(use_provider, api_key=api_key)
             publisher = UniversalPublisher(
                 llm_client=llm_client,
                 output_dir=self.output_dir,
@@ -295,8 +365,28 @@ class APSV2Service:
                     self._repo.update_progress(job_id, job["progress"], stage)
                     self._last_db_update[job_id] = now
 
+                    # Broadcast progress via WebSocket
+                    try:
+                        from api.deps import manager
+                        loop = asyncio.get_event_loop()
+                        loop.call_soon_threadsafe(
+                            asyncio.ensure_future,
+                            manager.broadcast({
+                                "event": "job_progress",
+                                "job_id": job_id,
+                                "progress": job["progress"],
+                                "stage": stage,
+                                "status": "running",
+                            })
+                        )
+                    except Exception:
+                        pass  # WebSocket broadcast is best-effort
+
             # Run the publisher pipeline (first format for main processing)
             first_format = job["output_formats"][0] if job["output_formats"] else "docx"
+            # Use source filename (without extension) as title fallback
+            source_file = job.get("source_file", "")
+            title_fallback = source_file.rsplit(".", 1)[0] if source_file else ""
             result = await publisher.publish(
                 source_text=content,
                 source_lang=job["source_language"],
@@ -307,6 +397,7 @@ class APSV2Service:
                 use_vision=use_vision,  # NEW: Pass Vision mode flag
                 docx_template=docx_template,  # Professional DOCX template
                 pdf_template=pdf_template,  # Professional PDF template
+                title_fallback=title_fallback,
             )
 
             # Update job with results
@@ -344,6 +435,24 @@ class APSV2Service:
 
                 for fmt in job["output_formats"][1:]:
                     try:
+                        # Sprint 13: Use LayoutDNA-aware EPUB renderer
+                        if fmt == "epub" and epub_available() and job.get("layout_dna"):
+                            from api.services.layout_dna import LayoutDNA
+                            base_name = f"{job_id}_translated"
+                            output_path = self.output_dir / f"{base_name}.epub"
+                            dna = LayoutDNA.from_dict(job["layout_dna"])
+                            epub_renderer = EpubRenderer()
+                            epub_renderer.render(
+                                layout_dna=dna,
+                                output_path=str(output_path),
+                                title=result.dna.title if result.dna else "Document",
+                                author=result.dna.author if result.dna else "",
+                                language=job.get("target_language", "en"),
+                            )
+                            job["output_paths"]["epub"] = str(output_path)
+                            logger.info(f"[{job_id}] EPUB created via LayoutDNA renderer")
+                            continue
+
                         format_enum = OutputFormat(fmt)
                         base_name = f"{job_id}_translated"
                         output_path = self.output_dir / f"{base_name}.{fmt}"
@@ -364,6 +473,44 @@ class APSV2Service:
             if result.verification:
                 job["verification"] = result.verification
 
+            # Consistency check (Sprint 11) — read-only analysis, non-blocking
+            try:
+                if (result.chunks and result.translated_chunks
+                        and len(result.translated_chunks) >= 2):
+                    source_texts = [
+                        c.content if hasattr(c, 'content') else str(c)
+                        for c in result.chunks
+                    ]
+                    consistency_report = self._consistency_checker.check(
+                        source_chunks=source_texts,
+                        translated_chunks=result.translated_chunks,
+                        source_language=job.get("source_language", "en"),
+                        target_language=job.get("target_language", "vi"),
+                    )
+                    job["consistency"] = consistency_report.to_dict()
+                    logger.info(
+                        f"[{job_id}] Consistency: score={consistency_report.score:.3f} "
+                        f"issues={consistency_report.issues_found} "
+                        f"passed={consistency_report.passed}"
+                    )
+            except Exception as exc:
+                logger.warning(f"[{job_id}] Consistency check failed: {exc}")
+
+            # Layout DNA analysis (Sprint 12) — read-only, non-blocking
+            try:
+                source_text = result.full_content if hasattr(result, 'full_content') else None
+                if not source_text and result.chunks:
+                    source_text = "\n\n".join(
+                        c.content if hasattr(c, 'content') else str(c)
+                        for c in result.chunks
+                    )
+                if source_text and len(source_text) > 50:
+                    layout_dna = self._layout_analyzer.analyze(source_text)
+                    job["layout_dna"] = layout_dna.to_dict()
+                    logger.info(f"[{job_id}] {layout_dna.summary()}")
+            except Exception as exc:
+                logger.warning(f"[{job_id}] Layout DNA analysis failed: {exc}")
+
             if result.error:
                 job["error"] = result.error
                 job["status"] = JobStatusV2.FAILED
@@ -371,6 +518,33 @@ class APSV2Service:
             else:
                 # Save completion to database
                 self._repo.mark_complete(job_id, job["output_paths"])
+
+            # QAPR: record call outcome for future routing decisions
+            try:
+                job_elapsed = (time.time() - job.get("job_start_time", time.time())) * 1000
+                usage = job.get("usage_stats", {})
+                eqs_score = 0.0
+                if self._last_eqs_report:
+                    eqs_score = self._last_eqs_report.get("eqs_score", 0.0)
+                lang_pair = f"{job.get('source_language', '*')}→{job.get('target_language', '*')}"
+                doc_type = job.get("profile_id", "general")
+
+                self._provider_stats.record(CallRecord(
+                    provider=use_provider,
+                    language_pair=lang_pair,
+                    document_type=doc_type,
+                    success=result.error is None,
+                    latency_ms=job_elapsed,
+                    quality_score=eqs_score,
+                    cost_usd=usage.get("estimated_cost_usd", 0.0),
+                    input_tokens=usage.get("total_input_tokens", 0),
+                    output_tokens=usage.get("total_output_tokens", 0),
+                ))
+
+                # Save routing metadata to job
+                job["qapr"] = self._last_routing_decision
+            except Exception as exc:
+                logger.warning(f"[{job_id}] QAPR recording failed: {exc}")
 
             logger.info(f"[{job_id}] Job completed: {job['status']}")
 
@@ -384,6 +558,20 @@ class APSV2Service:
             job["error"] = str(e)
             self._repo.mark_failed(job_id, str(e))
             logger.error(f"[{job_id}] Job failed: {e}")
+
+            # QAPR: record failure
+            try:
+                lang_pair = f"{job.get('source_language', '*')}→{job.get('target_language', '*')}"
+                doc_type = job.get("profile_id", "general")
+                self._provider_stats.record(CallRecord(
+                    provider=use_provider,
+                    language_pair=lang_pair,
+                    document_type=doc_type,
+                    success=False,
+                    latency_ms=0,
+                ))
+            except Exception:
+                pass
 
     def get_job(self, job_id: str) -> Optional[Dict]:
         """Get job by ID (memory first, then database)."""
@@ -592,6 +780,31 @@ class APSV2Service:
             # Try reading as text
             return file_path.read_text(encoding='utf-8', errors='ignore')
 
+    def _eqs_score_text(
+        self, text: str, total_pages: int, strategy: str, source_lang: str = None
+    ) -> None:
+        """Score extracted text quality and store result. Never raises."""
+        try:
+            report = self._eqs_scorer.score(
+                text=text,
+                total_pages=total_pages,
+                expected_language=source_lang,
+            )
+            self._last_eqs_report = {
+                "eqs_score": round(report.overall_score, 4),
+                "eqs_grade": report.grade,
+                "eqs_strategy_used": strategy,
+                "eqs_recommendation": report.recommendation,
+                "eqs_passed": report.passed,
+            }
+            logger.info(
+                "EQS: strategy=%s score=%.3f grade=%s recommendation=%s",
+                strategy, report.overall_score, report.grade, report.recommendation,
+            )
+        except Exception as exc:
+            logger.warning("EQS scoring failed (non-blocking): %s", exc)
+            self._last_eqs_report = None
+
     async def _smart_extract_pdf(
         self,
         file_path: Path,
@@ -607,11 +820,16 @@ class APSV2Service:
         - OCR: Scanned docs with known language → PaddleOCR, FREE
         - FULL_VISION: Scanned, complex layouts → Full Vision API
 
+        After extraction, runs EQS quality scoring and auto-retries
+        with the next fallback strategy if score < 0.7.
+
         Args:
             file_path: Path to PDF file
             use_vision: Enable Vision API fallback
             source_lang: Source language for OCR routing ('ja', 'zh', 'ko', etc.)
         """
+        self._last_eqs_report = None
+
         try:
             from core.smart_extraction import (
                 SmartExtractionRouter,
@@ -637,57 +855,137 @@ class APSV2Service:
                 logger.info(f"   Vision disabled, forcing FAST_TEXT")
                 analysis.strategy = ExtractionStrategy.FAST_TEXT
 
-            # Route based on strategy
-            if analysis.strategy == ExtractionStrategy.FAST_TEXT:
-                # Use fast PyMuPDF extraction
-                from core.smart_extraction import fast_extract
-                result = await fast_extract(str(file_path))
-                logger.info(f"   ⚡ Fast extracted {result.total_pages} pages in {result.extraction_time:.1f}s")
-                logger.info(f"   💰 Estimated savings: ${analysis.estimated_cost_vision:.2f}")
-                return result.full_content
+            # === Extraction with EQS feedback loop (Sprint 9) ===
+            async def _try_extract(strategy: ExtractionStrategy):
+                """Extract text using a specific strategy. Returns (text, pages)."""
+                if strategy == ExtractionStrategy.FAST_TEXT:
+                    from core.smart_extraction import fast_extract
+                    result = await fast_extract(str(file_path))
+                    logger.info(f"   ⚡ Fast extracted {result.total_pages} pages in {result.extraction_time:.1f}s")
+                    return result.full_content, result.total_pages
 
-            elif analysis.strategy == ExtractionStrategy.HYBRID:
-                # Use fast extraction for most pages, Vision only for complex
-                from core.smart_extraction import fast_extract
-                result = await fast_extract(str(file_path))
+                elif strategy == ExtractionStrategy.HYBRID:
+                    from core.smart_extraction import fast_extract
+                    result = await fast_extract(str(file_path))
+                    logger.info(f"   📖 Hybrid extraction (fast for most pages)")
+                    logger.info(f"   Complex pages that could use Vision: {len(analysis.complex_page_numbers)}")
+                    return result.full_content, result.total_pages
 
-                # TODO: Re-extract complex pages with Vision if needed
-                # For now, return fast extraction result
-                logger.info(f"   📖 Hybrid extraction (fast for most pages)")
-                logger.info(f"   Complex pages that could use Vision: {len(analysis.complex_page_numbers)}")
-                return result.full_content
+                elif strategy == ExtractionStrategy.FULL_VISION:
+                    ocr_supported = {'ja', 'zh', 'zh-Hans', 'zh-Hant', 'ko', 'en', 'fr', 'de', 'es', 'vi'}
+                    if source_lang and source_lang in ocr_supported and analysis.scanned_pages > 0:
+                        logger.info(f"   🔤 Using PaddleOCR for {source_lang} scanned document (FREE)")
+                        result = await smart_extract(
+                            str(file_path),
+                            source_lang=source_lang,
+                            use_vision=False
+                        )
+                        logger.info(f"   ✅ OCR extracted {result.total_pages} pages")
+                        logger.info(f"   📊 OCR confidence: {result.ocr_confidence:.1%}")
+                        return result.content, result.total_pages
+                    else:
+                        # Vision path: return file path for orchestrator
+                        logger.info(f"   🔍 Document requires Vision API (scanned/complex)")
+                        return None, analysis.total_pages  # None signals "pass to orchestrator"
 
-            elif analysis.strategy == ExtractionStrategy.FULL_VISION:
-                # Check if we can use OCR instead (for scanned docs with known language)
-                ocr_supported = {'ja', 'zh', 'zh-Hans', 'zh-Hant', 'ko', 'en', 'fr', 'de', 'es', 'vi'}
-                if source_lang and source_lang in ocr_supported and analysis.scanned_pages > 0:
-                    # Use PaddleOCR instead of Vision API (FREE!)
-                    logger.info(f"   🔤 Using PaddleOCR for {source_lang} scanned document (FREE)")
+                else:  # OCR strategy
+                    logger.info(f"   🔤 Using PaddleOCR extraction")
                     result = await smart_extract(
                         str(file_path),
-                        source_lang=source_lang,
-                        use_vision=False  # Disable Vision to force OCR path
+                        source_lang=source_lang or 'en',
+                        use_vision=False
                     )
                     logger.info(f"   ✅ OCR extracted {result.total_pages} pages")
                     logger.info(f"   📊 OCR confidence: {result.ocr_confidence:.1%}")
-                    logger.info(f"   💰 Cost: $0 (vs Vision ${analysis.estimated_cost_vision:.2f})")
-                    return result.content
-                else:
-                    # Return path for Vision processing by orchestrator
-                    logger.info(f"   🔍 Document requires Vision API (scanned/complex)")
-                    return str(file_path)
+                    return result.content, result.total_pages
 
-            else:  # OCR strategy (explicitly set)
-                # Use PaddleOCR
-                logger.info(f"   🔤 Using PaddleOCR extraction")
-                result = await smart_extract(
-                    str(file_path),
-                    source_lang=source_lang or 'en',
-                    use_vision=False
+            # Map core ExtractionStrategy to EQS strategy names
+            _STRATEGY_TO_EQS = {
+                ExtractionStrategy.FAST_TEXT: EQSStrategy.TEXT,
+                ExtractionStrategy.HYBRID: EQSStrategy.TEXT,  # hybrid uses text extraction
+                ExtractionStrategy.FULL_VISION: EQSStrategy.VISION,
+                ExtractionStrategy.OCR: EQSStrategy.OCR,
+            }
+            # Reverse: EQS strategy → core strategy for retry
+            _EQS_TO_STRATEGY = {
+                EQSStrategy.TEXT: ExtractionStrategy.FAST_TEXT,
+                EQSStrategy.OCR: ExtractionStrategy.OCR,
+                EQSStrategy.VISION: ExtractionStrategy.FULL_VISION,
+            }
+
+            # --- First extraction attempt ---
+            text, total_pages = await _try_extract(analysis.strategy)
+
+            if text is None:
+                # FULL_VISION pass-through — can't score, return file path
+                logger.info(f"   💰 Estimated savings: ${analysis.estimated_cost_vision:.2f}")
+                return str(file_path)
+
+            # --- EQS scoring + feedback loop ---
+            try:
+                eqs_strategy = _STRATEGY_TO_EQS.get(analysis.strategy, EQSStrategy.TEXT)
+                fb = self._eqs_feedback.evaluate(
+                    text=text,
+                    strategy=eqs_strategy,
+                    total_pages=total_pages,
+                    expected_language=source_lang,
+                    iteration=1,
                 )
-                logger.info(f"   ✅ OCR extracted {result.total_pages} pages")
-                logger.info(f"   📊 OCR confidence: {result.ocr_confidence:.1%}")
-                return result.content
+                logger.info(
+                    "EQS: strategy=%s score=%.3f grade=%s action=%s",
+                    eqs_strategy.value, fb.eqs_report.overall_score,
+                    fb.eqs_report.grade, fb.action.value,
+                )
+
+                # Retry if score below threshold and there's a next strategy
+                if fb.action == FeedbackAction.RETRY and fb.next_strategy:
+                    retry_core = _EQS_TO_STRATEGY.get(fb.next_strategy)
+                    if retry_core and retry_core != analysis.strategy:
+                        logger.info(
+                            "EQS retry: %s → %s (score %.3f < %.1f)",
+                            getattr(analysis.strategy, 'value', analysis.strategy),
+                            getattr(retry_core, 'value', retry_core),
+                            fb.eqs_report.overall_score, self._eqs_feedback.min_score,
+                        )
+                        try:
+                            retry_text, retry_pages = await _try_extract(retry_core)
+                            if retry_text is not None:
+                                fb2 = self._eqs_feedback.evaluate(
+                                    text=retry_text,
+                                    strategy=fb.next_strategy,
+                                    total_pages=retry_pages,
+                                    expected_language=source_lang,
+                                    iteration=2,
+                                )
+                                logger.info(
+                                    "EQS retry result: score=%.3f grade=%s",
+                                    fb2.eqs_report.overall_score, fb2.eqs_report.grade,
+                                )
+                                # Use retry text if it scored better
+                                if fb2.eqs_report.overall_score > fb.eqs_report.overall_score:
+                                    text = retry_text
+                                    fb = fb2
+                                    logger.info("EQS: using retry result (better score)")
+                                else:
+                                    logger.info("EQS: keeping original (retry not better)")
+                        except Exception as retry_exc:
+                            logger.warning("EQS retry extraction failed: %s", retry_exc)
+
+                # Store final EQS metadata
+                self._last_eqs_report = {
+                    "eqs_score": round(fb.eqs_report.overall_score, 4),
+                    "eqs_grade": fb.eqs_report.grade,
+                    "eqs_strategy_used": fb.strategy_used.value,
+                    "eqs_recommendation": fb.eqs_report.recommendation,
+                    "eqs_passed": fb.eqs_report.passed,
+                    "eqs_retried": fb.iteration > 1,
+                    "eqs_attempts": fb.iteration,
+                }
+            except Exception as eqs_exc:
+                logger.warning("EQS scoring failed (non-blocking): %s", eqs_exc)
+                self._last_eqs_report = None
+
+            return text
 
         except ImportError as e:
             logger.warning(f"Smart extraction not available: {e}, using legacy")
@@ -870,6 +1168,58 @@ class APSV2Service:
             "output_dir": str(self.output_dir),
             "upload_dir": str(self.upload_dir),
         }
+
+    # ==================== JOB CLEANUP ====================
+
+    MAX_MEMORY_JOBS = 200  # Max jobs kept in memory
+    JOB_TTL_HOURS = 72  # Jobs older than this are evicted from memory
+
+    def cleanup_old_jobs(self) -> int:
+        """
+        Evict completed/failed jobs older than TTL from memory.
+        Jobs remain in the database for historical queries.
+        Returns number of jobs evicted.
+        """
+        now = time.time()
+        ttl_seconds = self.JOB_TTL_HOURS * 3600
+        evicted = 0
+
+        for job_id in list(self._jobs.keys()):
+            job = self._jobs[job_id]
+            status = job.get("status")
+            status_val = status.value if hasattr(status, "value") else str(status)
+
+            # Only evict completed/failed/cancelled jobs
+            if status_val not in ("complete", "failed", "cancelled"):
+                continue
+
+            job_start = job.get("job_start_time", 0)
+            if job_start and (now - job_start) > ttl_seconds:
+                del self._jobs[job_id]
+                self._job_tasks.pop(job_id, None)
+                self._last_db_update.pop(job_id, None)
+                evicted += 1
+
+        # If still over capacity, evict oldest completed jobs
+        if len(self._jobs) > self.MAX_MEMORY_JOBS:
+            completed_jobs = [
+                (jid, j.get("job_start_time", 0))
+                for jid, j in self._jobs.items()
+                if (j.get("status", "").value if hasattr(j.get("status", ""), "value") else str(j.get("status", "")))
+                in ("complete", "failed", "cancelled")
+            ]
+            completed_jobs.sort(key=lambda x: x[1])  # oldest first
+            excess = len(self._jobs) - self.MAX_MEMORY_JOBS
+            for jid, _ in completed_jobs[:excess]:
+                del self._jobs[jid]
+                self._job_tasks.pop(jid, None)
+                self._last_db_update.pop(jid, None)
+                evicted += 1
+
+        if evicted > 0:
+            logger.info(f"Job cleanup: evicted {evicted} old jobs from memory (remaining: {len(self._jobs)})")
+
+        return evicted
 
     # ==================== HEALTH ====================
 

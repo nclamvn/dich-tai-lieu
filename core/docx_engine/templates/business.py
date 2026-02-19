@@ -227,14 +227,14 @@ class BusinessTemplate(DocxTemplate):
             show_footer=True,
             header_left="{title}",
             header_right="{date}",
-            footer_right="Trang {page}",
+            footer_right="Page {page}",
             different_first_page=True,
             font=FontSpec(name=self.BODY_FONT, size=Pt(9))
         )
 
     def get_toc_spec(self) -> TocSpec:
         return TocSpec(
-            title="Mục lục",
+            title="Table of Contents",
             title_style=ParagraphSpec(
                 font=FontSpec(
                     name=self.HEADING_FONT,

@@ -3,10 +3,14 @@ Translation Engine Manager
 Handles engine selection, fallback, and coordination
 """
 
+import logging
 from typing import Dict, List, Optional
 from .engines.base import TranslationEngine, TranslationResult
+
+logger = logging.getLogger(__name__)
 from .engines.translategemma import TranslateGemmaEngine
 from .engines.cloud_api import CloudAPIEngine
+from .engines.llama_cpp import LlamaCppEngine
 
 
 class EngineManager:
@@ -46,17 +50,30 @@ class EngineManager:
         # Always register cloud API as fallback
         self.register_engine(CloudAPIEngine(provider="auto"))
 
-        # Try to register TranslateGemma if available
+        # Try LlamaCpp (recommended for Apple Silicon)
+        try:
+            llama_engine = LlamaCppEngine()
+            if llama_engine.is_available():
+                self.register_engine(llama_engine)
+                self._default_engine = llama_engine.engine_id
+                logger.info("LlamaCpp available: %s", llama_engine.model_id)
+            else:
+                logger.debug("LlamaCpp not available: %s", llama_engine._error)
+        except Exception as e:
+            logger.debug("Could not initialize LlamaCpp: %s", e)
+
+        # Try TranslateGemma PyTorch (fallback for CUDA systems)
         try:
             gemma_engine = TranslateGemmaEngine(model_size="4b")
             if gemma_engine.is_available():
                 self.register_engine(gemma_engine)
-                self._default_engine = gemma_engine.engine_id
-                print(f"[EngineManager] TranslateGemma available on {gemma_engine.device}")
+                if not self._default_engine or self._default_engine == self._fallback_engine:
+                    self._default_engine = gemma_engine.engine_id
+                logger.info("TranslateGemma available on %s", gemma_engine.device)
             else:
-                print("[EngineManager] TranslateGemma not available, using Cloud API")
+                logger.debug("TranslateGemma not available")
         except Exception as e:
-            print(f"[EngineManager] Could not initialize TranslateGemma: {e}")
+            logger.debug("Could not initialize TranslateGemma: %s", e)
 
         # Set default to cloud if no local engine
         if not self._default_engine:
@@ -65,7 +82,7 @@ class EngineManager:
     def register_engine(self, engine: TranslationEngine):
         """Register a translation engine"""
         self.engines[engine.engine_id] = engine
-        print(f"[EngineManager] Registered engine: {engine.name}")
+        logger.info("Registered engine: %s", engine.name)
 
     def unregister_engine(self, engine_id: str):
         """Unregister a translation engine"""
@@ -135,7 +152,7 @@ class EngineManager:
         # Check availability
         if not engine.is_available():
             if fallback and selected_id != self._fallback_engine:
-                print(f"[EngineManager] {engine.name} unavailable, falling back to Cloud API")
+                logger.warning("%s unavailable, falling back to Cloud API", engine.name)
                 engine = self.engines.get(self._fallback_engine)
             else:
                 return TranslationResult(
@@ -153,7 +170,7 @@ class EngineManager:
 
             # Fallback on failure
             if not result.success and fallback and engine.engine_id != self._fallback_engine:
-                print(f"[EngineManager] {engine.name} failed: {result.error}, falling back")
+                logger.warning("%s failed: %s, falling back", engine.name, result.error)
                 fallback_engine = self.engines.get(self._fallback_engine)
                 if fallback_engine:
                     result = await fallback_engine.translate(text, source_lang, target_lang)

@@ -1,0 +1,9 @@
+{
+  "name": "AI Publisher Pro",
+  "short_name": "AIPubPro",
+  "description": "AI-powered document translation and publishing",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFFFFF",
+  "theme_color": "#FFFFFF"
+}

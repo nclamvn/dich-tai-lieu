@@ -190,7 +190,9 @@ def get_template_info(name: str) -> Optional[Dict]:
             "font_style": template.font_style,
             "best_for": template.best_for,
         }
-    except Exception:
+    except Exception as e:
+        import logging
+        logging.getLogger(__name__).debug("Failed to get template info for '%s': %s", name, e)
         return None
 
 

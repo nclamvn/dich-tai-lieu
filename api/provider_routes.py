@@ -9,6 +9,9 @@ from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 import os
+import logging
+
+logger = logging.getLogger(__name__)
 
 # Import provider manager
 from ai_providers import (
@@ -343,5 +346,5 @@ def integrate_with_app(app):
     async def check_providers_on_startup():
         manager = get_provider_manager()
         available = manager.get_available_providers()
-        print(f"🤖 AI Providers available: {[p.name for p in available]}")
-        print(f"🎯 Default provider: {manager.current_provider.value}")
+        logger.info("AI Providers available: %s", [p.name for p in available])
+        logger.info("Default provider: %s", manager.current_provider.value)

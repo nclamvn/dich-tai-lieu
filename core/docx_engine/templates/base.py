@@ -111,7 +111,7 @@ class HeaderFooterSpec:
 @dataclass
 class TocSpec:
     """Table of contents specification"""
-    title: str = "Mục lục"
+    title: str = "Table of Contents"
     title_style: Optional[ParagraphSpec] = None
     level1_style: Optional[ParagraphSpec] = None  # Chapters
     level2_style: Optional[ParagraphSpec] = None  # Sections

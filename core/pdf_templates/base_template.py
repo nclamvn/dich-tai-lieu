@@ -11,6 +11,8 @@ from typing import Dict, List, Optional, Tuple
 from pathlib import Path
 from enum import Enum
 
+from core.i18n import format_chapter_title
+
 
 class PageSize(Enum):
     """Standard page sizes"""
@@ -327,7 +329,7 @@ class BaseTemplate(ABC):
 
         return elements
 
-    def create_chapter_opening(self, title: str, number: Optional[int] = None) -> List:
+    def create_chapter_opening(self, title: str, number: Optional[int] = None, lang: str = "en") -> List:
         """
         Create chapter opening elements.
 
@@ -353,7 +355,8 @@ class BaseTemplate(ABC):
         # Chapter number
         if number is not None:
             chapter_num_style = styles.get("chapter_number", styles.get("body"))
-            elements.append(Paragraph(f"Chương {number}", chapter_num_style))
+            chapter_label = format_chapter_title(number, "", lang)
+            elements.append(Paragraph(chapter_label, chapter_num_style))
             elements.append(Spacer(1, 10))
 
         # Chapter title

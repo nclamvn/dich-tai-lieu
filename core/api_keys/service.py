@@ -20,6 +20,7 @@ from contextlib import contextmanager
 
 from passlib.context import CryptContext
 
+from core.database import get_db_backend
 from .models import APIKey, APIKeyCreate, APIKeyResponse, APIKeyInfo, APIKeyScope
 
 logger = logging.getLogger(__name__)
@@ -42,28 +43,19 @@ class APIKeyService:
 
         db_path.parent.mkdir(parents=True, exist_ok=True)
         self.db_path = db_path
+        self._backend = get_db_backend("keys", db_dir=db_path.parent)
         self._init_db()
 
     @contextmanager
     def _get_connection(self):
         """Get database connection."""
-        conn = sqlite3.connect(str(self.db_path))
-        conn.row_factory = sqlite3.Row
-        try:
+        with self._backend.connection() as conn:
             yield conn
-            conn.commit()
-        except Exception:
-            conn.rollback()
-            raise
-        finally:
-            conn.close()
 
     def _init_db(self):
         """Initialize database schema."""
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("""
+            conn.execute("""
                 CREATE TABLE IF NOT EXISTS api_keys (
                     id TEXT PRIMARY KEY,
                     user_id TEXT NOT NULL,
@@ -83,8 +75,8 @@ class APIKeyService:
                 )
             """)
 
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)")
-            cursor.execute("CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON api_keys(key_prefix)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_api_keys_user ON api_keys(user_id)")
+            conn.execute("CREATE INDEX IF NOT EXISTS idx_api_keys_prefix ON api_keys(key_prefix)")
 
     def _generate_key(self) -> str:
         """Generate a new API key."""
@@ -132,10 +124,8 @@ class APIKeyService:
         now = datetime.utcnow()
 
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
             try:
-                cursor.execute("""
+                conn.execute("""
                     INSERT INTO api_keys (
                         id, user_id, name, key_prefix, key_hash,
                         scopes, rate_limit, created_at, expires_at,
@@ -183,15 +173,13 @@ class APIKeyService:
         key_prefix = key[:12]
 
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
             # Find keys with matching prefix
-            cursor.execute("""
+            rows = conn.execute("""
                 SELECT * FROM api_keys
                 WHERE key_prefix = ? AND is_active = 1
-            """, (key_prefix,))
+            """, (key_prefix,)).fetchall()
 
-            for row in cursor.fetchall():
+            for row in rows:
                 if self._verify_key(key, row["key_hash"]):
                     # Found matching key
                     api_key = self._row_to_key(row)
@@ -200,7 +188,7 @@ class APIKeyService:
                         return None
 
                     # Update last used
-                    cursor.execute("""
+                    conn.execute("""
                         UPDATE api_keys
                         SET last_used = ?, use_count = use_count + 1
                         WHERE id = ?
@@ -213,14 +201,11 @@ class APIKeyService:
     def get_key(self, key_id: str, user_id: str) -> Optional[APIKey]:
         """Get API key by ID (only for the owning user)."""
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("""
+            row = conn.execute("""
                 SELECT * FROM api_keys
                 WHERE id = ? AND user_id = ?
-            """, (key_id, user_id))
+            """, (key_id, user_id)).fetchone()
 
-            row = cursor.fetchone()
             if row:
                 return self._row_to_key(row)
 
@@ -229,16 +214,14 @@ class APIKeyService:
     def list_keys(self, user_id: str) -> List[APIKeyInfo]:
         """List all API keys for a user."""
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("""
+            rows = conn.execute("""
                 SELECT * FROM api_keys
                 WHERE user_id = ?
                 ORDER BY created_at DESC
-            """, (user_id,))
+            """, (user_id,)).fetchall()
 
             keys = []
-            for row in cursor.fetchall():
+            for row in rows:
                 scopes = json.loads(row["scopes"])
                 keys.append(APIKeyInfo(
                     id=row["id"],
@@ -259,15 +242,13 @@ class APIKeyService:
     def revoke_key(self, key_id: str, user_id: str) -> bool:
         """Revoke (deactivate) an API key."""
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("""
+            conn.execute("""
                 UPDATE api_keys
                 SET is_active = 0
                 WHERE id = ? AND user_id = ?
             """, (key_id, user_id))
 
-            if cursor.rowcount > 0:
+            if conn.rowcount > 0:
                 logger.info(f"Revoked API key {key_id} for user {user_id}")
                 return True
 
@@ -276,14 +257,12 @@ class APIKeyService:
     def delete_key(self, key_id: str, user_id: str) -> bool:
         """Permanently delete an API key."""
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("""
+            conn.execute("""
                 DELETE FROM api_keys
                 WHERE id = ? AND user_id = ?
             """, (key_id, user_id))
 
-            if cursor.rowcount > 0:
+            if conn.rowcount > 0:
                 logger.info(f"Deleted API key {key_id} for user {user_id}")
                 return True
 
@@ -301,9 +280,7 @@ class APIKeyService:
         new_hash = self._hash_key(new_key)
 
         with self._get_connection() as conn:
-            cursor = conn.cursor()
-
-            cursor.execute("""
+            conn.execute("""
                 UPDATE api_keys
                 SET key_prefix = ?, key_hash = ?, use_count = 0
                 WHERE id = ? AND user_id = ?

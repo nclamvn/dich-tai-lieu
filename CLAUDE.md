@@ -1,12 +1,35 @@
 # AI Publisher Pro - Project Context
 
-## 🚀 Quick Resume
+## TWO REPOSITORIES (Updated 2026-02-11)
+
+### PRIVATE (Development) — WORK HERE
+- **Path**: `~/ai-publisher-pro-public`
+- **Purpose**: All development, new features, bug fixes
+- **Status**: ACTIVE — Phase 2 development
+- **Contains**: Full history, configs, secrets, internal docs
+
+### PUBLIC (Open Source) — DO NOT DEVELOP HERE
+- **Path**: `~/Dich-Viet` (local copy)
+- **GitHub**: `github.com/nclamvn/Dich-Viet`
+- **Purpose**: Community sharing, releases only
+- **Status**: RELEASED v3.2.0
+- **Contains**: Sanitized code, no secrets
+
+### Workflow
+1. ALL development happens in `~/ai-publisher-pro-public`
+2. When ready for release: `./scripts/sync_to_public.sh vX.X.X`
+3. NEVER develop directly in `~/Dich-Viet`
+
+---
+
+## Quick Resume
 Khi quay lại dự án, chỉ cần nói: **"continue"** hoặc **"tiếp tục"**
 
 Claude sẽ tự động đọc HANDOVER document và tiếp tục công việc.
 
 ### Handover Files:
-- **Vision Fallback 2026-02-03:** `docs/HANDOVER_2026-02-03.md` (Latest)
+- **Sprint 15.5 2026-02-09:** `docs/HANDOVER_2026-02-09.md` (Latest)
+- **Vision Fallback 2026-02-03:** `docs/HANDOVER_2026-02-03.md`
 - **UI Redesign 2026:** `docs/HANDOVER_UI_2026.md`
 - **General:** `docs/HANDOVER_v2.7.md`
 

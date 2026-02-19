@@ -1,0 +1,59 @@
+{
+  "job_id": "6ddf2068",
+  "source_path": "inline_text",
+  "output_dir": "outputs/cinema/job_20260122_114951",
+  "style": "anime",
+  "video_provider": "mock",
+  "status": "complete",
+  "progress": 0.98,
+  "current_stage": "assembling",
+  "error": null,
+  "created_at": "2026-01-22T11:49:51.174534",
+  "completed_at": "2026-01-22T11:49:53.381738",
+  "chunks_count": 1,
+  "scenes_count": 1,
+  "prompts_count": 1,
+  "videos_count": 1,
+  "final_video_path": "outputs/cinema/videos/mock_video_1_1769057393.mp4",
+  "chunks": [
+    {
+      "id": "scene_64a2ff0d",
+      "text": "Chương 1: Khởi Đầu\n\nBuổi sáng hôm ấy, trời trong xanh như ngọc. Minh đứng bên cửa sổ căn phòng \nnhỏ, nhìn ra con phố vắng lặng. Ánh nắng ban mai len lỏi qua khe cửa, \nchiếu những vệt sáng vàng nhạt trên sàn gỗ cũ kỹ.\n\n\"Hôm nay là ngày quan trọng,\" anh tự nhủ, tay nắm chặt lá thư đã nhàu nát.\n\nTiếng chuông điện thoại reo vang, phá tan bầu không khí tĩnh lặng. \nLan đứng ngoài cửa, mỉm cười với anh qua ô kính. Cô mặc chiếc áo dài \ntrắng, tóc buông dài sau lưng.\n\n\"Anh sẵn sàng chưa?\" cô hỏi khẽ.\n\nMi"
+    }
+  ],
+  "scenes": [
+    {
+      "scene_id": "adapted_scene_64a2ff0d",
+      "setting": "",
+      "time_of_day": "day",
+      "location_type": "interior",
+      "characters": [],
+      "key_actions": [],
+      "dialogue": [],
+      "mood": "neutral",
+      "camera_suggestions": [],
+      "lighting_mood": "",
+      "estimated_duration": 30
+    }
+  ],
+  "prompts": [
+    {
+      "scene_id": "adapted_scene_64a2ff0d",
+      "provider": "mock",
+      "prompt": "High quality anime style, Studio Ghibli aesthetic, vibrant colors, detailed backgrounds, Japanese animation,, , anime art style, expressive characters, beautiful scenery, masterpiece anime quality",
+      "negative_prompt": "3D render, realistic, western cartoon, low quality, poorly drawn, bad anatomy",
+      "duration_seconds": 30,
+      "aspect_ratio": "16:9",
+      "style_preset": "anime",
+      "provider_params": {}
+    }
+  ],
+  "videos": [
+    {
+      "scene_id": "adapted_scene_64a2ff0d",
+      "path": "outputs/cinema/videos/mock_video_1_1769057393.mp4",
+      "success": true,
+      "error": null
+    }
+  ]
+}

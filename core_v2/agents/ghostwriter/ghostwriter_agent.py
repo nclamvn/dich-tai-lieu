@@ -6,9 +6,12 @@ No corpus learning (Phase 4.2 skipped per user request).
 """
 
 import asyncio
+import logging
 import re
 from typing import List, Optional, Dict, Any
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 from ...agents.base_agent import BaseAgent
 from .models import AuthorProject, Variation, AuthorConfig
@@ -273,8 +276,8 @@ class GhostwriterAgent(BaseAgent):
                             
                     if memory_context:
                         context = f"STORY BIBLE & MEMORY:\n{memory_context}\n\nCURRENT MANUSCRIPT:\n{context}"
-            except Exception:
-                pass
+            except Exception as e:
+                logger.debug("Failed to load memory context: %s", e)
 
         style = style or self.config.default_style
         style_instruction = get_style_instruction(style, custom_style_instruction)
