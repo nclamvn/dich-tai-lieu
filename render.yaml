@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: ai-publisher-pro
+    runtime: python
+    region: singapore
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT --workers 2
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: CORS_ORIGINS
+        value: "https://translate.prismy.in,https://prismy.in"
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+    domains:
+      - translate.prismy.in
