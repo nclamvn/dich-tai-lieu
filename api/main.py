@@ -465,8 +465,8 @@ async def startup_db_integrity_check():
 @app.on_event("startup")
 async def startup_security_check():
     """Log security warnings for insecure defaults."""
-    from config.settings import get_settings
-    s = get_settings()
+    from config.settings import Settings
+    s = Settings()
     warnings = []
     if s.security_mode == "development":
         warnings.append("SECURITY_MODE=development — authentication is DISABLED")
