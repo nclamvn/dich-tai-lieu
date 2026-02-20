@@ -373,9 +373,11 @@ export default function WritePage() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={t.write.searchPlaceholder || "Search projects..."}
-                  className="pl-8 pr-3 py-1.5 text-sm"
+                  className="py-1.5 text-sm"
                   style={{
                     width: 200,
+                    paddingLeft: 32,
+                    paddingRight: 12,
                     borderRadius: "var(--radius-sm)",
                     border: "1px solid var(--border-default)",
                     background: "var(--bg-primary)",

@@ -170,8 +170,10 @@ export default function JobsPage() {
             value={search}
             onChange={(e) => { setSearch(e.target.value); setVisibleCount(JOBS_PER_PAGE); }}
             placeholder={t.jobs.searchPlaceholder || "Search jobs..."}
-            className="w-full pl-9 pr-3 py-2 text-sm"
+            className="w-full py-2 text-sm"
             style={{
+              paddingLeft: 36,
+              paddingRight: 12,
               background: "var(--bg-secondary)",
               border: "1px solid var(--border-default)",
               borderRadius: "var(--radius-md)",

@@ -114,6 +114,20 @@ from api.preview_router import router as preview_router
 # Book-to-Cinema: AI Movie Maker routes
 from api.cinema_api import router as cinema_router
 
+# Screenplay Studio routes
+from api.routes.screenplay import router as screenplay_router
+
+# Settings & System routes
+from api.routes.settings import router as settings_router
+from api.routes.system import router as system_router
+
+# Book Writer routes
+from api.book_writer_router import router as book_writer_router
+from api.routes.book_writer_v2 import router as book_writer_v2_router
+
+# Dashboard routes
+from api.routes.dashboard import router as dashboard_router
+
 # P1: Error tracking integration
 from core.error_integration import (
     track_api_error,
@@ -536,7 +550,7 @@ app.include_router(auth_router)
 
 # P1: Error Dashboard routes
 app.include_router(error_router)
-app.include_router(tm_router, prefix="/api/tm", tags=["Translation Memory"])
+app.include_router(tm_router)
 
 # P4: Usage tracking, API keys, and Preview
 app.include_router(usage_router)
@@ -545,6 +559,20 @@ app.include_router(preview_router)
 
 # Book-to-Cinema: AI Movie Maker
 app.include_router(cinema_router)
+
+# Screenplay Studio
+app.include_router(screenplay_router)
+
+# Settings & System
+app.include_router(settings_router)
+app.include_router(system_router)
+
+# Book Writer
+app.include_router(book_writer_router)
+app.include_router(book_writer_v2_router)
+
+# Dashboard
+app.include_router(dashboard_router)
 
 # UI Page Routes (for clean URLs)
 ui_path = Path(__file__).parent.parent / "ui"

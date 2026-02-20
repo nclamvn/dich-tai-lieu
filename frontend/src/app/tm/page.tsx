@@ -194,8 +194,10 @@ export default function TMListPage() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder={t.tm.searchSegments}
-          className="w-full pl-9 pr-8 py-2 text-sm"
+          className="w-full py-2 text-sm"
           style={{
+            paddingLeft: 36,
+            paddingRight: 32,
             borderRadius: "var(--radius-sm)",
             border: "1px solid var(--border-default)",
             background: "var(--bg-primary)",

@@ -138,8 +138,10 @@ export default function GlossaryDetailPage({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder={t.glossary.searchTerms}
-            className="w-full pl-9 pr-3 py-2 text-sm"
+            className="w-full py-2 text-sm"
             style={{
+              paddingLeft: 36,
+              paddingRight: 12,
               borderRadius: "var(--radius-md)",
               border: "1px solid var(--border-default)",
               background: "var(--bg-primary)",

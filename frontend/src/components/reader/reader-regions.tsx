@@ -59,7 +59,7 @@ function HeadingRegion({ region, font }: RegionProps) {
         fontSize: fontSizes[level] || fontSizes[3],
         fontFamily:
           level <= 2 && font === "serif"
-            ? "'Instrument Serif', Georgia, serif"
+            ? "'Source Serif 4', Georgia, serif"
             : "inherit",
         letterSpacing: level <= 2 ? "-0.01em" : undefined,
       }}

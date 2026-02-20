@@ -8,31 +8,10 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT_CLASSES: Record<string, string> = {
-  primary: "text-white",
-  secondary: "",
-  ghost: "",
-  danger: "text-white",
-};
-
-const VARIANT_STYLES: Record<string, React.CSSProperties> = {
-  primary: {
-    background: "var(--color-notion-blue)",
-    boxShadow:
-      "inset 0 0 0 1px rgba(15,15,15,0.1), 0 1px 2px rgba(15,15,15,0.1)",
-  },
-  secondary: {
-    background: "var(--bg-primary)",
-    color: "var(--fg-primary)",
-    boxShadow: "var(--shadow-sm)",
-  },
-  ghost: {
-    background: "transparent",
-    color: "var(--fg-secondary)",
-  },
-  danger: {
-    background: "var(--color-notion-red)",
-    boxShadow: "inset 0 0 0 1px rgba(15,15,15,0.1)",
-  },
+  primary: "text-white btn-primary",
+  secondary: "btn-secondary",
+  ghost: "btn-ghost",
+  danger: "text-white btn-danger",
 };
 
 const SIZE_CLASSES: Record<string, string> = {
@@ -68,7 +47,6 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         style={{
           borderRadius: "var(--radius-sm)",
-          ...VARIANT_STYLES[variant],
         }}
         disabled={disabled || loading}
         {...props}

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Source+Serif+4:ital,wght@0,400;0,600;0,700;1,400;1,600;1,700&display=swap');
 
 @import "tailwindcss";
 
@@ -7,9 +7,9 @@
    ═══════════════════════════════════════ */
 
 @theme {
-  --font-display: 'Instrument Serif', Georgia, 'Times New Roman', serif;
-  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
-               "Segoe UI", Helvetica, "Apple Color Emoji", Arial, sans-serif;
+  --font-display: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+  --font-body: 'Be Vietnam Pro', ui-sans-serif, system-ui, -apple-system,
+               BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
   --font-mono: "SFMono-Regular", Menlo, Consolas, "PT Mono",
                "Liberation Mono", Courier, monospace;
 
@@ -396,6 +396,45 @@ hr {
 
 .error-global h2 {
   font-size: 2rem;
+}
+
+/* ─── Button variants ─── */
+
+.btn-primary {
+  background: var(--color-notion-blue);
+  box-shadow: inset 0 0 0 1px rgba(15,15,15,0.1), 0 1px 2px rgba(15,15,15,0.1);
+}
+
+.btn-primary:hover:not(:disabled) {
+  filter: brightness(0.88);
+}
+
+.btn-secondary {
+  background: var(--bg-primary);
+  color: var(--fg-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.btn-ghost {
+  background: transparent;
+  color: var(--fg-secondary);
+}
+
+.btn-ghost:hover:not(:disabled) {
+  background: var(--bg-hover);
+}
+
+.btn-danger {
+  background: var(--color-notion-red);
+  box-shadow: inset 0 0 0 1px rgba(15,15,15,0.1);
+}
+
+.btn-danger:hover:not(:disabled) {
+  filter: brightness(0.88);
 }
 
 .line-clamp-2 {

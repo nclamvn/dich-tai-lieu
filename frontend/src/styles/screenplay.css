@@ -178,14 +178,14 @@
 }
 
 .screenplay-btn-primary {
-  background: #4f46e5;
+  background: rgb(35, 131, 226);
   color: #fff;
-  border-color: #4f46e5;
+  border-color: rgb(35, 131, 226);
 }
 
 .screenplay-btn-primary:hover {
-  background: #4338ca;
-  border-color: #4338ca;
+  background: rgb(0, 110, 205);
+  border-color: rgb(0, 110, 205);
 }
 
 .screenplay-btn-danger {

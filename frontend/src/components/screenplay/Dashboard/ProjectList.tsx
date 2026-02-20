@@ -45,7 +45,7 @@ export function ProjectList() {
     return (
       <div className="screenplay-empty">
         <h3>No projects yet</h3>
-        <p>Create your first screenplay project to get started.</p>
+        <p className="mb-4">Create your first screenplay project to get started.</p>
         <Link href="/screenplay/new" className="screenplay-btn screenplay-btn-primary">
           Create Project
         </Link>

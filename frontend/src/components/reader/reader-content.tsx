@@ -89,7 +89,7 @@ export function ReaderContentArea({
           fontSize: FONT_SIZE_MAP[fontSize],
           fontFamily:
             font === "serif"
-              ? "'Instrument Serif', Georgia, 'Times New Roman', serif"
+              ? "'Source Serif 4', Georgia, 'Times New Roman', serif"
               : "ui-sans-serif, system-ui, -apple-system, sans-serif",
         }}
       >
@@ -107,7 +107,7 @@ export function ReaderContentArea({
               fontWeight: font === "serif" ? 400 : 700,
               fontFamily:
                 font === "serif"
-                  ? "'Instrument Serif', Georgia, serif"
+                  ? "'Source Serif 4', Georgia, serif"
                   : "inherit",
             }}
           >
