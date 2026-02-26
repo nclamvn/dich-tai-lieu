@@ -37,9 +37,13 @@ Claude sẽ tự động đọc HANDOVER document và tiếp tục công việc.
 ## Quick Start
 ```bash
 cd /Users/mac/ai-publisher-pro-public
+# API server
 uvicorn api.main:app --host 0.0.0.0 --port 3000 --reload
+# Frontend (Next.js) — separate process
+cd frontend && npm run dev
 ```
-Then open: http://localhost:3000/ui
+- API Docs: http://localhost:3000/docs
+- Frontend: http://localhost:3001 (Next.js)
 
 ## Project Type
 FastAPI web server for AI-powered document translation (PDF, DOCX, TXT).
@@ -80,13 +84,13 @@ ai_providers/
 - `api/main.py` - Main FastAPI application
 - `api/aps_v2_service.py` - V2 publishing service
 - `core_v2/orchestrator.py` - Translation orchestrator
-- `ui/app.html` - Main UI (3 agents)
+- `frontend/` - Next.js frontend (Vietnamese + Screenplay support)
 - `.env` - API keys configuration
 
-## URLs (port 3001)
-- UI: http://localhost:3001/ui
-- API Docs: http://localhost:3001/docs
-- Health: http://localhost:3001/health
+## URLs
+- API: http://localhost:3000/docs
+- Frontend: http://localhost:3001 (Next.js, `cd frontend && npm run dev`)
+- Health: http://localhost:3000/health
 
 ## Handover Document
 **QUAN TRỌNG:** Để tiếp tục dự án sau khi nghỉ → đọc `docs/HANDOVER_v2.8.md`
@@ -140,8 +144,7 @@ lsof -ti:3001 | xargs kill -9
 4. ✅ Usage Stats Tracking - tokens/time/cost
 5. ✅ Git pushed to nclamvn/ai-translator-pro
 
-## UI (3 Agents)
-```
-Biên Tập Viên → Dịch Giả → Nhà Xuất Bản
-(Document Analysis) → (Translation) → (Output Generation)
-```
+## Frontend (Next.js)
+- Path: `frontend/`
+- Features: Vietnamese UI, Screenplay Studio, Book Writer, Translation
+- NEVER serve legacy `ui/` directory (deleted 2026-02-26)

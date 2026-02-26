@@ -45,8 +45,7 @@ Configuration:
 
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse, RedirectResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from slowapi import Limiter, _rate_limit_exceeded_handler
@@ -620,49 +619,7 @@ app.include_router(batch_legacy_router)
 app.include_router(health_router)
 app.include_router(job_outputs_router)
 
-# UI Page Routes (for clean URLs)
-ui_path = Path(__file__).parent.parent / "ui"
-
-
-@app.get("/app", include_in_schema=False)
-async def publisher_studio():
-    """Serve Publisher Studio page (Claude-style UI)"""
-    # Use new Claude-style UI
-    claude_ui = ui_path / "app-claude-style.html"
-    if claude_ui.exists():
-        return FileResponse(claude_ui)
-    return RedirectResponse(url="/ui/landing/")
-
-
-@app.get("/admin", include_in_schema=False)
-async def admin_dashboard():
-    """Serve Admin Dashboard page"""
-    admin_html = ui_path / "admin.html"
-    if admin_html.exists():
-        return FileResponse(admin_html)
-    return RedirectResponse(url="/ui/landing/")
-
-
-@app.get("/admin/errors", include_in_schema=False)
-async def error_dashboard():
-    """Serve Error Dashboard page"""
-    errors_html = ui_path / "admin" / "errors.html"
-    if errors_html.exists():
-        return FileResponse(errors_html)
-    return RedirectResponse(url="/admin")
-
-
-@app.get("/ui", response_class=HTMLResponse)
-async def ui_dashboard():
-    """Serve Claude-style UI dashboard (2026 redesign)"""
-    claude_ui = ui_path / "app-claude-style.html"
-    if claude_ui.exists():
-        return FileResponse(claude_ui)
-    raise HTTPException(status_code=404, detail="UI dashboard not found")
-
-
-# Mount static files for UI (CSS, JS, images, etc.)
-app.mount("/ui", StaticFiles(directory=str(ui_path), html=True), name="ui")
+# Legacy ui/ removed — frontend is Next.js at frontend/
 
 # Global state
 queue = JobQueue()
@@ -818,13 +775,10 @@ async def get_session_info(session: SessionInfo = Depends(get_optional_session))
 # API Endpoints - Jobs
 # =============================================================================
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", include_in_schema=False)
 async def root():
-    """Serve landing page directly at root URL"""
-    landing_html = ui_path / "landing" / "index.html"
-    if landing_html.exists():
-        return FileResponse(landing_html)
-    return RedirectResponse(url="/ui/landing/")
+    """Redirect to API docs — frontend runs separately via Next.js"""
+    return RedirectResponse(url="/docs")
 
 
 # =============================================================================
