@@ -91,7 +91,6 @@ class CheckpointManager:
                 CREATE INDEX IF NOT EXISTS idx_updated_at
                 ON checkpoints(updated_at)
             """)
-            conn.commit()
 
     def save_checkpoint(
         self,
@@ -144,7 +143,7 @@ class CheckpointManager:
                 created_at,
                 now
             ))
-            conn.commit()
+            # commit handled by context manager
 
     def load_checkpoint(self, job_id: str) -> Optional[CheckpointState]:
         """
@@ -222,7 +221,7 @@ class CheckpointManager:
                 "DELETE FROM checkpoints WHERE job_id = ?",
                 (job_id,)
             )
-            conn.commit()
+            # commit handled by context manager
             return cursor.rowcount > 0
 
     def list_checkpoints(self, limit: int = 100) -> List[CheckpointState]:
@@ -310,7 +309,7 @@ class CheckpointManager:
                 "DELETE FROM checkpoints WHERE updated_at < ?",
                 (cutoff_time,)
             )
-            conn.commit()
+            # commit handled by context manager
             return cursor.rowcount
 
     def get_statistics(self) -> Dict[str, Any]:
