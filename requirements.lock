@@ -1,0 +1,81 @@
+# =============================================================================
+# AI Publisher Pro — Pinned Dependencies (Production Lock File)
+# Generated: 2026-02-26 | Python 3.13
+# Install: pip install --no-cache-dir -r requirements.lock
+# =============================================================================
+
+# --- Core ---
+python-dotenv==1.2.1
+pydantic==2.11.7
+pydantic-settings==2.6.1
+pydantic-core==2.33.2
+annotated-types==0.6.0
+typing_extensions==4.15.0
+
+# --- AI Providers ---
+openai==2.8.1
+anthropic==0.75.0
+httpx==0.28.1
+httpcore==1.0.9
+requests==2.31.0
+jiter==0.12.0
+
+# --- Document Processing ---
+pypdf==6.2.0
+python-docx==1.2.0
+pdf2image==1.17.0
+Pillow==12.0.0
+openpyxl==3.1.5
+PyMuPDF==1.26.6
+regex==2025.11.3
+
+# --- PDF Generation & Export ---
+reportlab==4.4.4
+docx2pdf==0.1.8
+
+# --- Async & Utilities ---
+aiofiles==25.1.0
+tqdm==4.67.1
+python-dateutil==2.8.2
+anyio==4.11.0
+sniffio==1.3.1
+six==1.17.0
+
+# --- Web API ---
+fastapi==0.121.1
+starlette==0.49.3
+uvicorn==0.38.0
+uvloop==0.22.1
+httptools==0.7.1
+watchfiles==1.1.1
+h11==0.16.0
+websockets==15.0.1
+python-multipart==0.0.20
+slowapi==0.1.9
+click==8.1.8
+Jinja2==3.1.6
+MarkupSafe==3.0.3
+
+# --- Chinese Text Processing ---
+jieba==0.42.1
+
+# --- Authentication ---
+PyJWT==2.10.1
+passlib==1.7.4
+bcrypt==4.0.1
+email-validator==2.3.0
+
+# --- Cache ---
+redis==7.1.0
+
+# --- Security ---
+fastapi-csrf-protect==0.3.4
+
+# --- Transitive (required by above) ---
+certifi==2025.8.3
+charset-normalizer==3.3.2
+idna==3.7
+urllib3==2.3.0
+distro==1.9.0
+limits==5.6.0
+et_xmlfile==2.0.0

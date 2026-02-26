@@ -498,9 +498,12 @@ async def startup_db_integrity_check():
 
 @app.on_event("startup")
 async def startup_security_check():
-    """Log security warnings for insecure defaults."""
+    """Log security warnings and deployment summary."""
     from config.settings import Settings
     s = Settings()
+    border = "=" * 60
+
+    # --- Security warnings ---
     warnings = []
     if s.security_mode == "development":
         warnings.append("SECURITY_MODE=development — authentication is DISABLED")
@@ -511,13 +514,29 @@ async def startup_security_check():
     if not s.csrf_enabled:
         warnings.append("CSRF_ENABLED=false — CSRF protection is OFF")
     if warnings:
-        border = "=" * 60
         logger.warning(f"\n{border}")
         logger.warning("SECURITY WARNINGS:")
         for w in warnings:
             logger.warning(f"  ⚠ {w}")
         logger.warning(f"Set SECURITY_MODE=production in .env to enforce security.")
         logger.warning(f"{border}")
+
+    # --- Deployment summary ---
+    providers = []
+    if s.anthropic_api_key:
+        providers.append("Anthropic")
+    if s.openai_api_key:
+        providers.append("OpenAI")
+    if s.google_api_key:
+        providers.append("Google")
+    logger.info(f"\n{border}")
+    logger.info(f"AI Publisher Pro v3.3.1")
+    logger.info(f"  Mode:      {s.security_mode}")
+    logger.info(f"  Auth:      {'ON' if s.session_auth_enabled else 'OFF'}")
+    logger.info(f"  Providers: {', '.join(providers) if providers else 'NONE — configure API keys!'}")
+    logger.info(f"  Provider:  {s.provider} / {s.model}")
+    logger.info(f"  Features:  cache={'ON' if s.cache_enabled else 'OFF'} tm={'ON' if s.tm_enabled else 'OFF'} glossary={'ON' if s.glossary_enabled else 'OFF'}")
+    logger.info(f"{border}")
 
 
 @app.on_event("startup")
