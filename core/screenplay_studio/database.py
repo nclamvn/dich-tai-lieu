@@ -4,14 +4,13 @@ Screenplay Studio Database Repository
 SQLite-based storage for screenplay projects.
 """
 
-import sqlite3
 import json
 import logging
-from typing import List, Optional
+from typing import Any, List, Optional
 from pathlib import Path
 from datetime import datetime
-from contextlib import contextmanager
 
+from core.database import get_db_backend
 from .models import ScreenplayProject, ProjectStatus, ProjectTier
 
 logger = logging.getLogger(__name__)
@@ -23,23 +22,14 @@ class ScreenplayRepository:
     def __init__(self, db_path: str = "data/screenplay_studio.db"):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._backend = get_db_backend(
+            "screenplay_studio", db_dir=self.db_path.parent
+        )
         self._init_db()
 
-    @contextmanager
     def _get_connection(self):
-        """Get database connection with WAL mode"""
-        conn = sqlite3.connect(str(self.db_path))
-        conn.execute("PRAGMA journal_mode=WAL")
-        conn.execute("PRAGMA foreign_keys=ON")
-        conn.row_factory = sqlite3.Row
-        try:
-            yield conn
-            conn.commit()
-        except Exception:
-            conn.rollback()
-            raise
-        finally:
-            conn.close()
+        """Get database connection via SQLiteBackend."""
+        return self._backend.connection()
 
     def _init_db(self):
         """Initialize database schema"""
@@ -219,7 +209,7 @@ class ScreenplayRepository:
             ).fetchone()
             return row[0]
 
-    def _row_to_project(self, row: sqlite3.Row) -> ScreenplayProject:
+    def _row_to_project(self, row: Any) -> ScreenplayProject:
         """Convert database row to ScreenplayProject"""
         data = {
             "id": row["id"],

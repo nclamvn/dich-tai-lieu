@@ -572,7 +572,7 @@ async def list_available_styles():
 
     Returns all predefined styles that can be used for prompt-based control.
     """
-    from core.author.models import AuthorConfig
+    from core_v2.agents.ghostwriter.models import AuthorConfig
 
     config = AuthorConfig()
     return {
@@ -634,7 +634,7 @@ async def add_character(request: AddCharacterRequest):
         if not project or not project.memory:
             raise HTTPException(status_code=404, detail="Project not found or memory not initialized")
 
-        from core.author.memory_store import Character
+        from core_v2.agents.ghostwriter.memory_store import Character
 
         character = Character(
             name=request.name,
@@ -697,7 +697,7 @@ async def add_timeline_event(request: AddEventRequest):
         if not project or not project.memory:
             raise HTTPException(status_code=404, detail="Project not found or memory not initialized")
 
-        from core.author.memory_store import TimelineEvent
+        from core_v2.agents.ghostwriter.memory_store import TimelineEvent
         import uuid
 
         event = TimelineEvent(
@@ -762,7 +762,7 @@ async def add_plot_point(request: AddPlotPointRequest):
         if not project or not project.memory:
             raise HTTPException(status_code=404, detail="Project not found or memory not initialized")
 
-        from core.author.memory_store import PlotPoint
+        from core_v2.agents.ghostwriter.memory_store import PlotPoint
 
         plot_point = PlotPoint(
             point_id=request.point_id,

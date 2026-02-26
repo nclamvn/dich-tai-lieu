@@ -154,7 +154,7 @@ class APSV2Service:
         try:
             from config.settings import get_settings
             max_jobs = get_settings().max_concurrent_jobs
-        except Exception:
+        except (ImportError, AttributeError):
             max_jobs = 10
         self._global_semaphore = asyncio.Semaphore(max_jobs)
 
@@ -578,11 +578,16 @@ class APSV2Service:
             job["error"] = "Job cancelled"
             self._repo.mark_failed(job_id, "Job cancelled by user")
             logger.info(f"[{job_id}] Job cancelled")
-        except Exception as e:
+        except (FileNotFoundError, ValueError, OSError, RuntimeError) as e:
             job["status"] = JobStatusV2.FAILED
             job["error"] = str(e)
             self._repo.mark_failed(job_id, str(e))
             logger.error(f"[{job_id}] Job failed: {e}")
+        except Exception as e:
+            job["status"] = JobStatusV2.FAILED
+            job["error"] = str(e)
+            self._repo.mark_failed(job_id, str(e))
+            logger.error(f"[{job_id}] Job failed (unexpected): {e}", exc_info=True)
 
             # QAPR: record failure
             try:
@@ -866,7 +871,7 @@ class APSV2Service:
                 "EQS: strategy=%s score=%.3f grade=%s recommendation=%s",
                 strategy, report.overall_score, report.grade, report.recommendation,
             )
-        except Exception as exc:
+        except (ValueError, RuntimeError, TypeError) as exc:
             logger.warning("EQS scoring failed (non-blocking): %s", exc)
             self._last_eqs_report = None
 
@@ -1058,7 +1063,7 @@ class APSV2Service:
                 return str(file_path)
             else:
                 return await self._extract_pdf_text_legacy(file_path)
-        except Exception as e:
+        except (FileNotFoundError, OSError, ValueError, RuntimeError) as e:
             logger.error(f"Smart extraction failed: {e}, falling back")
             if use_vision:
                 return str(file_path)
@@ -1169,7 +1174,7 @@ class APSV2Service:
                         shutil.rmtree(item, ignore_errors=True)
                     else:
                         item.unlink(missing_ok=True)
-                except Exception as e:
+                except OSError as e:
                     logger.warning(f"Failed to delete {item}: {e}")
 
         # Clear upload files
@@ -1177,7 +1182,7 @@ class APSV2Service:
             for item in self.upload_dir.iterdir():
                 try:
                     item.unlink(missing_ok=True)
-                except Exception as e:
+                except OSError as e:
                     logger.warning(f"Failed to delete {item}: {e}")
 
         logger.info(f"Cache cleared: {count} jobs removed")

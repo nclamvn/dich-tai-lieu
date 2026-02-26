@@ -6,10 +6,11 @@
 import json
 import logging
 import os
-import sqlite3
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 
+from core.database import get_db_backend
 from .book_writer_models import BookProject, BookListItem, BookStatus
 
 logger = logging.getLogger("book_writer.repository")
@@ -21,12 +22,14 @@ class BookWriterRepository:
     def __init__(self, db_path: str = "data/book_writer.db"):
         os.makedirs(os.path.dirname(db_path) or ".", exist_ok=True)
         self.db_path = db_path
+        self._backend = get_db_backend(
+            "book_writer", db_dir=Path(db_path).parent
+        )
         self._init_db()
 
     def _init_db(self):
         """Create tables if not exist."""
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("PRAGMA journal_mode=WAL")
+        with self._backend.connection() as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS book_projects (
                     id TEXT PRIMARY KEY,
@@ -48,7 +51,6 @@ class BookWriterRepository:
                 CREATE INDEX IF NOT EXISTS idx_book_updated
                 ON book_projects(updated_at DESC)
             """)
-            conn.commit()
 
     def save_project(self, project: BookProject):
         """Insert or update a book project."""
@@ -72,7 +74,7 @@ class BookWriterRepository:
         # Serialize to JSON
         data = project.model_dump_json()
 
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             conn.execute("""
                 INSERT INTO book_projects (id, data, status, title, input_mode,
                                           total_words, chapter_count, created_at, updated_at)
@@ -95,11 +97,10 @@ class BookWriterRepository:
                 project.created_at.isoformat(),
                 project.updated_at.isoformat(),
             ))
-            conn.commit()
 
     def get_project(self, book_id: str) -> Optional[BookProject]:
         """Load a book project by ID."""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             row = conn.execute(
                 "SELECT data FROM book_projects WHERE id = ?", (book_id,)
             ).fetchone()
@@ -115,7 +116,7 @@ class BookWriterRepository:
 
     def list_projects(self, limit: int = 20, offset: int = 0) -> list[BookListItem]:
         """List projects ordered by updated_at desc."""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             rows = conn.execute("""
                 SELECT id, title, status, input_mode, chapter_count,
                        total_words, created_at, updated_at
@@ -149,7 +150,7 @@ class BookWriterRepository:
             "writing", "enriching", "editing", "compiling",
         )
         placeholders = ",".join("?" for _ in stalled_statuses)
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             rows = conn.execute(f"""
                 SELECT id, title, status, input_mode, chapter_count,
                        total_words, created_at, updated_at
@@ -177,9 +178,8 @@ class BookWriterRepository:
 
     def delete_project(self, book_id: str) -> bool:
         """Delete a project."""
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             cursor = conn.execute(
                 "DELETE FROM book_projects WHERE id = ?", (book_id,)
             )
-            conn.commit()
             return cursor.rowcount > 0

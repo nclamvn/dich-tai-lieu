@@ -137,7 +137,7 @@ class TestErrorTracker:
     def test_tracker_creation(self, tracker):
         """Test basic tracker creation."""
         assert tracker is not None
-        assert tracker.conn is not None
+        assert tracker._backend is not None
     
     def test_track_simple_error(self, tracker):
         """Test tracking a simple error."""

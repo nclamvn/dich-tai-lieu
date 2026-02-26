@@ -8,13 +8,14 @@ Phase 5.2: Allows translation jobs to resume from last saved state after interru
 Stores completed chunk IDs and translation results in SQLite for crash recovery.
 """
 
-import sqlite3
 import json
 import time
 from pathlib import Path
 from typing import Optional, List, Dict, Any
 from dataclasses import dataclass, asdict
 from datetime import datetime
+
+from core.database import get_db_backend
 
 
 @dataclass
@@ -65,12 +66,14 @@ class CheckpointManager:
             db_path = settings.checkpoint_dir / "checkpoints.db"
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
+        self._backend = get_db_backend(
+            self.db_path.stem, db_dir=self.db_path.parent
+        )
         self._init_db()
 
     def _init_db(self):
         """Initialize database schema"""
-        with sqlite3.connect(self.db_path) as conn:
-            conn.execute("PRAGMA journal_mode=WAL")
+        with self._backend.connection() as conn:
             conn.execute("""
                 CREATE TABLE IF NOT EXISTS checkpoints (
                     job_id TEXT PRIMARY KEY,
@@ -114,7 +117,7 @@ class CheckpointManager:
         """
         now = time.time()
 
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             # Check if checkpoint exists
             cursor = conn.execute(
                 "SELECT created_at FROM checkpoints WHERE job_id = ?",
@@ -153,7 +156,7 @@ class CheckpointManager:
         Returns:
             CheckpointState if checkpoint exists, None otherwise
         """
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             cursor = conn.execute("""
                 SELECT
                     job_id, input_file, output_file, total_chunks,
@@ -197,7 +200,7 @@ class CheckpointManager:
         Returns:
             True if checkpoint exists
         """
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             cursor = conn.execute(
                 "SELECT 1 FROM checkpoints WHERE job_id = ? LIMIT 1",
                 (job_id,)
@@ -214,7 +217,7 @@ class CheckpointManager:
         Returns:
             True if checkpoint was deleted
         """
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             cursor = conn.execute(
                 "DELETE FROM checkpoints WHERE job_id = ?",
                 (job_id,)
@@ -232,7 +235,7 @@ class CheckpointManager:
         Returns:
             List of CheckpointState objects, sorted by updated_at desc
         """
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             cursor = conn.execute("""
                 SELECT
                     job_id, input_file, output_file, total_chunks,
@@ -302,7 +305,7 @@ class CheckpointManager:
         """
         cutoff_time = time.time() - (days * 86400)
 
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             cursor = conn.execute(
                 "DELETE FROM checkpoints WHERE updated_at < ?",
                 (cutoff_time,)
@@ -317,7 +320,7 @@ class CheckpointManager:
         Returns:
             Dict with stats
         """
-        with sqlite3.connect(self.db_path) as conn:
+        with self._backend.connection() as conn:
             cursor = conn.execute("""
                 SELECT
                     COUNT(*) as total_checkpoints,

@@ -146,7 +146,7 @@ async def publish_file(
                 )
         except HTTPException:
             raise
-        except Exception as e:
+        except (ImportError, ValueError, RuntimeError) as e:
             logger.warning(f"Quota check skipped: {e}")
 
         # Parse output formats
@@ -185,7 +185,9 @@ async def publish_file(
                 "action": "Please check your API keys and billing status"
             }
         )
-    except Exception as e:
+    except (FileNotFoundError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except (OSError, RuntimeError) as e:
         logger.error(f"Publish failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -232,7 +234,9 @@ async def publish_text(request: PublishTextRequest, user_id: str = Depends(get_c
 
     except HTTPException:
         raise
-    except Exception as e:
+    except (FileNotFoundError, ValueError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except (OSError, RuntimeError) as e:
         logger.error(f"Publish text failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -400,7 +404,7 @@ async def get_reader_content(job_id: str):
                         content_source = f"output_file:{fmt}"
                         logger.info(f"[{job_id}] Reader: using output file ({fmt})")
                         break
-                except Exception as e:
+                except (ImportError, OSError, UnicodeDecodeError) as e:
                     logger.warning(f"[{job_id}] Failed to read {fmt} output: {e}")
 
     # Strategy 3 (LAST RESORT): LayoutDNA regions — WARNING: this is SOURCE text
@@ -746,7 +750,7 @@ async def _convert_on_demand(job_id: str, target_format: str, service) -> Path:
             logger.warning(f"Unsupported format for on-demand conversion: {target_format}")
             return None
 
-    except Exception as e:
+    except (FileNotFoundError, OSError, TimeoutError) as e:
         logger.error(f"[{job_id}] On-demand conversion error: {e}")
         return None
 

@@ -11,6 +11,7 @@ Pipeline:
 import asyncio
 import json
 import logging
+import os
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -263,7 +264,7 @@ class UniversalPublisher:
         llm_client: Any,
         output_dir: Path = Path("output"),
         enable_verification: bool = True,
-        concurrency: int = 1,  # Reduced to avoid Anthropic rate limits (8k tokens/min)
+        concurrency: int = int(os.environ.get("PUBLISHER_CONCURRENCY", "3")),
     ):
         """
         Args:

@@ -4,12 +4,11 @@ Job Repository - SQLite persistence for APS V2 jobs.
 Ensures jobs survive server restarts.
 """
 
-import sqlite3
 import json
 import logging
 import shutil
 from pathlib import Path
-from typing import Dict, Optional, List
+from typing import Any, Dict, Optional, List
 from datetime import datetime
 from contextlib import contextmanager
 
@@ -223,7 +222,7 @@ class JobRepository:
 
             return [self._row_to_list_dict(row) for row in rows]
 
-    def _row_to_list_dict(self, row: sqlite3.Row) -> Dict:
+    def _row_to_list_dict(self, row: Any) -> Dict:
         """Convert list-query row to job dict (lighter, no dna_json/content_path)."""
         return {
             "job_id": row["job_id"],
@@ -363,7 +362,7 @@ class JobRepository:
             """, (error, datetime.now().isoformat(), job_id))
         self.record_history(job_id, "status", "running", "failed")
 
-    def _row_to_dict(self, row: sqlite3.Row) -> Dict:
+    def _row_to_dict(self, row: Any) -> Dict:
         """Convert database row to job dict."""
         return {
             "job_id": row["job_id"],

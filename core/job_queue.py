@@ -8,7 +8,6 @@ A lightweight, file-based job queue system for managing translation tasks.
 No external dependencies like Redis or Celery required.
 """
 
-import sqlite3
 import json
 import hashlib
 import time
@@ -387,7 +386,7 @@ class JobQueue:
                 return self._row_to_job(row)
             return None
 
-    def _row_to_job(self, row: sqlite3.Row) -> TranslationJob:
+    def _row_to_job(self, row: Any) -> TranslationJob:
         """Convert database row to TranslationJob"""
         data = dict(row)
 

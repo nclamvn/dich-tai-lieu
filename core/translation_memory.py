@@ -474,7 +474,7 @@ class TranslationMemory:
 
         return intersection / union if union > 0 else 0.0
 
-    def _row_to_segment(self, row: sqlite3.Row) -> TMSegment:
+    def _row_to_segment(self, row) -> TMSegment:
         """Convert database row to TMSegment"""
         return TMSegment(
             id=row['id'],

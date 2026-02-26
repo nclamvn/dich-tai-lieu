@@ -103,3 +103,69 @@ class TestSQLiteBackend:
         with tmp_db.connection() as conn:
             rows = conn.execute("SELECT COUNT(*) FROM t").fetchone()
             assert rows[0] == 5
+
+
+class TestSQLiteBackendPersistent:
+    """Tests for persistent connection mode."""
+
+    @pytest.fixture
+    def persistent_db(self, tmp_path):
+        return SQLiteBackend(tmp_path / "persistent.db", persistent=True)
+
+    def test_persistent_reuses_connection(self, persistent_db):
+        with persistent_db.connection() as conn:
+            conn.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, val TEXT)")
+            conn.execute("INSERT INTO t (val) VALUES (?)", ("hello",))
+
+        with persistent_db.connection() as conn:
+            row = conn.execute("SELECT val FROM t WHERE id = 1").fetchone()
+            assert row["val"] == "hello"
+
+    def test_persistent_rollback(self, persistent_db):
+        with persistent_db.connection() as conn:
+            conn.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, val TEXT)")
+
+        with pytest.raises(RuntimeError):
+            with persistent_db.connection() as conn:
+                conn.execute("INSERT INTO t (val) VALUES (?)", ("bad",))
+                raise RuntimeError("force rollback")
+
+        with persistent_db.connection() as conn:
+            row = conn.execute("SELECT COUNT(*) FROM t").fetchone()
+            assert row[0] == 0
+
+    def test_persistent_close(self, persistent_db):
+        with persistent_db.connection() as conn:
+            conn.execute("CREATE TABLE t (id INTEGER)")
+        persistent_db.close()
+        # After close, next connection() should create a new connection
+        with persistent_db.connection() as conn:
+            conn.execute("SELECT COUNT(*) FROM t").fetchone()
+        persistent_db.close()
+
+    def test_persistent_thread_safety(self, persistent_db):
+        import threading
+
+        with persistent_db.connection() as conn:
+            conn.execute("CREATE TABLE t (id INTEGER PRIMARY KEY, val INTEGER)")
+
+        errors = []
+
+        def insert_rows(start):
+            try:
+                for i in range(10):
+                    with persistent_db.connection() as conn:
+                        conn.execute("INSERT INTO t (val) VALUES (?)", (start + i,))
+            except Exception as e:
+                errors.append(e)
+
+        threads = [threading.Thread(target=insert_rows, args=(i * 10,)) for i in range(4)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+
+        assert not errors
+        with persistent_db.connection() as conn:
+            row = conn.execute("SELECT COUNT(*) FROM t").fetchone()
+            assert row[0] == 40

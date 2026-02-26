@@ -7,7 +7,6 @@ Usage Database
 SQLite storage for usage tracking data.
 """
 
-import sqlite3
 import json
 import logging
 from pathlib import Path

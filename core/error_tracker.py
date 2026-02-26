@@ -7,15 +7,16 @@ Error Tracking System for AI Translator Pro
 SQLite-based error tracking with categorization, deduplication, and reporting.
 """
 
-import sqlite3
 import hashlib
 import traceback
 import time
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Any, Optional, List, Dict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from enum import Enum
+
+from core.database import get_db_backend
 
 
 # ============================================================================
@@ -99,56 +100,52 @@ class ErrorTracker:
             db_path = ERROR_DB_PATH
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self.conn = None
+        self._backend = get_db_backend(
+            self.db_path.stem, db_dir=self.db_path.parent,
+            persistent=True,
+        )
         self._init_database()
 
     def _init_database(self):
         """Initialize database schema."""
-        self.conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
-        self.conn.execute("PRAGMA journal_mode=WAL")
-        self.conn.row_factory = sqlite3.Row
+        with self._backend.connection() as conn:
+            # Errors table
+            conn.execute("""
+                CREATE TABLE IF NOT EXISTS errors (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    error_hash TEXT UNIQUE NOT NULL,
+                    error_type TEXT NOT NULL,
+                    error_message TEXT NOT NULL,
+                    stack_trace TEXT,
+                    severity TEXT NOT NULL,
+                    category TEXT NOT NULL,
+                    module TEXT,
+                    function TEXT,
+                    job_id TEXT,
+                    user_id TEXT,
+                    first_seen REAL NOT NULL,
+                    last_seen REAL NOT NULL,
+                    occurrence_count INTEGER DEFAULT 1,
+                    resolved BOOLEAN DEFAULT 0,
+                    resolved_at REAL,
+                    resolution_notes TEXT,
+                    metadata TEXT
+                )
+            """)
 
-        cursor = self.conn.cursor()
-
-        # Errors table
-        cursor.execute("""
-            CREATE TABLE IF NOT EXISTS errors (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                error_hash TEXT UNIQUE NOT NULL,
-                error_type TEXT NOT NULL,
-                error_message TEXT NOT NULL,
-                stack_trace TEXT,
-                severity TEXT NOT NULL,
-                category TEXT NOT NULL,
-                module TEXT,
-                function TEXT,
-                job_id TEXT,
-                user_id TEXT,
-                first_seen REAL NOT NULL,
-                last_seen REAL NOT NULL,
-                occurrence_count INTEGER DEFAULT 1,
-                resolved BOOLEAN DEFAULT 0,
-                resolved_at REAL,
-                resolution_notes TEXT,
-                metadata TEXT
-            )
-        """)
-
-        # Indexes
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_error_hash ON errors(error_hash)
-        """)
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_severity ON errors(severity)
-        """)
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_category ON errors(category)
-        """)
-        cursor.execute("""
-            CREATE INDEX IF NOT EXISTS idx_resolved ON errors(resolved)
-        """)
-
-        self.conn.commit()
+            # Indexes
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_error_hash ON errors(error_hash)
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_severity ON errors(severity)
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_category ON errors(category)
+            """)
+            conn.execute("""
+                CREATE INDEX IF NOT EXISTS idx_resolved ON errors(resolved)
+            """)
 
     def _generate_error_hash(self, error_type: str, error_message: str, module: str, function: str) -> str:
         """Generate unique hash for error deduplication."""
@@ -188,44 +185,45 @@ class ErrorTracker:
 
         error_hash = self._generate_error_hash(error_type, error_message, module, function)
 
-        cursor = self.conn.cursor()
+        with self._backend.connection() as conn:
+            # Check if error already exists
+            existing = conn.execute(
+                "SELECT id, occurrence_count FROM errors WHERE error_hash = ?",
+                (error_hash,)
+            ).fetchone()
 
-        # Check if error already exists
-        cursor.execute("SELECT id, occurrence_count FROM errors WHERE error_hash = ?", (error_hash,))
-        existing = cursor.fetchone()
-
-        if existing:
-            # Update existing error
-            error_id = existing[0]
-            new_count = existing[1] + 1
-            cursor.execute("""
-                UPDATE errors
-                SET last_seen = ?, occurrence_count = ?
-                WHERE id = ?
-            """, (time.time(), new_count, error_id))
-        else:
-            # Insert new error
-            cursor.execute("""
-                INSERT INTO errors (
+            if existing:
+                # Update existing error
+                error_id = existing[0]
+                new_count = existing[1] + 1
+                conn.execute("""
+                    UPDATE errors
+                    SET last_seen = ?, occurrence_count = ?
+                    WHERE id = ?
+                """, (time.time(), new_count, error_id))
+            else:
+                # Insert new error
+                conn.execute("""
+                    INSERT INTO errors (
+                        error_hash, error_type, error_message, stack_trace,
+                        severity, category, module, function,
+                        job_id, user_id, first_seen, last_seen, occurrence_count
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """, (
                     error_hash, error_type, error_message, stack_trace,
-                    severity, category, module, function,
-                    job_id, user_id, first_seen, last_seen, occurrence_count
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-            """, (
-                error_hash, error_type, error_message, stack_trace,
-                severity.value, category.value, module, function,
-                job_id, user_id, time.time(), time.time(), 1
-            ))
-            error_id = cursor.lastrowid
+                    severity.value, category.value, module, function,
+                    job_id, user_id, time.time(), time.time(), 1
+                ))
+                error_id = conn.lastrowid
 
-        self.conn.commit()
         return error_id
 
     def get_error(self, error_id: int) -> Optional[ErrorRecord]:
         """Get error record by ID."""
-        cursor = self.conn.cursor()
-        cursor.execute("SELECT * FROM errors WHERE id = ?", (error_id,))
-        row = cursor.fetchone()
+        with self._backend.connection() as conn:
+            row = conn.execute(
+                "SELECT * FROM errors WHERE id = ?", (error_id,)
+            ).fetchone()
 
         if row:
             return self._row_to_record(row)
@@ -233,92 +231,88 @@ class ErrorTracker:
 
     def get_recent_errors(self, limit: int = 50, severity: Optional[ErrorSeverity] = None) -> List[ErrorRecord]:
         """Get recent errors, optionally filtered by severity."""
-        cursor = self.conn.cursor()
+        with self._backend.connection() as conn:
+            if severity:
+                rows = conn.execute("""
+                    SELECT * FROM errors
+                    WHERE severity = ?
+                    ORDER BY last_seen DESC
+                    LIMIT ?
+                """, (severity.value, limit)).fetchall()
+            else:
+                rows = conn.execute("""
+                    SELECT * FROM errors
+                    ORDER BY last_seen DESC
+                    LIMIT ?
+                """, (limit,)).fetchall()
 
-        if severity:
-            cursor.execute("""
-                SELECT * FROM errors
-                WHERE severity = ?
-                ORDER BY last_seen DESC
-                LIMIT ?
-            """, (severity.value, limit))
-        else:
-            cursor.execute("""
-                SELECT * FROM errors
-                ORDER BY last_seen DESC
-                LIMIT ?
-            """, (limit,))
-
-        return [self._row_to_record(row) for row in cursor.fetchall()]
+        return [self._row_to_record(row) for row in rows]
 
     def get_unresolved_errors(self, category: Optional[ErrorCategory] = None) -> List[ErrorRecord]:
         """Get all unresolved errors, optionally filtered by category."""
-        cursor = self.conn.cursor()
+        with self._backend.connection() as conn:
+            if category:
+                rows = conn.execute("""
+                    SELECT * FROM errors
+                    WHERE resolved = 0 AND category = ?
+                    ORDER BY last_seen DESC
+                """, (category.value,)).fetchall()
+            else:
+                rows = conn.execute("""
+                    SELECT * FROM errors
+                    WHERE resolved = 0
+                    ORDER BY last_seen DESC
+                """).fetchall()
 
-        if category:
-            cursor.execute("""
-                SELECT * FROM errors
-                WHERE resolved = 0 AND category = ?
-                ORDER BY last_seen DESC
-            """, (category.value,))
-        else:
-            cursor.execute("""
-                SELECT * FROM errors
-                WHERE resolved = 0
-                ORDER BY last_seen DESC
-            """)
-
-        return [self._row_to_record(row) for row in cursor.fetchall()]
+        return [self._row_to_record(row) for row in rows]
 
     def resolve_error(self, error_id: int, resolution_notes: str = ""):
         """Mark error as resolved."""
-        cursor = self.conn.cursor()
-        cursor.execute("""
-            UPDATE errors
-            SET resolved = 1, resolved_at = ?, resolution_notes = ?
-            WHERE id = ?
-        """, (time.time(), resolution_notes, error_id))
-        self.conn.commit()
+        with self._backend.connection() as conn:
+            conn.execute("""
+                UPDATE errors
+                SET resolved = 1, resolved_at = ?, resolution_notes = ?
+                WHERE id = ?
+            """, (time.time(), resolution_notes, error_id))
 
     def get_statistics(self, time_window_hours: int = 24) -> Dict[str, Any]:
         """Get error statistics for a time window."""
-        cursor = self.conn.cursor()
         cutoff_time = time.time() - (time_window_hours * 3600)
 
-        # Total errors in window
-        cursor.execute("""
-            SELECT COUNT(*) as total,
-                   SUM(occurrence_count) as total_occurrences
-            FROM errors
-            WHERE last_seen >= ?
-        """, (cutoff_time,))
-        row = cursor.fetchone()
-        total_unique = row[0]
-        total_occurrences = row[1] or 0
+        with self._backend.connection() as conn:
+            # Total errors in window
+            row = conn.execute("""
+                SELECT COUNT(*) as total,
+                       SUM(occurrence_count) as total_occurrences
+                FROM errors
+                WHERE last_seen >= ?
+            """, (cutoff_time,)).fetchone()
+            total_unique = row[0]
+            total_occurrences = row[1] or 0
 
-        # By severity
-        cursor.execute("""
-            SELECT severity, COUNT(*) as count, SUM(occurrence_count) as occurrences
-            FROM errors
-            WHERE last_seen >= ?
-            GROUP BY severity
-        """, (cutoff_time,))
-        by_severity = {row[0]: {"unique": row[1], "occurrences": row[2]} for row in cursor.fetchall()}
+            # By severity
+            severity_rows = conn.execute("""
+                SELECT severity, COUNT(*) as count, SUM(occurrence_count) as occurrences
+                FROM errors
+                WHERE last_seen >= ?
+                GROUP BY severity
+            """, (cutoff_time,)).fetchall()
+            by_severity = {r[0]: {"unique": r[1], "occurrences": r[2]} for r in severity_rows}
 
-        # By category
-        cursor.execute("""
-            SELECT category, COUNT(*) as count, SUM(occurrence_count) as occurrences
-            FROM errors
-            WHERE last_seen >= ?
-            GROUP BY category
-        """, (cutoff_time,))
-        by_category = {row[0]: {"unique": row[1], "occurrences": row[2]} for row in cursor.fetchall()}
+            # By category
+            category_rows = conn.execute("""
+                SELECT category, COUNT(*) as count, SUM(occurrence_count) as occurrences
+                FROM errors
+                WHERE last_seen >= ?
+                GROUP BY category
+            """, (cutoff_time,)).fetchall()
+            by_category = {r[0]: {"unique": r[1], "occurrences": r[2]} for r in category_rows}
 
-        # Unresolved count
-        cursor.execute("""
-            SELECT COUNT(*) FROM errors WHERE resolved = 0 AND last_seen >= ?
-        """, (cutoff_time,))
-        unresolved = cursor.fetchone()[0]
+            # Unresolved count
+            unresolved_row = conn.execute("""
+                SELECT COUNT(*) FROM errors WHERE resolved = 0 AND last_seen >= ?
+            """, (cutoff_time,)).fetchone()
+            unresolved = unresolved_row[0]
 
         return {
             "time_window_hours": time_window_hours,
@@ -331,14 +325,16 @@ class ErrorTracker:
 
     def clear_old_errors(self, days: int = 30):
         """Clear errors older than specified days."""
-        cursor = self.conn.cursor()
         cutoff_time = time.time() - (days * 24 * 3600)
-        cursor.execute("DELETE FROM errors WHERE last_seen < ? AND resolved = 1", (cutoff_time,))
-        deleted = cursor.rowcount
-        self.conn.commit()
+        with self._backend.connection() as conn:
+            conn.execute(
+                "DELETE FROM errors WHERE last_seen < ? AND resolved = 1",
+                (cutoff_time,)
+            )
+            deleted = conn.rowcount
         return deleted
 
-    def _row_to_record(self, row: sqlite3.Row) -> ErrorRecord:
+    def _row_to_record(self, row: Any) -> ErrorRecord:
         """Convert database row to ErrorRecord."""
         return ErrorRecord(
             id=row['id'],
@@ -362,8 +358,7 @@ class ErrorTracker:
 
     def close(self):
         """Close database connection."""
-        if self.conn:
-            self.conn.close()
+        self._backend.close()
 
 
 # ============================================================================
@@ -390,54 +385,3 @@ def track_error(
     """Track an error using the global tracker."""
     tracker = get_error_tracker()
     return tracker.track_error(error, severity, category, **context)
-
-
-# ============================================================================
-# Usage Example
-# ============================================================================
-
-if __name__ == "__main__":
-    # Example usage
-    tracker = ErrorTracker()
-
-    # Track errors
-    try:
-        raise ValueError("Test error #1")
-    except Exception as e:
-        tracker.track_error(
-            e,
-            severity=ErrorSeverity.HIGH,
-            category=ErrorCategory.VALIDATION_ERROR,
-            module="test_module",
-            function="test_function",
-            job_id="job_123"
-        )
-
-    try:
-        raise ConnectionError("API connection failed")
-    except Exception as e:
-        tracker.track_error(
-            e,
-            severity=ErrorSeverity.CRITICAL,
-            category=ErrorCategory.API_ERROR,
-            module="api_client",
-            function="call_api"
-        )
-
-    # Get statistics
-    stats = tracker.get_statistics(time_window_hours=24)
-    print("Error Statistics (24h):")
-    print(f"  Total unique errors: {stats['total_unique_errors']}")
-    print(f"  Total occurrences: {stats['total_occurrences']}")
-    print(f"  Unresolved: {stats['unresolved_count']}")
-    print(f"\nBy Severity: {stats['by_severity']}")
-    print(f"By Category: {stats['by_category']}")
-
-    # Get recent errors
-    recent = tracker.get_recent_errors(limit=10)
-    print(f"\nRecent Errors: {len(recent)}")
-    for err in recent:
-        print(f"  - [{err.severity.value}] {err.error_type}: {err.error_message[:50]}...")
-
-    print("\n✅ Error tracking system initialized successfully!")
-    print(f"📁 Database location: {ERROR_DB_PATH.absolute()}")

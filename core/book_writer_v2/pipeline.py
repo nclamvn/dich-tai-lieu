@@ -18,6 +18,8 @@ from .agents import (
 )
 from .agents.base import AgentContext
 
+_PIPELINE_PHASES = ["analysis", "outline", "writing", "expansion", "editing", "enriching", "quality", "publishing"]
+
 
 class BookWriterPipeline:
     """
@@ -46,6 +48,15 @@ class BookWriterPipeline:
         self.progress_callback = progress_callback
         self.logger = logging.getLogger("BookWriter.Pipeline")
 
+        # Checkpointing
+        self._checkpoint_mgr = None
+        if config.enable_auto_save:
+            try:
+                from core.cache.checkpoint_manager import CheckpointManager
+                self._checkpoint_mgr = CheckpointManager()
+            except Exception as e:
+                self.logger.warning(f"Checkpoint manager unavailable: {e}")
+
         # Initialize agents
         self.analyst = AnalystAgent(config, ai_client)
         self.architect = ArchitectAgent(config, ai_client)
@@ -56,6 +67,32 @@ class BookWriterPipeline:
         self.editor = EditorAgent(config, ai_client)
         self.quality_gate = QualityGateAgent(config, ai_client)
         self.publisher = PublisherAgent(config, ai_client)
+
+    def _save_checkpoint(self, project: BookProject, phase: str, completed_phases: list[str]):
+        """Save pipeline checkpoint after a major phase completes."""
+        if self._checkpoint_mgr is None:
+            return
+        try:
+            self._checkpoint_mgr.save_checkpoint(
+                job_id=project.id,
+                input_file=project.user_request,
+                output_file=self.config.output_dir,
+                total_chunks=len(_PIPELINE_PHASES),
+                completed_chunk_ids=completed_phases,
+                results_data={"phase": phase, "status": project.status.value},
+                job_metadata={"current_agent": project.current_agent},
+            )
+        except Exception as e:
+            self.logger.warning(f"Checkpoint save failed at {phase}: {e}")
+
+    def _delete_checkpoint(self, project_id: str):
+        """Remove checkpoint on successful completion."""
+        if self._checkpoint_mgr is None:
+            return
+        try:
+            self._checkpoint_mgr.delete_checkpoint(project_id)
+        except Exception as e:
+            self.logger.warning(f"Checkpoint delete failed: {e}")
 
     async def create_book(
         self,
@@ -81,6 +118,7 @@ class BookWriterPipeline:
 
         self.logger.info(f"Starting book project: {project.id}")
         self._report_progress(project.id, "Starting book creation...", 0)
+        completed_phases: list[str] = []
 
         try:
             context = AgentContext(
@@ -107,6 +145,8 @@ class BookWriterPipeline:
             }, context)
 
             project.analysis = analysis
+            completed_phases.append("analysis")
+            self._save_checkpoint(project, "analysis", completed_phases)
 
             # Agent 2: Architect
             project.status = BookStatus.ARCHITECTING
@@ -130,6 +170,8 @@ class BookWriterPipeline:
             self._report_progress(project.id, "Creating detailed outlines...", 15)
 
             blueprint = await self.outliner.execute(blueprint, context)
+            completed_phases.append("outline")
+            self._save_checkpoint(project, "outline", completed_phases)
 
             # === PHASE 2: WRITING ===
 
@@ -140,6 +182,8 @@ class BookWriterPipeline:
 
             blueprint = await self.writer.execute(blueprint, context)
             project.update_progress()
+            completed_phases.append("writing")
+            self._save_checkpoint(project, "writing", completed_phases)
 
             # Agent 5: Expander (may run multiple rounds)
             project.status = BookStatus.EXPANDING
@@ -161,6 +205,9 @@ class BookWriterPipeline:
                 project.expansion_rounds += 1
                 project.update_progress()
 
+            completed_phases.append("expansion")
+            self._save_checkpoint(project, "expansion", completed_phases)
+
             # === PHASE 3: ENHANCEMENT ===
 
             # Agent 6: Enricher
@@ -177,6 +224,8 @@ class BookWriterPipeline:
 
             blueprint = await self.editor.execute(blueprint, context)
             project.update_progress()
+            completed_phases.extend(["enriching", "editing"])
+            self._save_checkpoint(project, "editing", completed_phases)
 
             # === PHASE 4: QUALITY GATE ===
 
@@ -215,6 +264,7 @@ class BookWriterPipeline:
             project.update_progress()
 
             self._report_progress(project.id, "Book creation complete!", 100)
+            self._delete_checkpoint(project.id)
 
             self.logger.info(
                 f"Book completed: {project.id} | "
@@ -229,6 +279,8 @@ class BookWriterPipeline:
             self.logger.error(f"Pipeline error: {e}")
             project.status = BookStatus.FAILED
             project.add_error(str(e), project.current_agent, recoverable=False)
+            # Keep checkpoint on failure so the job can be resumed later
+            self._save_checkpoint(project, "failed", completed_phases)
             raise BookWriterError(f"Book creation failed: {e}")
 
     def _report_progress(self, project_id: str, message: str, percentage: float):
