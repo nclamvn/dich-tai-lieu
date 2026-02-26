@@ -3,3 +3,5 @@ export { BookListV2 } from "./book-list";
 export { BookCardV2 } from "./book-card";
 export { BookProgress } from "./book-progress";
 export { StructurePreview } from "./structure-preview";
+export { ImageUploadZone } from "./image-upload-zone";
+export { IllustrationPlanViewer } from "./illustration-plan-viewer";

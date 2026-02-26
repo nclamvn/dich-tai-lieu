@@ -142,6 +142,10 @@ class BookProjectResponse(BaseModel):
     updated_at: datetime
     completed_at: Optional[datetime] = None
     errors: List[Dict[str, Any]] = []
+    # Illustration (Sprint K)
+    has_images: bool = False
+    uploaded_images: List[str] = []
+    illustration_plan: Optional[Dict[str, Any]] = None
 
 
 class BookListResponse(BaseModel):
@@ -185,3 +189,65 @@ class DraftAnalysisResponse(BaseModel):
     total_chapters: int
     total_words: int
     chapters: List[DraftChapterInfo]
+
+
+# === Illustration Schemas (Sprint K) ===
+
+class ImageAnalysisResponse(BaseModel):
+    image_id: str
+    filename: str
+    subject: str = ""
+    description: str = ""
+    keywords: List[str] = []
+    category: str = "other"
+    dominant_colors: List[str] = []
+    width: int = 0
+    height: int = 0
+    file_size_bytes: int = 0
+    media_type: str = "image/jpeg"
+    quality_score: float = 0.0
+    suggested_layout: str = "inline"
+    suggested_size: str = "medium"
+    aspect_ratio: float = 1.0
+
+
+class ImageManifestResponse(BaseModel):
+    images: List[ImageAnalysisResponse] = []
+    detected_genre: str = "non_fiction"
+    total_images: int = 0
+
+
+class ImageUploadResponse(BaseModel):
+    uploaded: int
+    filenames: List[str]
+    project_id: str
+
+
+class ImagePlacementResponse(BaseModel):
+    image_id: str
+    chapter_index: int
+    section_index: int = 0
+    paragraph_index: int = 0
+    layout_mode: str = "inline"
+    size: str = "medium"
+    caption: str = ""
+    relevance_score: float = 0.0
+
+
+class GalleryGroupResponse(BaseModel):
+    group_id: str
+    image_ids: List[str] = []
+    title: str = ""
+    chapter_index: int = 0
+
+
+class IllustrationPlanResponse(BaseModel):
+    placements: List[ImagePlacementResponse] = []
+    galleries: List[GalleryGroupResponse] = []
+    unmatched_image_ids: List[str] = []
+    total_placed: int = 0
+    total_unmatched: int = 0
+
+
+class IllustrationPlanUpdateRequest(BaseModel):
+    placements: Optional[List[Dict[str, Any]]] = None

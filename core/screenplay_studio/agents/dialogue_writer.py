@@ -95,7 +95,7 @@ class DialogueWriterAgent(BaseAgent):
                 prompt=prompt,
                 system_prompt=SYSTEM_PROMPT,
                 temperature=0.7,
-                max_tokens=4000,
+                max_tokens=8000,
             )
 
             # Parse response

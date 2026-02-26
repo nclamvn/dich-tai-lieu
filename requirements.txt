@@ -21,6 +21,7 @@ regex>=2023.0.0  # Enhanced regex for formula detection
 # PDF generation & export
 reportlab>=4.0.0
 docx2pdf>=0.1.8  # Optional: Windows/Mac only for DOCX to PDF conversion
+ebooklib>=0.18  # EPUB 3.0 generation for illustrated books
 
 # Async and utilities
 aiofiles>=23.0.0

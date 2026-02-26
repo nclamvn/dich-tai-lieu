@@ -55,7 +55,10 @@ Create a comprehensive scene breakdown in the following JSON format:
             "visual_notes": "Key visual elements, atmosphere, or specific imagery",
             "mood": "tense|romantic|comedic|melancholic|hopeful|etc",
             "key_dialogue_hint": "Brief hint of important dialogue if any",
-            "transition_from_previous": "How we get to this scene from the previous one"
+            "transition_from_previous": "How we get to this scene from the previous one",
+            "transition_out": "CUT TO|DISSOLVE TO|FADE OUT|SMASH CUT TO|MATCH CUT",
+            "key_props": ["prop1", "prop2"],
+            "atmosphere": "Lighting, weather, ambient sound description"
         }}
     ]
 }}
@@ -137,7 +140,10 @@ Tạo bảng phân cảnh theo định dạng JSON sau:
             "visual_notes": "Yếu tố hình ảnh quan trọng, bầu không khí",
             "mood": "căng thẳng|lãng mạn|hài hước|u buồn|hy vọng|etc",
             "key_dialogue_hint": "Gợi ý đối thoại quan trọng nếu có",
-            "transition_from_previous": "Cách chuyển cảnh từ cảnh trước"
+            "transition_from_previous": "Cách chuyển cảnh từ cảnh trước",
+            "transition_out": "CUT TO|DISSOLVE TO|FADE OUT|SMASH CUT TO|MATCH CUT",
+            "key_props": ["đạo cụ 1", "đạo cụ 2"],
+            "atmosphere": "Ánh sáng, thời tiết, âm thanh môi trường"
         }}
     ]
 }}

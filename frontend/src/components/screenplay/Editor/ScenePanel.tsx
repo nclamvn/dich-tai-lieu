@@ -31,7 +31,7 @@ export function ScenePanel({ scene }: ScenePanelProps) {
         <span className="screenplay-emotional-beat">
           {scene.emotional_beat}
         </span>
-        {scene.characters_present.length > 0 && (
+        {scene.characters_present?.length > 0 && (
           <span className="screenplay-scene-characters">
             {scene.characters_present.join(", ")}
           </span>
@@ -45,15 +45,17 @@ export function ScenePanel({ scene }: ScenePanelProps) {
 
       <p className="screenplay-scene-summary">{scene.summary}</p>
 
-      <div className="screenplay-elements">
-        {scene.elements.map((el, i) =>
-          isDialogue(el) ? (
-            <DialogueBlock key={i} block={el} />
-          ) : (
-            <ActionBlock key={i} block={el as { text: string }} />
-          )
-        )}
-      </div>
+      {scene.elements && scene.elements.length > 0 && (
+        <div className="screenplay-elements">
+          {scene.elements.map((el, i) =>
+            isDialogue(el) ? (
+              <DialogueBlock key={i} block={el} />
+            ) : (
+              <ActionBlock key={i} block={el as { text: string }} />
+            )
+          )}
+        </div>
+      )}
     </div>
   );
 }

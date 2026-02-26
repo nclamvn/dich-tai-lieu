@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Upload, FileText, Sparkles, ArrowRight, Loader2 } from "lucide-react";
+import { Upload, FileText, Sparkles, ArrowRight, Loader2, Check, Home, Cloud } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateJob, useProfiles, useGlossaries, useTranslationEngines, useSettingsSection } from "@/lib/api/hooks";
@@ -305,7 +305,7 @@ export default function TranslatePage() {
                       fontWeight: isSelected ? 500 : 400,
                     }}
                   >
-                    {isSelected ? "\u2713 " : ""}{f.label}
+                    {isSelected && <Check size={14} strokeWidth={2} className="inline mr-1 align-[-2px]" />}{f.label}
                   </button>
                 );
               })}
@@ -329,7 +329,7 @@ export default function TranslatePage() {
                 <option value="auto">{t.translate.engineAuto}</option>
                 {enginesData.map((eng) => (
                   <option key={eng.id} value={eng.id} disabled={!eng.available}>
-                    {eng.offline ? "\uD83C\uDFE0" : "\u2601\uFE0F"} {eng.name}
+                    {eng.offline ? "[Local] " : "[Cloud] "}{eng.name}
                     {!eng.available ? ` (${t.translate.engineUnavailable})` : ""}
                   </option>
                 ))}

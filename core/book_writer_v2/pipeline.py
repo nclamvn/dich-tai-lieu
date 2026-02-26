@@ -5,6 +5,7 @@ Main orchestrator that coordinates all agents.
 """
 
 import logging
+import os
 from typing import Optional, Callable, Any
 from datetime import datetime
 
@@ -17,6 +18,7 @@ from .agents import (
     EditorAgent, QualityGateAgent, PublisherAgent,
 )
 from .agents.base import AgentContext
+from .agents.illustrator import IllustratorAgent
 
 _PIPELINE_PHASES = ["analysis", "outline", "writing", "expansion", "editing", "enriching", "quality", "publishing"]
 
@@ -67,6 +69,7 @@ class BookWriterPipeline:
         self.editor = EditorAgent(config, ai_client)
         self.quality_gate = QualityGateAgent(config, ai_client)
         self.publisher = PublisherAgent(config, ai_client)
+        self.illustrator = IllustratorAgent(config, ai_client)
 
     def _save_checkpoint(self, project: BookProject, phase: str, completed_phases: list[str]):
         """Save pipeline checkpoint after a major phase completes."""
@@ -246,6 +249,55 @@ class BookWriterPipeline:
 
                     quality_result = await self.quality_gate.execute(blueprint, context)
                     project.quality_checks.append(quality_result)
+
+            # === PHASE 4b: ILLUSTRATION (optional) ===
+
+            if project.has_images():
+                project.status = BookStatus.ILLUSTRATING
+                project.current_agent = "Illustrator"
+                self._report_progress(project.id, "Planning illustrations...", 88)
+
+                # Load manifest if available
+                manifest = None
+                try:
+                    import json as _json
+                    manifest_path = f"data/books_v2/{project.id}_manifest.json"
+                    if os.path.exists(manifest_path):
+                        from .illustration_models import (
+                            ImageManifest, ImageAnalysis, ImageCategory,
+                            LayoutMode, ImageSize, BookGenre,
+                        )
+                        with open(manifest_path) as _f:
+                            mdata = _json.load(_f)
+                        images = []
+                        for img_data in mdata.get("images", []):
+                            images.append(ImageAnalysis(
+                                image_id=img_data["image_id"],
+                                filename=img_data["filename"],
+                                filepath=img_data.get("filepath", ""),
+                                subject=img_data.get("subject", ""),
+                                description=img_data.get("description", ""),
+                                keywords=img_data.get("keywords", []),
+                                category=ImageCategory(img_data.get("category", "other")),
+                                width=img_data.get("width", 0),
+                                height=img_data.get("height", 0),
+                                quality_score=img_data.get("quality_score", 0.5),
+                                suggested_layout=LayoutMode(img_data.get("suggested_layout", "inline")),
+                                suggested_size=ImageSize(img_data.get("suggested_size", "medium")),
+                            ))
+                        manifest = ImageManifest(
+                            images=images,
+                            detected_genre=BookGenre(mdata.get("detected_genre", "non_fiction")),
+                            total_images=len(images),
+                        )
+                except Exception as e:
+                    self.logger.warning(f"Failed to load manifest: {e}")
+
+                if manifest and manifest.images:
+                    illus_plan = await self.illustrator.execute(
+                        {"project": project, "manifest": manifest}, context
+                    )
+                    project.illustration_plan = illus_plan
 
             # === PHASE 5: PUBLISHING ===
 

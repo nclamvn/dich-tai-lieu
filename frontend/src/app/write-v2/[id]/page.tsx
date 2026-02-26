@@ -17,18 +17,21 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { useBookV2Project, useBookV2WebSocket, usePauseBookV2 } from "@/lib/api/hooks";
+import { useBookV2Project, useBookV2WebSocket, usePauseBookV2, useTriggerIllustrate } from "@/lib/api/hooks";
 import { bookWriterV2 } from "@/lib/api/client";
 import { formatDate, formatNumber } from "@/lib/utils";
 import { useLocale } from "@/lib/i18n";
 import { BookProgress } from "@/components/book-writer-v2/book-progress";
+import { ImageUploadZone } from "@/components/book-writer-v2/image-upload-zone";
+import { IllustrationPlanViewer } from "@/components/book-writer-v2/illustration-plan-viewer";
 import { useState } from "react";
 import type { BookV2Project, BookV2Blueprint } from "@/lib/api/types";
 
 const TERMINAL = new Set(["completed", "failed", "paused"]);
 const ACTIVE = new Set([
   "analyzing", "architecting", "outlining", "writing",
-  "expanding", "enriching", "editing", "quality_check", "publishing",
+  "expanding", "enriching", "editing", "quality_check",
+  "illustrating", "publishing",
 ]);
 
 export default function BookV2DetailPage({
@@ -194,6 +197,11 @@ export default function BookV2DetailPage({
       {/* Blueprint details */}
       {project.blueprint && <BlueprintView blueprint={project.blueprint} />}
 
+      {/* Illustrations (Sprint K) */}
+      {(project.status === "completed" || project.status === "quality_check" || project.status === "publishing") && (
+        <IllustrationsSection projectId={project.id} hasImages={project.has_images} hasPlan={!!project.illustration_plan} />
+      )}
+
       {/* Errors */}
       {project.errors.length > 0 && (
         <Card>
@@ -223,6 +231,52 @@ export default function BookV2DetailPage({
         </Card>
       )}
     </div>
+  );
+}
+
+function IllustrationsSection({
+  projectId,
+  hasImages,
+  hasPlan,
+}: {
+  projectId: string;
+  hasImages?: boolean;
+  hasPlan: boolean;
+}) {
+  const { t } = useLocale();
+  const [open, setOpen] = useState(false);
+  const illustrate = useTriggerIllustrate();
+
+  return (
+    <Card>
+      <CardHeader>
+        <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between text-left">
+          <h3 className="text-[15px] font-semibold" style={{ color: "var(--fg-primary)" }}>
+            {t.writeV2.illustrations || "Illustrations"}
+          </h3>
+          {open ? (
+            <ChevronDown className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
+          ) : (
+            <ChevronRight className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
+          )}
+        </button>
+      </CardHeader>
+      {open && (
+        <CardContent className="space-y-4">
+          <ImageUploadZone projectId={projectId} />
+          {hasImages && !hasPlan && (
+            <Button
+              variant="primary"
+              onClick={() => illustrate.mutate(projectId)}
+              loading={illustrate.isPending}
+            >
+              {t.writeV2.generateIllustrated}
+            </Button>
+          )}
+          {hasPlan && <IllustrationPlanViewer projectId={projectId} />}
+        </CardContent>
+      )}
+    </Card>
   );
 }
 

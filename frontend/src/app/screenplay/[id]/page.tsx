@@ -109,7 +109,7 @@ export default function ProjectDetailPage({
             Start Analysis
           </button>
         )}
-        {project.current_phase === 1 && project.status === "completed" && (
+        {project.current_phase === 1 && project.status === "draft" && project.story_analysis && (
           <button
             className="screenplay-btn screenplay-btn-primary"
             disabled={isProcessing}

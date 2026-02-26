@@ -22,7 +22,7 @@ export const TIER_INFO: Record<ProjectTier, {
       'Fountain & PDF export',
     ],
     color: 'gray',
-    icon: '\u{1F4DD}',
+    icon: 'pen-line',
   },
   standard: {
     name: 'Standard',
@@ -35,7 +35,7 @@ export const TIER_INFO: Record<ProjectTier, {
       'Storyboard PDF export',
     ],
     color: 'blue',
-    icon: '\u{1F5BC}\u{FE0F}',
+    icon: 'image',
   },
   pro: {
     name: 'Pro',
@@ -48,7 +48,7 @@ export const TIER_INFO: Record<ProjectTier, {
       'Scene videos export',
     ],
     color: 'purple',
-    icon: '\u{1F3AC}',
+    icon: 'clapperboard',
   },
   director: {
     name: 'Director',
@@ -61,7 +61,7 @@ export const TIER_INFO: Record<ProjectTier, {
       'Final compiled video',
     ],
     color: 'gold',
-    icon: '\u{1F3C6}',
+    icon: 'trophy',
   },
 };
 

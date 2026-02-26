@@ -413,7 +413,8 @@ export type BookV2OutputFormat = "docx" | "markdown" | "pdf" | "html";
 export type BookV2Status =
   | "created" | "analyzing" | "architecting" | "outlining"
   | "writing" | "expanding" | "enriching" | "editing"
-  | "quality_check" | "publishing" | "completed" | "failed" | "paused";
+  | "quality_check" | "illustrating" | "publishing"
+  | "completed" | "failed" | "paused";
 
 export interface BookV2CreateRequest {
   title: string;
@@ -467,6 +468,10 @@ export interface BookV2Project {
   updated_at: string;
   completed_at?: string;
   errors: Array<{ message: string; agent?: string; timestamp?: string }>;
+  // Illustration support (Sprint K)
+  uploaded_images?: string[];
+  has_images?: boolean;
+  illustration_plan?: IllustrationPlan;
 }
 
 export interface BookV2Blueprint {
@@ -582,6 +587,72 @@ export interface BookV2ReaderContent {
     title: string;
     content: string;
   }>;
+}
+
+// ─── Illustrations (Sprint K) ───
+
+export type ImageCategory =
+  | "photo" | "illustration" | "diagram" | "chart" | "map"
+  | "screenshot" | "art" | "infographic" | "other";
+
+export type LayoutMode = "full_page" | "inline" | "float_top" | "gallery" | "margin";
+
+export type IllustrationImageSize = "small" | "medium" | "large" | "full";
+
+export interface ImageAnalysisResult {
+  image_id: string;
+  filename: string;
+  subject: string;
+  description: string;
+  keywords: string[];
+  category: ImageCategory;
+  dominant_colors: string[];
+  width: number;
+  height: number;
+  file_size_bytes: number;
+  media_type: string;
+  quality_score: number;
+  suggested_layout: LayoutMode;
+  suggested_size: IllustrationImageSize;
+  aspect_ratio: number;
+}
+
+export interface ImageManifest {
+  images: ImageAnalysisResult[];
+  detected_genre: string;
+  total_images: number;
+}
+
+export interface ImageUploadResult {
+  uploaded: number;
+  filenames: string[];
+  project_id: string;
+}
+
+export interface ImagePlacement {
+  image_id: string;
+  chapter_index: number;
+  section_index: number;
+  paragraph_index: number;
+  layout_mode: LayoutMode;
+  size: IllustrationImageSize;
+  caption: string;
+  relevance_score: number;
+}
+
+export interface GalleryGroup {
+  group_id: string;
+  image_ids: string[];
+  title: string;
+  chapter_index: number;
+}
+
+export interface IllustrationPlan {
+  placements: ImagePlacement[];
+  galleries: GalleryGroup[];
+  unmatched_image_ids: string[];
+  total_placed: number;
+  total_unmatched: number;
 }
 
 // ─── Settings ───

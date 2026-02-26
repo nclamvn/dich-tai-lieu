@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { ArrowUp, ArrowDown } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 interface StatCardProps {
@@ -51,7 +52,7 @@ export function StatCard({
                     : "var(--color-notion-red)",
               }}
             >
-              {trend.value >= 0 ? "\u2191" : "\u2193"}{" "}
+              {trend.value >= 0 ? <ArrowUp size={12} className="inline align-[-2px]" /> : <ArrowDown size={12} className="inline align-[-2px]" />}{" "}
               {Math.abs(trend.value)}% {trend.label}
             </p>
           )}

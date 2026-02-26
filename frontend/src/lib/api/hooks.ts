@@ -574,6 +574,73 @@ export function useBookV2ReaderContent(projectId: string | null) {
   });
 }
 
+// ── Illustration hooks (Sprint K) ──
+
+export function useUploadImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, files }: { projectId: string; files: File[] }) =>
+      bookWriterV2.uploadImages(projectId, files),
+    onSuccess: (_, { projectId }) => {
+      queryClient.invalidateQueries({ queryKey: ["book-v2-project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["book-v2-manifest", projectId] });
+    },
+  });
+}
+
+export function useAnalyzeImages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) => bookWriterV2.analyzeImages(projectId),
+    onSuccess: (_, projectId) => {
+      queryClient.invalidateQueries({ queryKey: ["book-v2-manifest", projectId] });
+    },
+  });
+}
+
+export function useImageManifest(projectId: string | null) {
+  return useQuery({
+    queryKey: ["book-v2-manifest", projectId],
+    queryFn: () => bookWriterV2.getImageManifest(projectId!),
+    enabled: !!projectId,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+}
+
+export function useTriggerIllustrate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (projectId: string) => bookWriterV2.triggerIllustrate(projectId),
+    onSuccess: (_, projectId) => {
+      queryClient.invalidateQueries({ queryKey: ["book-v2-project", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["book-v2-plan", projectId] });
+    },
+  });
+}
+
+export function useIllustrationPlan(projectId: string | null) {
+  return useQuery({
+    queryKey: ["book-v2-plan", projectId],
+    queryFn: () => bookWriterV2.getIllustrationPlan(projectId!),
+    enabled: !!projectId,
+    staleTime: 5 * 60_000,
+    retry: false,
+  });
+}
+
+export function useUpdateIllustrationPlan() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ projectId, placements }: { projectId: string; placements: any[] }) =>
+      bookWriterV2.updateIllustrationPlan(projectId, placements),
+    onSuccess: (_, { projectId }) => {
+      queryClient.invalidateQueries({ queryKey: ["book-v2-plan", projectId] });
+      queryClient.invalidateQueries({ queryKey: ["book-v2-project", projectId] });
+    },
+  });
+}
+
 /**
  * Real-time progress for Book Writer v2 via WebSocket.
  * Connects to /api/v2/books-v2/{id}/ws.

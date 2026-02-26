@@ -14,6 +14,8 @@ from .enricher import EnricherAgent
 from .editor import EditorAgent
 from .quality_gate import QualityGateAgent
 from .publisher import PublisherAgent
+from .vision_analyzer import VisionAnalyzerAgent
+from .illustrator import IllustratorAgent
 
 __all__ = [
     "BaseAgent",
@@ -26,4 +28,6 @@ __all__ = [
     "EditorAgent",
     "QualityGateAgent",
     "PublisherAgent",
+    "VisionAnalyzerAgent",
+    "IllustratorAgent",
 ]

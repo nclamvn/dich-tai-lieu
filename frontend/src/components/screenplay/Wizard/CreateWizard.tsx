@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Globe, ChevronDown, Check, Upload, FileText, Loader2, X } from "lucide-react";
+import { Globe, ChevronDown, Check, Upload, FileText, Loader2, X, PenLine, Image, Clapperboard, Trophy } from "lucide-react";
 import {
   CreateProjectInput,
   ProjectTier,
@@ -20,6 +20,13 @@ import { createProject, estimateCost, extractTextFromFile } from "@/lib/screenpl
 import type { CostEstimate } from "@/lib/screenplay/types";
 
 type Step = "source" | "settings" | "review";
+
+const TIER_ICONS: Record<string, React.ElementType> = {
+  free: PenLine,
+  standard: Image,
+  pro: Clapperboard,
+  director: Trophy,
+};
 
 function LanguageSelect({
   value,
@@ -308,7 +315,12 @@ export function CreateWizard() {
                   } screenplay-tier-${info.color}`}
                   onClick={() => handleTierChange(key)}
                 >
-                  <div className="screenplay-tier-icon">{info.icon}</div>
+                  <div className="screenplay-tier-icon">
+                    {(() => {
+                      const TierIcon = TIER_ICONS[key];
+                      return TierIcon ? <TierIcon size={32} strokeWidth={1.5} /> : null;
+                    })()}
+                  </div>
                   <h3>{info.name}</h3>
                   <p>{info.description}</p>
                   <ul>

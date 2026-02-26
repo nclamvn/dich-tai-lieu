@@ -87,6 +87,52 @@ class AIClientAdapter:
             self.logger.error(f"AI generation failed: {e}")
             raise
 
+    async def generate_with_vision(
+        self,
+        prompt: str,
+        image_base64: str,
+        media_type: str = "image/jpeg",
+        system: Optional[str] = None,
+        max_tokens: int = 1024,
+        temperature: float = 0.3,
+    ) -> str:
+        """Generate text from an image using Vision API."""
+        try:
+            if hasattr(self.client, 'chat'):
+                messages = []
+                if system:
+                    messages.append({"role": "system", "content": system})
+                messages.append({
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "image",
+                            "source": {
+                                "type": "base64",
+                                "media_type": media_type,
+                                "data": image_base64,
+                            },
+                        },
+                        {"type": "text", "text": prompt},
+                    ],
+                })
+                response = await self.client.chat(
+                    messages=messages,
+                    max_tokens=max_tokens,
+                    temperature=temperature,
+                )
+                if isinstance(response, dict):
+                    return response.get("content", response.get("text", str(response)))
+                if hasattr(response, 'content'):
+                    return response.content
+                return str(response)
+
+            raise ValueError("Vision API not supported by this client")
+
+        except Exception as e:
+            self.logger.error(f"Vision generation failed: {e}")
+            raise
+
 
 class MockAIClient:
     """
@@ -285,6 +331,30 @@ class MockAIClient:
             return original.strip() + additional
 
         return self._generate_section_content()
+
+    async def generate_with_vision(
+        self,
+        prompt: str,
+        image_base64: str,
+        media_type: str = "image/jpeg",
+        system: Optional[str] = None,
+        max_tokens: int = 1024,
+        temperature: float = 0.3,
+    ) -> str:
+        """Mock vision analysis."""
+        self.call_count += 1
+        return '''```json
+{
+    "subject": "Sample image",
+    "description": "A sample image for testing purposes.",
+    "keywords": ["sample", "test", "image"],
+    "category": "photo",
+    "dominant_colors": ["blue", "white", "green"],
+    "quality_score": 0.75,
+    "suggested_layout": "inline",
+    "suggested_size": "medium"
+}
+```'''
 
     def _generate_generic_content(self) -> str:
         return "This is generated content that provides valuable information on the topic at hand. " * 50

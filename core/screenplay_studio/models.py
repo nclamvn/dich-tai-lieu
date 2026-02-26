@@ -308,6 +308,11 @@ class Scene:
     visual_notes: Optional[str] = None
     mood: Optional[str] = None
 
+    # Shooting script metadata
+    transition_out: str = ""  # CUT TO, DISSOLVE TO, FADE OUT, etc.
+    key_props: List[str] = field(default_factory=list)
+    atmosphere: str = ""  # Lighting/weather/ambient sound notes
+
     # Generated content (filled in later phases)
     shot_list: Optional["ShotList"] = None
     storyboard_images: List[str] = field(default_factory=list)
@@ -337,6 +342,9 @@ class Scene:
             "page_count": self.page_count,
             "visual_notes": self.visual_notes,
             "mood": self.mood,
+            "transition_out": self.transition_out,
+            "key_props": self.key_props,
+            "atmosphere": self.atmosphere,
             "storyboard_images": self.storyboard_images,
             "video_clips": self.video_clips,
         }

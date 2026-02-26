@@ -1,9 +1,11 @@
 "use client";
 
+import type { ReactNode } from "react";
+
 interface DownloadButtonProps {
   href: string;
   label: string;
-  icon?: string;
+  icon?: ReactNode;
   disabled?: boolean;
 }
 

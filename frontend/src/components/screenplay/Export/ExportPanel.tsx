@@ -1,5 +1,6 @@
 "use client";
 
+import { FileText, FileDown, Image, Clapperboard } from "lucide-react";
 import { ScreenplayProject } from "@/lib/screenplay/types";
 import {
   getFountainUrl,
@@ -29,13 +30,13 @@ export function ExportPanel({ project }: ExportPanelProps) {
             <DownloadButton
               href={getFountainUrl(project.id)}
               label="Fountain (.fountain)"
-              icon={"\ud83d\udcc4"}
+              icon={<FileText size={16} strokeWidth={1.5} />}
               disabled={!hasScreenplay}
             />
             <DownloadButton
               href={getPdfUrl(project.id)}
               label="PDF"
-              icon={"\ud83d\udcd1"}
+              icon={<FileDown size={16} strokeWidth={1.5} />}
               disabled={!hasScreenplay}
             />
           </div>
@@ -47,7 +48,7 @@ export function ExportPanel({ project }: ExportPanelProps) {
             <DownloadButton
               href={getStoryboardPdfUrl(project.id)}
               label="Storyboard PDF"
-              icon={"\ud83d\uddbc\ufe0f"}
+              icon={<Image size={16} strokeWidth={1.5} />}
               disabled={!hasStoryboard}
             />
           </div>
@@ -60,7 +61,7 @@ export function ExportPanel({ project }: ExportPanelProps) {
               <DownloadButton
                 href={getVideoUrl(project.id)}
                 label="Final Video"
-                icon={"\ud83c\udfac"}
+                icon={<Clapperboard size={16} strokeWidth={1.5} />}
                 disabled={!hasVideo}
               />
             </div>

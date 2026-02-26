@@ -409,6 +409,8 @@ ALLOWED_ORIGINS = [
     "http://127.0.0.1:3000",
     "http://localhost:4000",  # APS UI port 4000
     "http://127.0.0.1:4000",
+    "http://localhost:3002",  # Next.js dev alternate port
+    "http://127.0.0.1:3002",
 ]
 app.add_middleware(
     CORSMiddleware,

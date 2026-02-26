@@ -11,7 +11,8 @@ Phases:
 """
 
 import logging
-from typing import Optional, List, Dict, Any
+import re
+from typing import Optional, List, Dict, Any, Set
 
 from .models import (
     ScreenplayProject, StoryAnalysis, Screenplay, Scene,
@@ -196,6 +197,8 @@ class ScreenplayPipeline:
         scene: Scene,
         project: ScreenplayProject,
         source_excerpt: str = "",
+        is_first: bool = False,
+        is_last: bool = False,
     ) -> AgentResult:
         """
         Write complete scene (dialogue + action).
@@ -256,6 +259,8 @@ class ScreenplayPipeline:
             scene=scene,
             dialogue_blocks=dialogue_blocks,
             action_blocks=action_blocks,
+            is_first=is_first,
+            is_last=is_last,
         )
 
         total_tokens = dialogue_result.tokens_used + action_result.tokens_used
@@ -298,19 +303,19 @@ class ScreenplayPipeline:
         total_cost = 0.0
         completed_scenes = []
 
-        # Extract source excerpts for each scene
+        # Extract semantically relevant source excerpts for each scene
         source_text = project.source_text
-        excerpt_length = len(source_text) // len(scenes) if scenes else 1000
 
+        total_scenes = len(scenes)
         for i, scene in enumerate(scenes):
-            start = i * excerpt_length
-            end = start + excerpt_length + 500  # Overlap
-            source_excerpt = source_text[start:min(end, len(source_text))]
+            source_excerpt = self._find_relevant_excerpt(source_text, scene)
 
             result = await self.write_scene(
                 scene=scene,
                 project=project,
                 source_excerpt=source_excerpt,
+                is_first=(i == 0),
+                is_last=(i == total_scenes - 1),
             )
 
             if not result.success:
@@ -387,6 +392,90 @@ class ScreenplayPipeline:
                     adapted_actions[i]["text"] = adapt.get("adapted", action["text"])
 
         return adapted_dialogues, adapted_actions
+
+    def _find_relevant_excerpt(
+        self,
+        source_text: str,
+        scene: Scene,
+        window_size: int = 3000,
+    ) -> str:
+        """Find the most relevant excerpt from source text for a given scene.
+
+        Uses keyword overlap scoring based on character names, location,
+        and scene summary to find the best matching passage.
+        Falls back to proportional split if no chunk scores well.
+        """
+        if not source_text or len(source_text) <= window_size:
+            return source_text
+
+        # Build keyword set from scene metadata
+        keywords: Set[str] = set()
+
+        # Character names (split multi-word names)
+        for name in scene.characters_present:
+            for word in name.lower().split():
+                if len(word) >= 2:
+                    keywords.add(word)
+
+        # Location words from heading
+        for word in scene.heading.location.lower().split():
+            if len(word) >= 2:
+                keywords.add(word)
+
+        # Key terms from summary
+        stop_words = {
+            "the", "a", "an", "is", "are", "was", "were", "in", "on", "at",
+            "to", "for", "of", "and", "or", "but", "with", "this", "that",
+            "từ", "và", "của", "cho", "trong", "một", "các", "đã", "được",
+            "là", "có", "không", "với", "này", "đến", "như", "về",
+        }
+        for word in re.split(r'\W+', scene.summary.lower()):
+            if len(word) >= 3 and word not in stop_words:
+                keywords.add(word)
+
+        if not keywords:
+            # No keywords — fall back to proportional split
+            return self._proportional_excerpt(source_text, scene, window_size)
+
+        # Split source into overlapping chunks
+        step = window_size // 2  # 50% overlap
+        chunks = []
+        for start in range(0, len(source_text), step):
+            end = min(start + window_size, len(source_text))
+            chunks.append((start, source_text[start:end]))
+            if end >= len(source_text):
+                break
+
+        # Score each chunk by keyword overlap
+        best_score = 0.0
+        best_chunk = chunks[0][1] if chunks else source_text[:window_size]
+
+        for _start, chunk in chunks:
+            chunk_lower = chunk.lower()
+            hits = sum(1 for kw in keywords if kw in chunk_lower)
+            score = hits / len(keywords)
+            if score > best_score:
+                best_score = score
+                best_chunk = chunk
+
+        # If score too low, fall back to proportional
+        if best_score < 0.1:
+            return self._proportional_excerpt(source_text, scene, window_size)
+
+        return best_chunk
+
+    def _proportional_excerpt(
+        self,
+        source_text: str,
+        scene: Scene,
+        window_size: int,
+    ) -> str:
+        """Fall back to proportional character-count split."""
+        total_scenes = max(scene.scene_number, 1)
+        excerpt_length = len(source_text) // total_scenes
+        start = (scene.scene_number - 1) * excerpt_length
+        end = min(start + window_size, len(source_text))
+        return source_text[start:end]
 
     # =========================================================================
     # PHASE 3: PRE-VISUALIZATION

@@ -23,6 +23,7 @@ class BookStatus(Enum):
     ENRICHING = "enriching"
     EDITING = "editing"
     QUALITY_CHECK = "quality_check"
+    ILLUSTRATING = "illustrating"
     PUBLISHING = "publishing"
     COMPLETED = "completed"
     FAILED = "failed"
@@ -534,6 +535,10 @@ class BookProject:
     user_description: str = ""
     draft_chapters: Optional[list] = field(default_factory=list)
 
+    # Illustration support (Sprint K)
+    uploaded_images: List[str] = field(default_factory=list)
+    illustration_plan: Optional[Any] = None  # IllustrationPlan
+
     blueprint: Optional[BookBlueprint] = None
 
     analysis: Optional[AnalysisResult] = None
@@ -580,6 +585,10 @@ class BookProject:
             )
         self.updated_at = datetime.now()
 
+    def has_images(self) -> bool:
+        """Check if project has uploaded images."""
+        return bool(self.uploaded_images)
+
     def add_error(self, error: str, agent: str = "", recoverable: bool = True):
         """Add error to log"""
         self.errors.append({
@@ -605,6 +614,9 @@ class BookProject:
             "blueprint": self.blueprint.to_dict() if self.blueprint else None,
             "analysis": self.analysis.to_dict() if self.analysis else None,
             "quality_checks": [q.to_dict() for q in self.quality_checks],
+            "uploaded_images": self.uploaded_images,
+            "has_images": self.has_images(),
+            "illustration_plan": self.illustration_plan.to_dict() if self.illustration_plan else None,
             "output_files": self.output_files,
             "errors": self.errors[-10:],
             "created_at": self.created_at.isoformat(),

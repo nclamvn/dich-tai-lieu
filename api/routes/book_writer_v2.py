@@ -20,6 +20,10 @@ from api.schemas.book_writer_v2 import (
     StructurePreviewResponse,
     BookContentResponse,
     DraftAnalysisResponse,
+    ImageUploadResponse,
+    ImageManifestResponse,
+    IllustrationPlanResponse,
+    IllustrationPlanUpdateRequest,
 )
 from api.services.book_writer_v2_service import (
     get_book_writer_v2_service,
@@ -275,6 +279,152 @@ async def pause_book(
     return {"message": "Project paused", "id": project_id}
 
 
+# === Illustration Endpoints (Sprint K) ===
+
+IMAGE_UPLOAD_DIR = Path("data/uploads/books")
+ALLOWED_IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".tiff", ".bmp"}
+MAX_IMAGE_SIZE = 20 * 1024 * 1024  # 20MB per image
+MAX_IMAGES_PER_PROJECT = 50
+
+
+@router.post("/{project_id}/images/upload", response_model=ImageUploadResponse)
+async def upload_images(
+    project_id: str,
+    files: list[UploadFile] = FileParam(...),
+    service: BookWriterV2Service = Depends(get_service),
+):
+    """Upload images for illustrated book output."""
+    project = await service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    if len(files) > MAX_IMAGES_PER_PROJECT:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Maximum {MAX_IMAGES_PER_PROJECT} images allowed",
+        )
+
+    image_dir = IMAGE_UPLOAD_DIR / project_id / "images"
+    image_dir.mkdir(parents=True, exist_ok=True)
+
+    saved_filenames = []
+    for f in files:
+        if not f.filename:
+            continue
+        ext = Path(f.filename).suffix.lower()
+        if ext not in ALLOWED_IMAGE_EXTENSIONS:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported image type: {ext}. Allowed: {', '.join(ALLOWED_IMAGE_EXTENSIONS)}",
+            )
+        content = await f.read()
+        if len(content) > MAX_IMAGE_SIZE:
+            raise HTTPException(status_code=400, detail=f"Image too large: {f.filename} (max 20MB)")
+
+        safe_name = f"{uuid.uuid4().hex[:8]}_{f.filename}"
+        (image_dir / safe_name).write_bytes(content)
+        saved_filenames.append(safe_name)
+
+    # Track uploaded images on the project
+    existing = project.uploaded_images or []
+    project.uploaded_images = existing + [str(image_dir / fn) for fn in saved_filenames]
+    await service.save_project(project)
+
+    return ImageUploadResponse(
+        uploaded=len(saved_filenames),
+        filenames=saved_filenames,
+        project_id=project_id,
+    )
+
+
+@router.post("/{project_id}/images/analyze", response_model=ImageManifestResponse)
+async def analyze_images(
+    project_id: str,
+    service: BookWriterV2Service = Depends(get_service),
+):
+    """Trigger Vision AI analysis on uploaded images."""
+    project = await service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    if not project.uploaded_images:
+        raise HTTPException(status_code=400, detail="No images uploaded")
+
+    try:
+        manifest = await service.analyze_images(project_id)
+        return ImageManifestResponse(**manifest.to_dict())
+    except Exception as e:
+        logger.error(f"Image analysis failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{project_id}/images/manifest", response_model=ImageManifestResponse)
+async def get_image_manifest(
+    project_id: str,
+    service: BookWriterV2Service = Depends(get_service),
+):
+    """Return cached image analysis manifest."""
+    manifest = await service.get_image_manifest(project_id)
+    if not manifest:
+        raise HTTPException(status_code=404, detail="No manifest found. Run /images/analyze first.")
+    return ImageManifestResponse(**manifest.to_dict())
+
+
+@router.post("/{project_id}/illustrate")
+async def trigger_illustration(
+    project_id: str,
+    service: BookWriterV2Service = Depends(get_service),
+):
+    """Trigger illustrated output generation."""
+    project = await service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Book not found")
+    if not project.has_images():
+        raise HTTPException(status_code=400, detail="No images uploaded")
+
+    try:
+        result = await service.run_illustration_pipeline(project_id)
+        return {"message": "Illustration complete", "project_id": project_id, "plan": result}
+    except Exception as e:
+        logger.error(f"Illustration failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/{project_id}/illustration-plan", response_model=IllustrationPlanResponse)
+async def get_illustration_plan(
+    project_id: str,
+    service: BookWriterV2Service = Depends(get_service),
+):
+    """Preview the current illustration plan."""
+    project = await service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Book not found")
+    if not project.illustration_plan:
+        raise HTTPException(status_code=404, detail="No illustration plan. Run /illustrate first.")
+    return IllustrationPlanResponse(**project.illustration_plan.to_dict())
+
+
+@router.put("/{project_id}/illustration-plan", response_model=IllustrationPlanResponse)
+async def update_illustration_plan(
+    project_id: str,
+    request: IllustrationPlanUpdateRequest,
+    service: BookWriterV2Service = Depends(get_service),
+):
+    """Manually adjust the illustration plan."""
+    project = await service.get_project(project_id)
+    if not project:
+        raise HTTPException(status_code=404, detail="Book not found")
+    if not project.illustration_plan:
+        raise HTTPException(status_code=404, detail="No illustration plan exists")
+
+    try:
+        updated = await service.update_illustration_plan(project_id, request.placements)
+        return IllustrationPlanResponse(**updated.to_dict())
+    except Exception as e:
+        logger.error(f"Plan update failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 # === WebSocket ===
 
 @router.websocket("/{project_id}/ws")
@@ -305,6 +455,20 @@ async def book_progress_ws(websocket: WebSocket, project_id: str):
 
 # === Helpers ===
 
+def _safe_plan_dict(project):
+    """Safely convert illustration_plan to dict, returning None on failure."""
+    plan = getattr(project, "illustration_plan", None)
+    if plan is None:
+        return None
+    try:
+        d = plan.to_dict()
+        if isinstance(d, dict):
+            return d
+    except Exception:
+        pass
+    return None
+
+
 def _to_response(project, include_blueprint: bool = False) -> BookProjectResponse:
     """Convert BookProject to API response."""
     data = {
@@ -322,6 +486,10 @@ def _to_response(project, include_blueprint: bool = False) -> BookProjectRespons
         "updated_at": project.updated_at,
         "completed_at": project.completed_at,
         "errors": project.errors[-10:],
+        # Illustration (Sprint K)
+        "has_images": project.has_images(),
+        "uploaded_images": getattr(project, "uploaded_images", None) or [],
+        "illustration_plan": _safe_plan_dict(project),
     }
     if include_blueprint and project.blueprint:
         data["blueprint"] = project.blueprint.to_dict()

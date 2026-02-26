@@ -94,7 +94,7 @@ class ActionWriterAgent(BaseAgent):
                 prompt=prompt,
                 system_prompt=SYSTEM_PROMPT,
                 temperature=0.6,
-                max_tokens=3000,
+                max_tokens=6000,
             )
 
             # Parse response

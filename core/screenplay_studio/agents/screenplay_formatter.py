@@ -100,6 +100,8 @@ class ScreenplayFormatterAgent(BaseAgent):
         scene: Scene,
         dialogue_blocks: List[DialogueBlock],
         action_blocks: List[Dict],
+        is_first: bool = False,
+        is_last: bool = False,
     ) -> Scene:
         """
         Assemble a single scene from dialogue and action blocks.
@@ -108,11 +110,17 @@ class ScreenplayFormatterAgent(BaseAgent):
             scene: Scene object with metadata
             dialogue_blocks: List of DialogueBlock
             action_blocks: List of action info dicts with placement
+            is_first: Whether this is the first scene (prepend FADE IN:)
+            is_last: Whether this is the last scene (append FADE OUT.)
 
         Returns:
             Scene with elements populated
         """
         elements = []
+
+        # FADE IN: for the first scene
+        if is_first:
+            elements.append(ActionBlock(text="FADE IN:"))
 
         # Sort action blocks by placement
         opening_actions = [
@@ -124,14 +132,21 @@ class ScreenplayFormatterAgent(BaseAgent):
         closing_actions = [
             ActionBlock(text=a["text"])
             for a in action_blocks
-            if a.get("placement") == "scene_end" or a.get("type") == "transition"
+            if a.get("placement") == "scene_end"
+            and a.get("type") != "transition"
         ]
 
-        inline_actions = {
-            a.get("after_dialogue_index", -1): ActionBlock(text=a["text"])
-            for a in action_blocks
-            if a.get("after_dialogue_index") is not None
-        }
+        # Separate transition blocks from action writer
+        transition_actions = [
+            a for a in action_blocks
+            if a.get("type") == "transition"
+        ]
+
+        inline_actions = {}
+        for a in action_blocks:
+            idx = a.get("after_dialogue_index")
+            if idx is not None and a.get("type") not in ("scene_opening", "transition") and a.get("placement") != "before_dialogue" and a.get("placement") != "scene_end":
+                inline_actions[idx] = ActionBlock(text=a["text"])
 
         # Opening action
         elements.extend(opening_actions)
@@ -144,6 +159,22 @@ class ScreenplayFormatterAgent(BaseAgent):
 
         # Closing action
         elements.extend(closing_actions)
+
+        # Add transition at scene end
+        if is_last:
+            elements.append(ActionBlock(text="FADE OUT."))
+        elif transition_actions:
+            # Use the transition from action writer
+            elements.append(ActionBlock(text=transition_actions[0]["text"]))
+        elif scene.transition_out:
+            # Use transition from scene architect metadata
+            transition = scene.transition_out
+            if not transition.endswith(":") and not transition.endswith("."):
+                transition += ":"
+            elements.append(ActionBlock(text=transition))
+        else:
+            # Default transition between scenes
+            elements.append(ActionBlock(text="CUT TO:"))
 
         scene.elements = elements
         scene.page_count = self._estimate_page_count(elements)

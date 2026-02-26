@@ -35,9 +35,26 @@ class FountainWriter:
         lines.append("===")  # Page break
         lines.append("")
 
+        # FADE IN:
+        lines.append("FADE IN:")
+        lines.append("")
+
         # Scenes
-        for scene in screenplay.scenes:
+        total_scenes = len(screenplay.scenes)
+        for i, scene in enumerate(screenplay.scenes):
             lines.extend(self._write_scene(scene))
+            lines.append("")
+
+            # Transition between scenes
+            is_last = (i == total_scenes - 1)
+            if is_last:
+                lines.append("FADE OUT.")
+            else:
+                transition = getattr(scene, 'transition_out', '') or "CUT TO"
+                if not transition.endswith(":"):
+                    transition += ":"
+                # Fountain spec: transitions end with TO: and are right-aligned
+                lines.append(f"> {transition}")
             lines.append("")
 
         # End
@@ -77,10 +94,12 @@ class FountainWriter:
         """Write a single scene"""
         lines = []
 
-        # Scene heading (slugline)
+        # Scene heading (slugline) with scene number per Fountain spec
         heading_str = str(scene.heading).upper()
         if not heading_str.startswith(("INT.", "EXT.", "INT/EXT.", "I/E.")):
             heading_str = f".{heading_str}"
+        # Fountain scene numbers: INT. LOCATION - TIME #1#
+        heading_str = f"{heading_str} #{scene.scene_number}#"
         lines.append(heading_str)
         lines.append("")
 

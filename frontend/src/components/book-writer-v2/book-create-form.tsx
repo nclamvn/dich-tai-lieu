@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { PenTool, Eye, Upload, FileText, Check } from "lucide-react";
+import { PenTool, Eye, Upload, FileText, Check, ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useLocale } from "@/lib/i18n";
@@ -51,6 +51,7 @@ export function BookCreateForm() {
   const [language, setLanguage] = useState("en");
   const [outputFormats, setOutputFormats] = useState<BookV2OutputFormat[]>(["docx", "markdown"]);
   const [showPreview, setShowPreview] = useState(false);
+  const [showImageUpload, setShowImageUpload] = useState(false);
 
   // Draft state
   const [draftFileId, setDraftFileId] = useState<string | null>(null);
@@ -398,6 +399,29 @@ export function BookCreateForm() {
                 </button>
               ))}
             </div>
+          </div>
+
+          {/* Images (optional) — Sprint K */}
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowImageUpload(!showImageUpload)}
+              className="flex items-center gap-2 text-sm font-medium"
+              style={{ color: "var(--fg-secondary)", cursor: "pointer", background: "none", border: "none", padding: 0 }}
+            >
+              {showImageUpload ? <ChevronDown size={14} className="inline" /> : <ChevronRight size={14} className="inline" />}{" "}
+              {t.writeV2.addImages || "Add Images (optional)"}
+            </button>
+            {showImageUpload && (
+              <div className="mt-2 p-3 rounded" style={{ background: "var(--bg-secondary)", border: "1px solid var(--border-default)", borderRadius: "var(--radius-md)" }}>
+                <p className="text-xs mb-2" style={{ color: "var(--fg-tertiary)" }}>
+                  Upload images to create an illustrated book. Images will be analyzed and matched to chapters after the book is generated.
+                </p>
+                <p className="text-xs" style={{ color: "var(--fg-tertiary)" }}>
+                  You can also add images later from the book detail page.
+                </p>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

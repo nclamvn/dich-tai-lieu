@@ -54,33 +54,43 @@ Write the dialogue in JSON format:
 
 DIALOGUE GUIDELINES:
 
-1. CHARACTER VOICE:
+1. VOLUME AND DENSITY:
+   - Write 10-25 dialogue blocks per scene depending on scene duration
+   - Each dialogue exchange should advance the story or reveal character — no filler
+   - Include character reaction beats: (beat), (pause), physical actions between exchanges
+
+2. CHARACTER VOICE:
    - Each character should sound distinct based on their profile
    - Consider age, education, background, personality
    - Maintain consistency with previous scenes
 
-2. SUBTEXT:
+3. SOURCE FIDELITY (for literary adaptations):
+   - Preserve the original author's dialogue and voice wherever the source text provides it
+   - Adapt prose narration into spoken dialogue, but keep existing dialogue intact
+   - Capture the rhythm and vocabulary of the source material
+
+4. SUBTEXT:
    - Characters rarely say exactly what they mean
    - Use implication, deflection, avoidance
    - Let silence speak when appropriate
 
-3. PARENTHETICALS:
-   - Use sparingly, only when necessary
-   - Common: (beat), (quietly), (to NAME), (continuing)
-   - Avoid over-directing actors
+5. PARENTHETICALS:
+   - Use for essential acting direction and reaction beats
+   - Common: (beat), (quietly), (to NAME), (continuing), (under his breath)
+   - Include physical actions: (picks up the glass), (turns away), (standing)
 
-4. NATURAL SPEECH:
+6. NATURAL SPEECH:
    - Use contractions
    - Allow interruptions with "--"
    - Include false starts, hesitations when appropriate
    - Avoid on-the-nose dialogue
 
-5. EXPOSITION:
+7. EXPOSITION:
    - Hide exposition in conflict
    - Never have characters tell each other what they both know
    - Use questions to reveal information naturally
 
-6. VIETNAMESE DIALOGUE (if applicable):
+8. VIETNAMESE DIALOGUE (if applicable):
    - Use appropriate honorifics (anh, chi, em, ong, ba)
    - Consider generational speech patterns
    - Include cultural expressions naturally
@@ -120,21 +130,31 @@ Viet loi thoai theo dinh dang JSON:
 }}
 ```
 
-HUONG DAN LOI THOAI:
+HƯỚNG DẪN LỜI THOẠI:
 
-1. GIONG NHAN VAT:
-   - Moi nhan vat phai co giong rieng biet
-   - Su dung dai tu xung ho phu hop (anh/chi/em/ong/ba/con/chau)
-   - Phan anh tuoi tac, hoc van, xuat than
+1. SỐ LƯỢNG VÀ MẬT ĐỘ:
+   - Viết 10-25 khối thoại mỗi cảnh tùy thời lượng
+   - Mỗi câu thoại phải đẩy câu chuyện hoặc bộc lộ nhân vật — không có thoại thừa
+   - Bao gồm phản ứng nhân vật: (nhịp), (dừng lại), hành động thể chất giữa các trao đổi
 
-2. NGON NGU TU NHIEN:
-   - Su dung tu ngu doi thuong
-   - Cho phep ngat loi voi "--"
-   - Bao gom ngap ngung, do du khi can
+2. GIỌNG NHÂN VẬT:
+   - Mỗi nhân vật phải có giọng riêng biệt
+   - Sử dụng đại từ xưng hô phù hợp (anh/chị/em/ông/bà/con/cháu)
+   - Phản ánh tuổi tác, học vấn, xuất thân
 
-3. VAN HOA VIET:
-   - The hien le nghi, ton ti trat tu
-   - Su dung thanh ngu, tuc ngu tu nhien
-   - Phan anh moi quan he qua cach xung ho
+3. TRUNG THÀNH VỚI NGUỒN (cho chuyển thể văn học):
+   - Giữ nguyên lời thoại và giọng văn gốc của tác giả khi văn bản nguồn cung cấp
+   - Chuyển thể lời kể thành lời thoại, nhưng giữ nguyên thoại sẵn có
+   - Nắm bắt nhịp điệu và từ vựng của tác phẩm gốc
 
-Chi tra loi bang JSON object."""
+4. NGÔN NGỮ TỰ NHIÊN:
+   - Sử dụng từ ngữ đời thường
+   - Cho phép ngắt lời với "--"
+   - Bao gồm ngập ngừng, do dự khi cần
+
+5. VĂN HÓA VIỆT:
+   - Thể hiện lễ nghi, tôn ti trật tự
+   - Sử dụng thành ngữ, tục ngữ tự nhiên
+   - Phản ánh mối quan hệ qua cách xưng hô
+
+Chỉ trả lời bằng JSON object."""

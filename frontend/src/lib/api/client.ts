@@ -28,6 +28,10 @@ import type {
   BookV2ReaderContent,
   DraftUploadResponse,
   DraftAnalysisResponse,
+  ImageUploadResult,
+  ImageManifest,
+  IllustrationPlan,
+  ImagePlacement,
   AllSettings,
   TMItem,
   TMListResponse,
@@ -426,6 +430,49 @@ export const bookWriterV2 = {
       throw new ApiError(res.status, data?.detail || res.statusText, data);
     }
     return res.json();
+  },
+
+  // Illustration endpoints (Sprint K)
+  async uploadImages(projectId: string, files: File[]): Promise<ImageUploadResult> {
+    const formData = new FormData();
+    files.forEach((f) => formData.append("files", f));
+    const res = await fetch(`${API_BASE}/api/v2/books-v2/${projectId}/images/upload`, {
+      method: "POST",
+      body: formData,
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new ApiError(res.status, data?.detail || res.statusText, data);
+    }
+    return res.json();
+  },
+
+  async analyzeImages(projectId: string): Promise<ImageManifest> {
+    return apiFetch<ImageManifest>(`/api/v2/books-v2/${projectId}/images/analyze`, {
+      method: "POST",
+    });
+  },
+
+  async getImageManifest(projectId: string): Promise<ImageManifest> {
+    return apiFetch<ImageManifest>(`/api/v2/books-v2/${projectId}/images/manifest`);
+  },
+
+  async triggerIllustrate(projectId: string): Promise<{ message: string; plan: IllustrationPlan }> {
+    return apiFetch(`/api/v2/books-v2/${projectId}/illustrate`, { method: "POST" });
+  },
+
+  async getIllustrationPlan(projectId: string): Promise<IllustrationPlan> {
+    return apiFetch<IllustrationPlan>(`/api/v2/books-v2/${projectId}/illustration-plan`);
+  },
+
+  async updateIllustrationPlan(
+    projectId: string,
+    placements: ImagePlacement[],
+  ): Promise<IllustrationPlan> {
+    return apiFetch<IllustrationPlan>(`/api/v2/books-v2/${projectId}/illustration-plan`, {
+      method: "PUT",
+      body: JSON.stringify({ placements }),
+    });
   },
 };
 

@@ -265,6 +265,137 @@ class BookWriterV2Service:
             return True
         return False
 
+    # === Illustration (Sprint K) ===
+
+    async def save_project(self, project: BookProject):
+        """Public save method for route handlers."""
+        await self._save_project(project)
+        self._active_projects[project.id] = project
+
+    async def analyze_images(self, project_id: str):
+        """Run VisionAnalyzer on project images."""
+        from core.book_writer_v2.agents.vision_analyzer import VisionAnalyzerAgent
+        from core.book_writer_v2.agents.base import AgentContext
+
+        project = await self.get_project(project_id)
+        if not project or not project.uploaded_images:
+            return None
+
+        config = BookWriterConfig()
+        agent = VisionAnalyzerAgent(config, self.ai_client)
+        context = AgentContext(project_id=project_id, config=config)
+
+        manifest = await agent.execute(
+            {"image_paths": project.uploaded_images}, context
+        )
+
+        # Cache manifest to disk
+        manifest_path = os.path.join(self.db_path, f"{project_id}_manifest.json")
+        with open(manifest_path, "w", encoding="utf-8") as f:
+            json.dump(manifest.to_dict(), f, indent=2)
+
+        return manifest
+
+    async def get_image_manifest(self, project_id: str):
+        """Load cached image manifest."""
+        from core.book_writer_v2.illustration_models import (
+            ImageManifest, ImageAnalysis, ImageCategory, LayoutMode,
+            ImageSize, BookGenre,
+        )
+
+        manifest_path = os.path.join(self.db_path, f"{project_id}_manifest.json")
+        if not os.path.exists(manifest_path):
+            return None
+
+        with open(manifest_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        images = []
+        for img_data in data.get("images", []):
+            images.append(ImageAnalysis(
+                image_id=img_data["image_id"],
+                filename=img_data["filename"],
+                filepath=img_data.get("filepath", ""),
+                subject=img_data.get("subject", ""),
+                description=img_data.get("description", ""),
+                keywords=img_data.get("keywords", []),
+                category=ImageCategory(img_data.get("category", "other")),
+                width=img_data.get("width", 0),
+                height=img_data.get("height", 0),
+                file_size_bytes=img_data.get("file_size_bytes", 0),
+                media_type=img_data.get("media_type", "image/jpeg"),
+                quality_score=img_data.get("quality_score", 0.5),
+                suggested_layout=LayoutMode(img_data.get("suggested_layout", "inline")),
+                suggested_size=ImageSize(img_data.get("suggested_size", "medium")),
+            ))
+
+        return ImageManifest(
+            images=images,
+            detected_genre=BookGenre(data.get("detected_genre", "non_fiction")),
+            total_images=len(images),
+        )
+
+    async def run_illustration_pipeline(self, project_id: str) -> dict:
+        """Run the full illustration pipeline: analyze → match → plan."""
+        from core.book_writer_v2.agents.illustrator import IllustratorAgent
+        from core.book_writer_v2.agents.base import AgentContext
+
+        project = await self.get_project(project_id)
+        if not project:
+            raise ValueError("Project not found")
+
+        # Get or create manifest
+        manifest = await self.get_image_manifest(project_id)
+        if not manifest:
+            manifest = await self.analyze_images(project_id)
+
+        if not manifest or not manifest.images:
+            raise ValueError("No images to illustrate with")
+
+        config = BookWriterConfig()
+        agent = IllustratorAgent(config, self.ai_client)
+        context = AgentContext(project_id=project_id, config=config)
+
+        plan = await agent.execute(
+            {"project": project, "manifest": manifest}, context
+        )
+
+        project.illustration_plan = plan
+        project.status = BookStatus.COMPLETED
+        await self._save_project(project)
+        self._active_projects[project_id] = project
+
+        return plan.to_dict()
+
+    async def update_illustration_plan(self, project_id: str, placements_data):
+        """Update illustration plan with manual adjustments."""
+        from core.book_writer_v2.illustration_models import (
+            ImagePlacement, LayoutMode, ImageSize,
+        )
+
+        project = await self.get_project(project_id)
+        if not project or not project.illustration_plan:
+            raise ValueError("No illustration plan to update")
+
+        if placements_data:
+            new_placements = []
+            for p in placements_data:
+                new_placements.append(ImagePlacement(
+                    image_id=p["image_id"],
+                    chapter_index=p["chapter_index"],
+                    section_index=p.get("section_index", 0),
+                    paragraph_index=p.get("paragraph_index", 0),
+                    layout_mode=LayoutMode(p.get("layout_mode", "inline")),
+                    size=ImageSize(p.get("size", "medium")),
+                    caption=p.get("caption", ""),
+                    relevance_score=p.get("relevance_score", 0.5),
+                ))
+            project.illustration_plan.placements = new_placements
+
+        await self._save_project(project)
+        self._active_projects[project_id] = project
+        return project.illustration_plan
+
     # === Persistence ===
 
     async def _save_project(self, project: BookProject):
@@ -293,7 +424,18 @@ class BookWriterV2Service:
                 expansion_rounds=data.get("expansion_rounds", 0),
                 output_files=data.get("output_files", {}),
                 errors=data.get("errors", []),
+                uploaded_images=data.get("uploaded_images", []),
             )
+
+            # Restore illustration plan if present
+            if data.get("illustration_plan"):
+                try:
+                    from core.book_writer_v2.illustration_models import IllustrationPlan
+                    project.illustration_plan = IllustrationPlan.from_dict(
+                        data["illustration_plan"]
+                    )
+                except Exception as e:
+                    logger.warning(f"Failed to restore illustration plan: {e}")
 
             if data.get("created_at"):
                 project.created_at = datetime.fromisoformat(data["created_at"])

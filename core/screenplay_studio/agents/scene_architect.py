@@ -80,7 +80,7 @@ class SceneArchitectAgent(BaseAgent):
                 prompt=prompt,
                 system_prompt=SYSTEM_PROMPT,
                 temperature=0.6,
-                max_tokens=8000,
+                max_tokens=10000,
             )
 
             # Parse response
@@ -180,6 +180,9 @@ class SceneArchitectAgent(BaseAgent):
                 page_count=scene_data.get("page_count", 1.0),
                 visual_notes=scene_data.get("visual_notes"),
                 mood=scene_data.get("mood"),
+                transition_out=scene_data.get("transition_out", ""),
+                key_props=scene_data.get("key_props", []),
+                atmosphere=scene_data.get("atmosphere", ""),
             )
 
             scenes.append(scene)
