@@ -78,6 +78,13 @@ class Settings(BaseSettings):
     # Rate limiting for auth endpoints
     auth_rate_limit: str = "5/minute"  # Prevent brute force
 
+    # Security headers
+    security_headers_enabled: bool = True
+
+    # Cookie hardening (production should use secure=True, samesite=strict)
+    cookie_secure: bool = False
+    cookie_samesite: str = "lax"  # "strict" recommended for production
+
     # ========== Features ==========
     cache_enabled: bool = True
     quality_validation: bool = True

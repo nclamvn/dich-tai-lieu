@@ -1,3 +1,4 @@
+from __future__ import annotations
 # ═══════════════════════════════════════════════════════════════════
 # FILE: core/book_writer/prompts.py
 # PURPOSE: XML-structured system prompts for 7 agents

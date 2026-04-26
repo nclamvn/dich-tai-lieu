@@ -306,14 +306,16 @@ class JobProgressResponse(BaseModel):
 
 @CsrfProtect.load_config
 def get_csrf_config():
-    """Load CSRF configuration"""
+    """Load CSRF configuration — adapts to security_mode."""
     from config.settings import settings
+
+    is_production = settings.security_mode == "production"
 
     class CsrfSettings(BaseModel):
         secret_key: str = settings.csrf_secret_key
         cookie_name: str = "fastapi-csrf-token"
-        cookie_samesite: str = "lax"
-        cookie_secure: bool = False  # Set to True in production with HTTPS
+        cookie_samesite: str = "strict" if is_production else "lax"
+        cookie_secure: bool = is_production
         header_name: str = "X-CSRF-Token"
 
     return CsrfSettings()
@@ -347,20 +349,26 @@ def csrf_protect_exception_handler(request: Request, exc: CsrfProtectError):
     )
 
 # =============================================================================
-# CSRF Token Endpoint - TEMPORARILY DISABLED FOR DEBUGGING
+# CSRF Token Endpoint
 # =============================================================================
 
-# @app.get("/api/csrf-token")
-# async def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
-#     """
-#     Generate and return CSRF token for client-side requests
-#
-#     This endpoint sets a CSRF cookie and returns the token value.
-#     Frontend must call this before making any POST/PATCH/DELETE requests.
-#     """
-#     response = JSONResponse(content={"message": "CSRF cookie set"})
-#     csrf_protect.set_csrf_cookie(response)
-#     return response
+@app.get("/api/csrf-token")
+async def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
+    """
+    Generate and return CSRF token for client-side requests.
+
+    This endpoint sets a CSRF cookie and returns the token value.
+    Frontend must call this before making any POST/PATCH/DELETE requests
+    when CSRF protection is enabled.
+    """
+    response = JSONResponse(content={"message": "CSRF cookie set"})
+    try:
+        csrf_protect.set_csrf_cookie(response)
+    except TypeError:
+        # Older versions of fastapi-csrf-protect use generate_csrf()
+        token = csrf_protect.generate_csrf()
+        response = JSONResponse(content={"csrf_token": token})
+    return response
 
 
 # QA-12: Global exception handler — sanitize error messages
@@ -392,33 +400,23 @@ async def limit_body_size(request: Request, call_next):
     return await call_next(request)
 
 
-# CORS middleware - Restricted to allowed origins
-# Add more origins as needed for production
-ALLOWED_ORIGINS = [
-    "https://prismy.in",
-    "https://www.prismy.in",
-    "https://ai-translator-api.onrender.com",
-    "https://ai-translator-ui.onrender.com",
-    "http://localhost:3001",
-    "http://localhost:8000",
-    "http://127.0.0.1:3001",
-    "http://127.0.0.1:8000",
-    "http://localhost:5173",  # Vite dev server for APS UI
-    "http://127.0.0.1:5173",
-    "http://localhost:3000",  # APS UI alternative port
-    "http://127.0.0.1:3000",
-    "http://localhost:4000",  # APS UI port 4000
-    "http://127.0.0.1:4000",
-    "http://localhost:3002",  # Next.js dev alternate port
-    "http://127.0.0.1:3002",
-]
+# CORS middleware — uses settings-based origins (no hardcoded localhost in production)
+from config.settings import settings as _app_settings
+from api.middleware.security_headers import SecurityHeadersMiddleware
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=_app_settings.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=["*"],
+    allow_headers=[
+        "Content-Type", "Authorization", "X-Session-Token",
+        "X-CSRF-Token", "X-API-Key", "X-Requested-With",
+    ],
 )
+
+# Security headers middleware — adds X-Content-Type-Options, X-Frame-Options, CSP, etc.
+app.add_middleware(SecurityHeadersMiddleware, security_mode=_app_settings.security_mode)
 
 
 # BIZ-04: Audit logging middleware

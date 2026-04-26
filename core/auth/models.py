@@ -7,10 +7,11 @@ Authentication Models
 Defines User, Role, and Token models for the authentication system.
 """
 
+import re
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserRole(str, Enum):
@@ -61,13 +62,31 @@ class User(BaseModel):
         from_attributes = True
 
 
+def _validate_password_complexity(password: str) -> str:
+    """Shared password complexity validator."""
+    if not re.search(r"[A-Z]", password):
+        raise ValueError("Password must contain at least one uppercase letter")
+    if not re.search(r"[a-z]", password):
+        raise ValueError("Password must contain at least one lowercase letter")
+    if not re.search(r"\d", password):
+        raise ValueError("Password must contain at least one digit")
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>\-_+=\[\]~`/\\]", password):
+        raise ValueError("Password must contain at least one special character")
+    return password
+
+
 class UserCreate(BaseModel):
     """Schema for user registration."""
     email: EmailStr
     username: str = Field(min_length=3, max_length=50)
-    password: str = Field(min_length=8, max_length=100)
+    password: str = Field(min_length=12, max_length=100)
     full_name: Optional[str] = None
     organization: Optional[str] = None
+
+    @field_validator("password")
+    @classmethod
+    def check_password_complexity(cls, v):
+        return _validate_password_complexity(v)
 
 
 class UserUpdate(BaseModel):
@@ -119,7 +138,12 @@ class TokenPayload(BaseModel):
 class PasswordChange(BaseModel):
     """Password change request."""
     current_password: str
-    new_password: str = Field(min_length=8, max_length=100)
+    new_password: str = Field(min_length=12, max_length=100)
+
+    @field_validator("new_password")
+    @classmethod
+    def check_password_complexity(cls, v):
+        return _validate_password_complexity(v)
 
 
 class PasswordReset(BaseModel):
@@ -130,4 +154,9 @@ class PasswordReset(BaseModel):
 class PasswordResetConfirm(BaseModel):
     """Password reset confirmation."""
     token: str
-    new_password: str = Field(min_length=8, max_length=100)
+    new_password: str = Field(min_length=12, max_length=100)
+
+    @field_validator("new_password")
+    @classmethod
+    def check_password_complexity(cls, v):
+        return _validate_password_complexity(v)

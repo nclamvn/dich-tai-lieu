@@ -52,12 +52,12 @@ class AuthService:
 
     def _ensure_admin_exists(self):
         """Ensure default admin user exists."""
-        admin = self.db.get_user_by_email("admin@aipublisher.local")
+        admin = self.db.get_user_by_email("admin@aipublisher.dev")
         if not admin:
             # Create default admin (change password on first login!)
             default_password = os.getenv("ADMIN_DEFAULT_PASSWORD", "admin123456")
             admin_user = User(
-                email="admin@aipublisher.local",
+                email="admin@aipublisher.dev",
                 username="admin",
                 password_hash=self.hash_password(default_password),
                 full_name="System Administrator",
