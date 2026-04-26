@@ -133,9 +133,9 @@ class Block:
     """Base class for all block-level AST nodes."""
     # block_type is set by subclasses in __post_init__, not passed as parameter
     block_type: BlockType = field(init=False, default=BlockType.PARAGRAPH)
-    # Use kw_only for optional fields so subclasses can add required fields
-    style: Optional[ParagraphStyle] = field(default=None, kw_only=True)
-    metadata: Dict[str, Any] = field(default_factory=dict, kw_only=True)
+    # init=False so subclasses can add required fields without kw_only (Python 3.9 compat)
+    style: Optional[ParagraphStyle] = field(init=False, default=None)
+    metadata: Dict[str, Any] = field(init=False, default_factory=dict)
 
 
 @dataclass

@@ -122,6 +122,9 @@ from api.routes.system import router as system_router
 
 # Book Writer routes
 from api.book_writer_router import router as book_writer_router
+
+# Prometheus metrics
+from api.routes.metrics import router as metrics_router, MetricsMiddleware
 from api.routes.book_writer_v2 import router as book_writer_v2_router
 
 # Core route modules (jobs, uploads, batch, health, job outputs)
@@ -618,6 +621,10 @@ app.include_router(uploads_router)
 app.include_router(batch_legacy_router)
 app.include_router(health_router)
 app.include_router(job_outputs_router)
+app.include_router(metrics_router)
+
+# Metrics middleware — records request count, latency, error rate
+app.add_middleware(MetricsMiddleware)
 
 # Legacy ui/ removed — frontend is Next.js at frontend/
 
