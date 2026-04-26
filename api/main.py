@@ -403,23 +403,23 @@ async def limit_body_size(request: Request, call_next):
     return await call_next(request)
 
 
-# CORS middleware — uses settings-based origins (no hardcoded localhost in production)
+# Middleware order matters: last added = first executed in Starlette.
+# SecurityHeaders must be added BEFORE CORS so CORS runs first (handles preflight).
 from config.settings import settings as _app_settings
 from api.middleware.security_headers import SecurityHeadersMiddleware
 
+# 1) Security headers (runs second — after CORS has handled preflight)
+app.add_middleware(SecurityHeadersMiddleware, security_mode=_app_settings.security_mode)
+
+# 2) CORS (runs first — must handle OPTIONS preflight before anything else)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_app_settings.get_cors_origins(),
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
-    allow_headers=[
-        "Content-Type", "Authorization", "X-Session-Token",
-        "X-CSRF-Token", "X-API-Key", "X-Requested-With",
-    ],
+    allow_headers=["*"],
+    expose_headers=["X-Job-ID", "X-Progress", "Content-Disposition"],
 )
-
-# Security headers middleware — adds X-Content-Type-Options, X-Frame-Options, CSP, etc.
-app.add_middleware(SecurityHeadersMiddleware, security_mode=_app_settings.security_mode)
 
 
 # BIZ-04: Audit logging middleware
