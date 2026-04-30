@@ -62,6 +62,7 @@ class ApiKeySettings:
     openai_api_key: str = ""
     anthropic_api_key: str = ""
     google_api_key: str = ""
+    deepseek_api_key: str = ""
     mathpix_app_id: str = ""
     mathpix_app_key: str = ""
 

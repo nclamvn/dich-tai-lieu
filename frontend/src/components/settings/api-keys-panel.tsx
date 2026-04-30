@@ -86,6 +86,13 @@ export function ApiKeysPanel() {
             onChange={(v) => set("google_api_key", String(v))}
             placeholder="AIza..."
           />
+          <FieldInput
+            label={t.settings.deepseekKey}
+            type="password"
+            value={form.deepseek_api_key}
+            onChange={(v) => set("deepseek_api_key", String(v))}
+            placeholder="sk-..."
+          />
 
           <FieldSection title="OCR / Vision" />
 

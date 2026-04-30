@@ -58,6 +58,7 @@ from .manager import (
 from .unified_client import (
     UnifiedLLMClient,
     get_unified_client,
+    reset_unified_client,
     validate_providers_before_job,
     AllProvidersUnavailableError,
     ProviderStatus,
@@ -90,6 +91,7 @@ __all__ = [
     # Unified Client (with auto-fallback)
     "UnifiedLLMClient",
     "get_unified_client",
+    "reset_unified_client",
     "validate_providers_before_job",
     "AllProvidersUnavailableError",
     "ProviderStatus",

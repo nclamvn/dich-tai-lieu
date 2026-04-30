@@ -180,6 +180,7 @@ class SettingsService:
                     openai_api_key=env.openai_api_key,
                     anthropic_api_key=env.anthropic_api_key,
                     google_api_key=env.google_api_key,
+                    deepseek_api_key=env.deepseek_api_key,
                     mathpix_app_id=env.mathpix_app_id or "",
                     mathpix_app_key=env.mathpix_app_key or "",
                 ),
@@ -263,6 +264,31 @@ class SettingsService:
             env.cache_enabled = t.cache_enabled
             env.glossary_enabled = t.glossary_enabled
             env.tm_enabled = t.tm_enabled
+
+            # Sync API keys to environment variables so unified_client can find them
+            ak = settings.api_keys
+            _env_key_map = {
+                "OPENAI_API_KEY": ak.openai_api_key,
+                "ANTHROPIC_API_KEY": ak.anthropic_api_key,
+                "GOOGLE_API_KEY": ak.google_api_key,
+                "DEEPSEEK_API_KEY": ak.deepseek_api_key,
+            }
+            for env_name, value in _env_key_map.items():
+                if value:
+                    os.environ[env_name] = value
+
+            # Also sync to global config object
+            env.openai_api_key = ak.openai_api_key
+            env.anthropic_api_key = ak.anthropic_api_key
+            env.google_api_key = ak.google_api_key
+            env.deepseek_api_key = ak.deepseek_api_key
+
+            # Reset cached unified client so it picks up new keys
+            try:
+                from ai_providers.unified_client import reset_unified_client
+                reset_unified_client()
+            except ImportError:
+                pass
         except Exception as e:
             logger.debug("Could not sync to global settings: %s", e)
 

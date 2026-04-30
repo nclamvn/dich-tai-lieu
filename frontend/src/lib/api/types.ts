@@ -701,6 +701,7 @@ export interface ApiKeySettingsConfig {
   openai_api_key: string;
   anthropic_api_key: string;
   google_api_key: string;
+  deepseek_api_key: string;
   mathpix_app_id: string;
   mathpix_app_key: string;
 }

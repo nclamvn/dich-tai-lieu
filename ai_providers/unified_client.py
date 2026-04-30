@@ -734,6 +734,12 @@ def get_unified_client() -> UnifiedLLMClient:
     return _global_client
 
 
+def reset_unified_client() -> None:
+    """Reset the global client so it re-reads API keys from environment."""
+    global _global_client
+    _global_client = None
+
+
 async def validate_providers_before_job() -> Tuple[bool, str, Dict]:
     """
     Validate providers before starting a job.

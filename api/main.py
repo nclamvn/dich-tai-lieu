@@ -542,6 +542,32 @@ async def startup_security_check():
 
 
 @app.on_event("startup")
+async def startup_sync_api_keys():
+    """Sync API keys from settings.json to environment variables."""
+    try:
+        import os
+        from core.settings.service import get_settings_service
+        svc = get_settings_service()
+        all_settings = svc.load()
+        ak = all_settings.api_keys
+        _env_key_map = {
+            "OPENAI_API_KEY": ak.openai_api_key,
+            "ANTHROPIC_API_KEY": ak.anthropic_api_key,
+            "GOOGLE_API_KEY": ak.google_api_key,
+            "DEEPSEEK_API_KEY": ak.deepseek_api_key,
+        }
+        synced = []
+        for env_name, value in _env_key_map.items():
+            if value and not os.environ.get(env_name):
+                os.environ[env_name] = value
+                synced.append(env_name)
+        if synced:
+            logger.info(f"Startup: Synced API keys from settings: {', '.join(synced)}")
+    except Exception as e:
+        logger.warning(f"Startup: Could not sync API keys: {e}")
+
+
+@app.on_event("startup")
 async def startup_resume_jobs():
     """Resume any pending jobs after server restart."""
     try:
