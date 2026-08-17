@@ -38,6 +38,22 @@ Targeted upgrades to the live `core_v2` translation path (quality, cost, reliabi
   `_translate_chunk` behaviour (temperature/cache_system forwarding, cache hit/miss/store,
   transient-retry, fail-loud). No regressions in existing suites.
 
+### Terminology consistency (Phase 2 — cross-chunk quality)
+- New `core_v2/term_ledger.py`: a shared, document-level term ledger (source → agreed
+  target). Merges an optional user glossary (`core/glossary`, loaded lazily and guarded so
+  it degrades to empty when SQLAlchemy is absent) with terms auto-extracted from the source
+  in one LLM pre-pass. Diacritic/CJK-safe relevance matching.
+- The ledger is injected into the **cached** `TRANSLATION_SYSTEM` prefix (new `{glossary}`
+  slot), so every chunk shares the same terminology at near-zero token cost — fixing the
+  proper-noun / term drift between chapters that the 100-char pseudo-context caused.
+- The ledger fingerprint is folded into the chunk-cache key, so changing terminology
+  invalidates stale cache entries.
+- Fully degrade-safe: no glossary, no API key, or a failed pre-pass all fall back to the
+  prior behaviour. `tests/unit/test_term_ledger.py` (23) + `tests/unit/test_glossary_wiring.py`
+  (8); Phase-1 suites remain green (81 passing total).
+- Settings: `TRANSLATION_AUTO_GLOSSARY_ENABLED`, `TRANSLATION_GLOSSARY_MAX_TERMS`,
+  `TRANSLATION_GLOSSARY_IDS`.
+
 ## [3.3.0] - 2026-02-12
 
 ### New Feature: Screenplay Studio
