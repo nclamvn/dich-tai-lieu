@@ -117,6 +117,21 @@ Targeted upgrades to the live `core_v2` translation path (quality, cost, reliabi
 - `tests/unit/test_tm_gateway.py` (9, real temp sqlite TM) + `tests/unit/test_tm_wiring.py` (4);
   all prior suites green (213 passing total).
 
+### Semantic faithfulness verification (Phase 7 — close the verifier loop)
+- New `core_v2/semantic_verifier.py`: an optional single-call LLM check of whether a translated
+  chunk faithfully renders its source — catching dropped/added/mistranslated meaning that the
+  deterministic Phase-4 gate cannot see. Returns a typed `SemanticVerdict(faithful, severity,
+  issue)` and is **fail-open**: empty input, a client error, or a malformed reply all default to
+  "faithful", so a flaky check never triggers a spurious re-translate.
+- `_repair_suspect_chunks` gains an opt-in semantic pass (gated by
+  `TRANSLATION_SEMANTIC_VERIFY_ENABLED`, default off; bounded by `TRANSLATION_SEMANTIC_VERIFY_MAX`):
+  it checks the chunks the deterministic gate passed, and any judged unfaithful (≥ major severity)
+  join the **same** bounded repair loop. On repair a semantic suspect is re-verified, so a faithful
+  retry is adopted and a still-unfaithful one is rejected. Disabled (the default) leaves the repair
+  path byte-for-byte identical to Phase 4.
+- `tests/unit/test_semantic_verifier.py` (20) + `tests/unit/test_semantic_repair.py` (6); all prior
+  suites green (239 passing total).
+
 ## [3.3.0] - 2026-02-12
 
 ### New Feature: Screenplay Studio
