@@ -73,6 +73,14 @@ class Settings(BaseSettings):
     # is retried again (was: benched permanently for the whole process).
     provider_health_ttl_seconds: float = 300.0
 
+    # ---- Bounded repair pass for suspect chunks ----
+    # After translation, re-translate ONLY the chunks the deterministic quality
+    # gate flags (empty / truncated / wrong-language / dropped-formula) and adopt
+    # a retry only when it is strictly better. Off => today's behavior unchanged.
+    translation_repair_enabled: bool = True
+    # Cap how many suspect chunks a single job repairs (bounds cost/latency).
+    translation_repair_max_chunks: int = 20
+
     # ---- Chunking: hard per-chunk token budget (structure-preserving) ----
     # No emitted semantic chunk exceeds this estimate_tokens count; oversized
     # chunks are split at the finest content-preserving boundary available.

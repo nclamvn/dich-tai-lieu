@@ -499,6 +499,17 @@ class UniversalPublisher:
                 lambda p: update_progress(0.55 + p * 0.35, f"Translating chunk {int(p * len(job.chunks))}/{len(job.chunks)}"),
             )
 
+            # Stage 3.5: Bounded repair pass — re-translate only the chunks the
+            # deterministic quality gate flags as suspect (empty / truncated /
+            # wrong-language / dropped-formula), adopting a retry only when it is
+            # strictly better. Gated by config; degrades to a no-op on any issue.
+            if bool(_cfg("translation_repair_enabled", True)):
+                update_progress(0.90, "Checking & repairing translation")
+                job.translated_chunks, repaired = await self._repair_suspect_chunks(
+                    job.chunks, job.translated_chunks, job.dna, profile_id, actual_source_lang, target_lang)
+                if repaired:
+                    logger.info(f"[{job.job_id}] Repaired {repaired} suspect chunk(s)")
+
             # Stage 4: Assemble (92%)
             update_progress(0.92, "Assembling document")
             job.status = JobStatus.ASSEMBLING
@@ -684,6 +695,7 @@ class UniversalPublisher:
         profile_id: str = "essay",
         max_retries: Optional[int] = None,
         ledger=None,
+        force_refresh: bool = False,
     ) -> str:
         """Translate a single chunk.
 
@@ -705,9 +717,11 @@ class UniversalPublisher:
         glossary_block = ledger.to_prompt_block(getattr(self, "glossary_max_terms", 80)) if ledger else ""
         ledger_fp = ledger.fingerprint() if ledger else "noterms"
 
-        # 1) Cache lookup (best-effort — must never break translation)
+        # 1) Cache lookup (best-effort — must never break translation).
+        # A forced refresh (repair pass) skips the GET so we always re-translate,
+        # but still computes cache_key below only when a store could happen.
         cache_key: Optional[str] = None
-        if self.chunk_cache is not None:
+        if self.chunk_cache is not None and not force_refresh:
             try:
                 cache_key = self._chunk_cache_key(
                     chunk.content, source_lang, target_lang, profile_id,
@@ -797,7 +811,7 @@ class UniversalPublisher:
                 # 3) Store in cache — only cache "good" results (right language,
                 # not truncated) so we never memoize a corrupted chunk.
                 lang_ok = detected in (target_lang, "unknown")
-                if self.chunk_cache is not None and cache_key and lang_ok and not truncated:
+                if self.chunk_cache is not None and cache_key and lang_ok and not truncated and not force_refresh:
                     try:
                         self.chunk_cache.set(cache_key, translated, source_lang, target_lang, mode=profile_id)
                     except Exception as e:  # pragma: no cover
@@ -823,6 +837,93 @@ class UniversalPublisher:
                 raise ChunkTranslationError(chunk.index, str(e)[:200]) from e
 
         raise ChunkTranslationError(chunk.index, f"exhausted {max_retries} retries: {last_error}")
+
+    async def _repair_suspect_chunks(
+        self,
+        chunks,
+        translated,
+        dna,
+        profile_id,
+        source_lang,
+        target_lang,
+    ) -> tuple[list, int]:
+        """Bounded, best-effort repair pass over suspect translated chunks.
+
+        Runs the deterministic quality gate over every (source, translation)
+        pair; for each flagged chunk it re-translates ONCE with the cache GET
+        bypassed (``force_refresh=True``) and adopts the new translation only if
+        it has *strictly* fewer issues. Clean chunks are never touched. Returns
+        the (possibly repaired) translation list and the number of chunks
+        replaced. Never raises — a hard translation failure keeps the original.
+        """
+        from .quality_gate import check_chunk
+
+        profile = get_profile(profile_id) or PROFILES.get("essay")
+        max_repairs = int(_cfg("translation_repair_max_chunks", 20))
+
+        # Identify suspect chunks deterministically (no LLM calls).
+        suspects: list[tuple[int, list]] = []
+        for i, (src, tr) in enumerate(zip(chunks, translated)):
+            issues = check_chunk(
+                src.content, tr, target_lang,
+                detected_lang=self._detect_language(tr),
+                has_formulas=dna.has_formulas,
+            )
+            if issues:
+                suspects.append((i, issues))
+
+        if not suspects:
+            return (translated, 0)
+
+        to_repair = suspects[:max_repairs]
+        if len(suspects) > max_repairs:
+            logger.warning(
+                f"{len(suspects)} suspect chunk(s) found; repairing only the first "
+                f"{max_repairs} (translation_repair_max_chunks)."
+            )
+
+        async def _repair_one(i, orig_issues):
+            async with self._semaphore:
+                try:
+                    new = await self._translate_chunk(
+                        chunks[i], dna, profile, source_lang, target_lang,
+                        profile_id=profile_id, force_refresh=True,
+                    )
+                except ChunkTranslationError:
+                    return (i, None)  # keep original on hard failure
+                new_issues = check_chunk(
+                    chunks[i].content, new, target_lang,
+                    detected_lang=self._detect_language(new),
+                    has_formulas=dna.has_formulas,
+                )
+                # Adopt only when the repair is strictly better (fewer issues).
+                if len(new_issues) < len(orig_issues):
+                    return (i, new)
+                return (i, None)
+
+        results = await asyncio.gather(*[_repair_one(i, iss) for (i, iss) in to_repair])
+
+        repaired = list(translated)
+        count = 0
+        for (i, new) in results:
+            if new is not None:
+                repaired[i] = new
+                count += 1
+                # Best-effort: overwrite the cache with the good repair so a later
+                # run serves the improved translation instead of the bad one.
+                if self.chunk_cache is not None:
+                    try:
+                        fp = self._active_ledger.fingerprint() if getattr(self, "_active_ledger", None) else "noterms"
+                        key = self._chunk_cache_key(
+                            chunks[i].content, source_lang, target_lang, profile_id,
+                            ledger_fingerprint=fp,
+                        )
+                        if key:
+                            self.chunk_cache.set(key, new, source_lang, target_lang, mode=profile_id)
+                    except Exception:
+                        pass
+
+        return (repaired, count)
 
     def _verify_latex_preservation(self, original: str, translated: str, chunk_index: int) -> str:
         """
