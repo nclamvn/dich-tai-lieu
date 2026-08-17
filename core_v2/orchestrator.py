@@ -358,6 +358,23 @@ class UniversalPublisher:
             except Exception as e:  # pragma: no cover - cache is best-effort
                 logger.warning(f"ChunkCache unavailable, continuing without cache: {e}")
 
+        # --- Translation Memory gateway (read/hints path — reuse approved
+        # translations as prompt hints). Built once per publisher and guarded:
+        # an empty/unavailable/disabled TM makes lookups a zero-cost no-op, and
+        # any construction failure degrades to no TM reuse (translation proceeds).
+        self.tm_gateway = None
+        if bool(_cfg("tm_reuse_enabled", True)) and bool(_cfg("tm_enabled", True)):
+            try:
+                from .tm_gateway import TMGateway
+                self.tm_gateway = TMGateway(
+                    enabled=True,
+                    threshold=float(_cfg("tm_fuzzy_threshold", 0.85)),
+                    max_hints=int(_cfg("tm_max_hints", 5)),
+                )
+            except Exception as e:
+                logger.warning(f"TM gateway unavailable, continuing without TM reuse: {e}")
+                self.tm_gateway = None
+
     def _chunk_cache_key(self, source_text: str, source_lang: str,
                          target_lang: str, profile_id: str,
                          ledger_fingerprint: str = "noterms") -> Optional[str]:
@@ -787,6 +804,24 @@ class UniversalPublisher:
             target_lang=target_lang,
             source_text=chunk.content,
         )
+
+        # Prepend approved Translation-Memory hints to the DYNAMIC user message
+        # (never the cached system prefix / template, so no KeyError and no cache
+        # thrash). TM state is deliberately NOT in the chunk-cache key, so a cache
+        # HIT legitimately returns above before hints are ever computed. Guarded via
+        # getattr so publishers built without __init__ (tests) are unaffected; an
+        # inactive/None gateway yields "" and leaves user_prompt byte-for-byte
+        # identical to the prior prompt.
+        gw = getattr(self, "tm_gateway", None)
+        if gw is not None:
+            try:
+                _hints = gw.lookup_hints(chunk.content, source_lang, target_lang)
+                _tm_block = gw.render_hints_block(_hints)
+                if _tm_block:
+                    user_prompt = _tm_block + "\n\n" + user_prompt
+            except Exception:
+                pass
+
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},

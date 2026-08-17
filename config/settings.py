@@ -181,6 +181,10 @@ class Settings(BaseSettings):
     # Translation Memory
     tm_enabled: bool = True
     tm_fuzzy_threshold: float = 0.85  # 85% similarity for fuzzy matches
+    # Inject approved TM translations into the live prompt as reuse hints
+    # (read/hints path only — no-op when the TM is empty/unavailable).
+    tm_reuse_enabled: bool = True
+    tm_max_hints: int = 5  # Max approved TM hints prepended to a chunk's prompt
 
     # AST Pipeline (experimental - for PDF export enhancement)
     use_ast_pipeline: bool = False  # Default OFF for backward compatibility
