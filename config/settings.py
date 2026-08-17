@@ -81,6 +81,16 @@ class Settings(BaseSettings):
     # Cap how many suspect chunks a single job repairs (bounds cost/latency).
     translation_repair_max_chunks: int = 20
 
+    # ---- Optional semantic faithfulness pass feeding the repair loop ----
+    # Opt-in LLM check that judges whether a translation faithfully renders its
+    # source (catches meaning drift the deterministic gate is blind to). Only
+    # deterministically-clean chunks are checked, and any judged unfaithful feed
+    # the SAME bounded repair loop. Off (default) => no extra LLM calls, repair
+    # behavior byte-for-byte unchanged.
+    translation_semantic_verify_enabled: bool = False
+    # Cap how many chunks a single job semantically checks (bounds cost).
+    translation_semantic_verify_max: int = 30
+
     # ---- Rolling cross-chunk context (deterministic, LLM-free by default) ----
     # How many older chunks feed each chunk's rolling-context gist (preceding =
     # older-context gist + exact tail of the immediately-preceding chunk).

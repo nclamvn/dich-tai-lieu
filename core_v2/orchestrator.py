@@ -920,14 +920,28 @@ class UniversalPublisher:
         it has *strictly* fewer issues. Clean chunks are never touched. Returns
         the (possibly repaired) translation list and the number of chunks
         replaced. Never raises — a hard translation failure keeps the original.
+
+        When ``translation_semantic_verify_enabled`` is set, an OPTIONAL LLM
+        faithfulness pass additionally checks the deterministically-clean chunks
+        (capped by ``translation_semantic_verify_max``, run under the semaphore)
+        and folds any chunk it judges unfaithful (>= major) into the SAME bounded
+        repair loop as a one-issue ``["semantic"]`` suspect — so a chunk is
+        deterministic-suspect OR semantic-suspect, never both. Disabled (the
+        default) => none of the semantic code runs and this method behaves
+        byte-for-byte like the deterministic-only pass.
         """
         from .quality_gate import check_chunk
 
         profile = get_profile(profile_id) or PROFILES.get("essay")
         max_repairs = int(_cfg("translation_repair_max_chunks", 20))
+        semantic_enabled = bool(_cfg("translation_semantic_verify_enabled", False))
+        semantic_max = int(_cfg("translation_semantic_verify_max", 30))
 
-        # Identify suspect chunks deterministically (no LLM calls).
+        # Identify suspect chunks deterministically (no LLM calls). Also record
+        # the deterministically-clean indices so an optional semantic pass can
+        # scrutinize only those.
         suspects: list[tuple[int, list]] = []
+        clean: list[int] = []
         for i, (src, tr) in enumerate(zip(chunks, translated)):
             issues = check_chunk(
                 src.content, tr, target_lang,
@@ -936,9 +950,36 @@ class UniversalPublisher:
             )
             if issues:
                 suspects.append((i, issues))
+            else:
+                clean.append(i)
+
+        # Optional semantic faithfulness pass (opt-in, bounded, under the
+        # semaphore). Only deterministically-clean chunks are checked; any judged
+        # unfaithful (>= major) joins the repair loop as a ["semantic"] suspect.
+        if semantic_enabled and clean:
+            from .semantic_verifier import verify_chunk, is_unfaithful
+
+            to_check = clean[:semantic_max]
+
+            async def _sem(i):
+                async with self._semaphore:
+                    v = await verify_chunk(
+                        chunks[i].content, translated[i],
+                        source_lang, target_lang, self.llm_client,
+                    )
+                    return (i, is_unfaithful(v, min_severity="major"))
+
+            for i, bad in await asyncio.gather(*[_sem(i) for i in to_check]):
+                if bad:
+                    suspects.append((i, ["semantic"]))
 
         if not suspects:
             return (translated, 0)
+
+        # Stable order after merging deterministic + semantic suspects (the
+        # deterministic pass already yields ascending indices, so with semantic
+        # disabled this sort is a no-op and the result is unchanged).
+        suspects.sort(key=lambda x: x[0])
 
         to_repair = suspects[:max_repairs]
         if len(suspects) > max_repairs:
@@ -961,6 +1002,16 @@ class UniversalPublisher:
                     detected_lang=self._detect_language(new),
                     has_formulas=dna.has_formulas,
                 )
+                # For a semantic suspect, re-verify the repair so a faithful+clean
+                # re-translation falls to 0 issues (adopted) while a still-unfaithful
+                # one stays at 1 (rejected), unifying with the deterministic count.
+                if semantic_enabled and "semantic" in orig_issues:
+                    from .semantic_verifier import verify_chunk, is_unfaithful
+                    v = await verify_chunk(
+                        chunks[i].content, new, source_lang, target_lang, self.llm_client,
+                    )
+                    if is_unfaithful(v, min_severity="major"):
+                        new_issues = new_issues + ["semantic"]
                 # Adopt only when the repair is strictly better (fewer issues).
                 if len(new_issues) < len(orig_issues):
                     return (i, new)
