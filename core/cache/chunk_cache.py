@@ -65,7 +65,10 @@ def compute_chunk_key(
     }
 
     # Add relevant kwargs that affect translation output
-    # Filter out None values and sort for determinism
+    # Filter out None values and sort for determinism.
+    # NOTE: model/profile_id/temperature/prompt_version were added so cache
+    # entries can't collide across different models or publishing profiles
+    # (two different models must never serve each other's cached translation).
     relevant_flags = {
         k: v for k, v in sorted(kwargs.items())
         if v is not None and k in [
@@ -73,6 +76,10 @@ def compute_chunk_key(
             'enable_chemical_formulas',
             'glossary_name',
             'domain',
+            'model',
+            'profile_id',
+            'temperature',
+            'prompt_version',
         ]
     }
 

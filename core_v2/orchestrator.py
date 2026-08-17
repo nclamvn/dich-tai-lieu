@@ -24,8 +24,26 @@ from .publishing_profiles import PublishingProfile, PROFILES, get_profile, BASE_
 from .output_converter import OutputConverter, OutputFormat
 from .verifier import QualityVerifier, VerificationResult
 from .vision_reader import VisionReader, VisionDocument
+from .reliability import ChunkTranslationError, backoff_delay, is_transient_error
+
+# Optional wiring — degrade gracefully if config/cache modules are unavailable.
+try:
+    from config.settings import settings as _settings
+except Exception:  # pragma: no cover
+    _settings = None
+
+try:
+    from core.cache.chunk_cache import ChunkCache, compute_chunk_key
+except Exception:  # pragma: no cover
+    ChunkCache = None
+    compute_chunk_key = None
 
 logger = logging.getLogger(__name__)
+
+
+def _cfg(name: str, default):
+    """Read a setting with a safe fallback when settings are unavailable."""
+    return getattr(_settings, name, default) if _settings is not None else default
 
 
 class JobStatus(Enum):
@@ -87,24 +105,19 @@ class PublishingJob:
 
 # ==================== TRANSLATION PROMPTS ====================
 
-TRANSLATION_PROMPT = """You are a professional translator and publisher.
+# The translation prompt is split into a STATIC system block (role + math
+# rules + profile + document DNA — constant across every chunk of a document)
+# and a DYNAMIC user block (per-chunk context + source text). This lets the
+# static prefix be cached (Anthropic prompt caching / OpenAI automatic caching),
+# cutting input tokens 30-50% on multi-chunk documents, and keeps per-chunk
+# messages small.
+TRANSLATION_SYSTEM = """You are a professional translator and publisher.
 
 DOCUMENT DNA:
 {dna_context}
 
 PUBLISHING PROFILE:
 {profile_prompt}
-
-CONTEXT:
-- This is chunk {chunk_index} of {total_chunks}
-- Previous content: {previous_summary}
-- Next content: {next_preview}
-
-TRANSLATION TASK:
-Translate the following text from {source_lang} to {target_lang}.
-
-Source Text:
-{source_text}
 
 CRITICAL REQUIREMENTS FOR MATHEMATICAL CONTENT:
 
@@ -142,6 +155,22 @@ OUTPUT:
 Provide ONLY the translated text. Preserve ALL LaTeX math notation exactly as in the original.
 Do not add explanations or meta-commentary.
 """
+
+# Dynamic, per-chunk portion (kept small so the cached system prefix dominates).
+TRANSLATION_USER = """CONTEXT:
+- This is chunk {chunk_index} of {total_chunks}
+- Previous content: {previous_summary}
+- Next content: {next_preview}
+
+TRANSLATION TASK:
+Translate the following text from {source_lang} to {target_lang}.
+
+Source Text:
+{source_text}"""
+
+# Back-compat: a single combined prompt (system + user) for any caller/test
+# that still expects the original one-shot template.
+TRANSLATION_PROMPT = TRANSLATION_SYSTEM + "\n\n" + TRANSLATION_USER
 
 ASSEMBLY_PROMPT = """You are a professional editor preparing a translated document for publication.
 
@@ -290,6 +319,46 @@ class UniversalPublisher:
 
         # Semaphore for concurrency control
         self._semaphore = asyncio.Semaphore(concurrency)
+
+        # --- Translation quality / cost knobs (env-overridable via settings) ---
+        self.translation_temperature: float = float(_cfg("translation_temperature", 0.3))
+        self.prompt_cache_enabled: bool = bool(_cfg("translation_prompt_cache_enabled", True))
+        self.prompt_version: str = str(_cfg("translation_prompt_version", "v2"))
+        self.max_retries: int = int(_cfg("translation_max_retries", 4))
+        self.backoff_base: float = float(_cfg("translation_backoff_base", 2.0))
+        self.backoff_cap: float = float(_cfg("translation_backoff_cap", 60.0))
+
+        # Cache signature: same (provider, model, temperature, prompt version)
+        # => same cache key. Changing any of them invalidates reuse, which
+        # prevents serving a translation produced under a different config.
+        self._provider_sig = str(_cfg("provider", ""))
+        self._model_sig = str(_cfg("model", ""))
+
+        # --- Chunk cache (persistent translation memoization) ---
+        self.chunk_cache = None
+        cache_on = bool(_cfg("chunk_cache_enabled", True)) and bool(_cfg("cache_enabled", True))
+        if cache_on and ChunkCache is not None and compute_chunk_key is not None:
+            try:
+                self.chunk_cache = ChunkCache()  # defaults to settings.cache_dir/chunks.db
+                logger.info("ChunkCache enabled for core_v2 translation path")
+            except Exception as e:  # pragma: no cover - cache is best-effort
+                logger.warning(f"ChunkCache unavailable, continuing without cache: {e}")
+
+    def _chunk_cache_key(self, source_text: str, source_lang: str,
+                         target_lang: str, profile_id: str) -> Optional[str]:
+        """Build a collision-safe cache key including model/temp/profile/version."""
+        if compute_chunk_key is None:
+            return None
+        return compute_chunk_key(
+            source_text=source_text,
+            source_lang=source_lang or "auto",
+            target_lang=target_lang or "vi",
+            mode=profile_id or "essay",
+            model=f"{self._provider_sig}:{self._model_sig}",
+            profile_id=profile_id or "essay",
+            temperature=str(self.translation_temperature),
+            prompt_version=self.prompt_version,
+        )
 
     async def publish(
         self,
@@ -471,18 +540,30 @@ class UniversalPublisher:
             """Translate single chunk with semaphore control."""
             async with self._semaphore:
                 result = await self._translate_chunk(
-                    chunk, dna, profile, source_lang, target_lang
+                    chunk, dna, profile, source_lang, target_lang, profile_id=profile_id
                 )
                 completed[0] += 1
                 if progress_callback:
                     progress_callback(completed[0] / total)
                 return (chunk.index, result)
 
-        # Launch all translations concurrently (semaphore limits parallelism)
+        # Launch all translations concurrently (semaphore limits parallelism).
+        # return_exceptions=True so one failing chunk doesn't orphan the rest;
+        # we then fail the whole job loudly rather than shipping a partial doc.
         tasks = [translate_with_semaphore(chunk) for chunk in chunks]
-        results_with_index = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        errors = [r for r in results if isinstance(r, BaseException)]
+        if errors:
+            first = errors[0]
+            logger.error(
+                f"Translation aborted: {len(errors)}/{total} chunk(s) failed; "
+                f"first error: {first}"
+            )
+            raise first
 
         # Sort by original index to maintain order
+        results_with_index = list(results)
         results_with_index.sort(key=lambda x: x[0])
         translated = [r[1] for r in results_with_index]
 
@@ -553,12 +634,47 @@ class UniversalPublisher:
         profile: PublishingProfile,
         source_lang: str,
         target_lang: str,
-        max_retries: int = 3,
+        profile_id: str = "essay",
+        max_retries: Optional[int] = None,
     ) -> str:
-        """Translate a single chunk with retry logic for rate limits."""
-        prompt = TRANSLATION_PROMPT.format(
+        """Translate a single chunk.
+
+        Improvements over the original:
+        - Static (cacheable) system prompt + small dynamic user prompt.
+        - Low, configurable temperature for faithful, low-variance output.
+        - Persistent chunk cache (keyed by model/temperature/profile/version).
+        - Exponential backoff + jitter on transient errors, and a raised
+          ``ChunkTranslationError`` on permanent failure — so the job fails
+          loudly instead of silently shipping a ``[TRANSLATION ERROR]`` hole.
+        """
+        max_retries = self.max_retries if max_retries is None else max_retries
+
+        # 1) Cache lookup (best-effort — must never break translation)
+        cache_key: Optional[str] = None
+        if self.chunk_cache is not None:
+            try:
+                cache_key = self._chunk_cache_key(chunk.content, source_lang, target_lang, profile_id)
+                if cache_key:
+                    cached = self.chunk_cache.get(cache_key)
+                    if cached is not None:
+                        logger.debug(f"[Chunk {chunk.index}] cache hit")
+                        return cached
+            except Exception as e:  # pragma: no cover
+                logger.debug(f"[Chunk {chunk.index}] cache lookup skipped: {e}")
+                cache_key = None
+
+        # 2) Build system (static/cacheable) + user (dynamic) prompts
+        system_prompt = TRANSLATION_SYSTEM.format(
             dna_context=dna.to_context_prompt(),
             profile_prompt=profile.to_prompt(),
+        )
+        if source_lang == 'ja':
+            if target_lang == 'vi':
+                system_prompt += "\n\n" + JAPANESE_TRANSLATION_ADDITIONS
+            elif target_lang == 'en':
+                system_prompt += "\n\n" + JAPANESE_TO_ENGLISH_ADDITIONS
+
+        user_prompt = TRANSLATION_USER.format(
             chunk_index=chunk.index + 1,
             total_chunks=chunk.total_chunks,
             previous_summary=chunk.previous_summary or "Start of document",
@@ -567,75 +683,86 @@ class UniversalPublisher:
             target_lang=target_lang,
             source_text=chunk.content,
         )
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
 
-        # Add Japanese-specific instructions for JA source
-        if source_lang == 'ja':
-            if target_lang == 'vi':
-                prompt += "\n\n" + JAPANESE_TRANSLATION_ADDITIONS
-                logger.debug(f"[Chunk {chunk.index}] Added JA→VI translation instructions")
-            elif target_lang == 'en':
-                prompt += "\n\n" + JAPANESE_TO_ENGLISH_ADDITIONS
-                logger.debug(f"[Chunk {chunk.index}] Added JA→EN translation instructions")
-
+        last_error: Optional[Exception] = None
         for attempt in range(max_retries):
             try:
                 response = await self.llm_client.chat(
-                    messages=[{"role": "user", "content": prompt}]
+                    messages=messages,
+                    temperature=self.translation_temperature,
+                    cache_system=self.prompt_cache_enabled,
                 )
                 translated = response.content.strip()
+                truncated = bool(getattr(response, "truncated", False))
 
                 # Verify LaTeX preservation if document has formulas
                 if dna.has_formulas:
                     translated = self._verify_latex_preservation(chunk.content, translated, chunk.index)
 
-                # Verify translation is in the target language
+                # Language check + strengthened retry (REUSING the full system
+                # prompt so terminology/formula guidance is preserved).
                 detected = self._detect_language(translated)
                 if detected != "unknown" and detected != target_lang:
                     logger.warning(
-                        f"[Chunk {chunk.index}] Language mismatch: "
-                        f"expected '{target_lang}', detected '{detected}'. "
-                        f"Retrying with explicit instruction."
+                        f"[Chunk {chunk.index}] Language mismatch: expected '{target_lang}', "
+                        f"detected '{detected}'. Retrying with stronger instruction."
                     )
-                    # Retry with a stronger, focused prompt
-                    retry_prompt = (
-                        f"CRITICAL INSTRUCTION: Translate the following text "
-                        f"from {source_lang} to {target_lang}.\n"
-                        f"Your output MUST be entirely in {target_lang}. "
-                        f"Do NOT include any {source_lang} text. "
-                        f"Do NOT echo the original. ONLY output the translation.\n\n"
-                        f"Text to translate:\n{chunk.content}"
+                    strong_user = (
+                        user_prompt
+                        + f"\n\nCRITICAL: Your output MUST be entirely in {target_lang}. "
+                        f"Do NOT include any {source_lang} text and do NOT echo the original."
                     )
                     retry_response = await self.llm_client.chat(
-                        messages=[{"role": "user", "content": retry_prompt}]
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": strong_user},
+                        ],
+                        temperature=self.translation_temperature,
+                        cache_system=self.prompt_cache_enabled,
                     )
                     retranslated = retry_response.content.strip()
-
+                    truncated = bool(getattr(retry_response, "truncated", False))
                     detected2 = self._detect_language(retranslated)
-                    if detected2 == target_lang or detected2 == "unknown":
-                        logger.info(f"[Chunk {chunk.index}] Retry succeeded: now in '{target_lang}'")
-                        return retranslated
-                    else:
+                    if detected2 not in (target_lang, "unknown"):
                         logger.error(
-                            f"[Chunk {chunk.index}] Still wrong language after retry "
-                            f"(detected '{detected2}'). Using retry result anyway."
+                            f"[Chunk {chunk.index}] Still '{detected2}' after retry; using it anyway."
                         )
-                        return retranslated
+                    translated = retranslated
+                    detected = detected2
+
+                # 3) Store in cache — only cache "good" results (right language,
+                # not truncated) so we never memoize a corrupted chunk.
+                lang_ok = detected in (target_lang, "unknown")
+                if self.chunk_cache is not None and cache_key and lang_ok and not truncated:
+                    try:
+                        self.chunk_cache.set(cache_key, translated, source_lang, target_lang, mode=profile_id)
+                    except Exception as e:  # pragma: no cover
+                        logger.debug(f"[Chunk {chunk.index}] cache store skipped: {e}")
 
                 return translated
-            except Exception as e:
-                error_str = str(e).lower()
-                # Check for rate limit error
-                if "429" in str(e) or "rate_limit" in error_str:
-                    wait_time = (attempt + 1) * 15  # 15s, 30s, 45s
-                    logger.warning(f"Rate limit hit for chunk {chunk.index}, waiting {wait_time}s (attempt {attempt+1}/{max_retries})")
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    logger.error(f"Translation failed for chunk {chunk.index}: {e}")
-                    return f"[TRANSLATION ERROR: {chunk.index}]"
 
-        logger.error(f"Translation failed for chunk {chunk.index} after {max_retries} retries")
-        return f"[TRANSLATION ERROR: {chunk.index}]"
+            except ChunkTranslationError:
+                raise
+            except Exception as e:
+                last_error = e
+                if is_transient_error(e) and attempt < max_retries - 1:
+                    delay = backoff_delay(attempt, self.backoff_base, self.backoff_cap)
+                    logger.warning(
+                        f"[Chunk {chunk.index}] transient error "
+                        f"(attempt {attempt + 1}/{max_retries}): {str(e)[:160]} — "
+                        f"retrying in {delay:.1f}s"
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                # Permanent error, or retries exhausted: fail loudly.
+                logger.error(f"[Chunk {chunk.index}] translation failed permanently: {e}")
+                raise ChunkTranslationError(chunk.index, str(e)[:200]) from e
+
+        raise ChunkTranslationError(chunk.index, f"exhausted {max_retries} retries: {last_error}")
 
     def _verify_latex_preservation(self, original: str, translated: str, chunk_index: int) -> str:
         """
@@ -711,7 +838,8 @@ class UniversalPublisher:
 
         try:
             response = await self.llm_client.chat(
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                temperature=self.translation_temperature,
             )
             assembled = response.content.strip()
 
