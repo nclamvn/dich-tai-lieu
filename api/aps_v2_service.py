@@ -70,16 +70,28 @@ class LLMClientAdapter:
     def __init__(self, provider: str = "openai", api_key: Optional[str] = None):
         self._unified_client = UnifiedLLMClient(preferred_provider=provider, api_key=api_key)
 
-    async def chat(self, messages: List[Dict], response_format: Optional[Dict] = None, max_tokens: int = 8192) -> Any:
+    async def chat(
+        self,
+        messages: List[Dict],
+        response_format: Optional[Dict] = None,
+        max_tokens: int = 8192,
+        temperature: Optional[float] = None,
+        cache_system: bool = False,
+    ) -> Any:
         """
         Send chat request to LLM with automatic fallback.
         Delegates to UnifiedLLMClient which handles all fallback logic.
+
+        temperature/cache_system are forwarded so the translation orchestrator
+        can request low-variance output and Anthropic prompt caching.
         """
         try:
             return await self._unified_client.chat(
                 messages=messages,
                 max_tokens=max_tokens,
-                response_format=response_format
+                response_format=response_format,
+                temperature=temperature,
+                cache_system=cache_system,
             )
         except AllProvidersUnavailableError as e:
             # Re-raise with clear message

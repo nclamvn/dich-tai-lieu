@@ -33,6 +33,36 @@ class Settings(BaseSettings):
     model: str = "gpt-4o-mini"
     quality_mode: str = "balanced"  # fast | balanced | quality
 
+    # ---- Per-provider model registry (env-overridable) ----
+    # These feed ai_providers.unified_client so model IDs can be refreshed
+    # from .env WITHOUT touching code. Defaults track the newest family the
+    # repo already standardized on (see core/book_writer/prompts.py).
+    anthropic_text_model: str = "claude-sonnet-4-5-20250929"
+    anthropic_vision_model: str = "claude-sonnet-4-5-20250929"
+    openai_text_model: str = "gpt-4o-mini"
+    openai_vision_model: str = "gpt-4o"
+    deepseek_text_model: str = "deepseek-chat"
+    gemini_text_model: str = "gemini-2.0-flash"
+    gemini_vision_model: str = "gemini-2.0-flash"
+
+    # ---- Translation determinism & caching (live core_v2 path) ----
+    # Low temperature => faithful, low-variance translation. The live
+    # orchestrator previously ran at provider-default (~1.0).
+    translation_temperature: float = 0.3
+    # Anthropic prompt caching of the static system prefix (role + LaTeX
+    # rules + profile + DNA). Cuts input tokens ~30-50% on multi-chunk docs.
+    translation_prompt_cache_enabled: bool = True
+    # Bump to invalidate all chunk-cache entries after a prompt/algorithm change.
+    translation_prompt_version: str = "v2"
+
+    # ---- Reliability: retry / backoff for transient API errors ----
+    translation_max_retries: int = 4        # attempts per chunk before failing the job
+    translation_backoff_base: float = 2.0   # exponential base (seconds)
+    translation_backoff_cap: float = 60.0   # max single backoff (seconds)
+    # How long a provider stays benched after a transient failure before it
+    # is retried again (was: benched permanently for the whole process).
+    provider_health_ttl_seconds: float = 300.0
+
     # ========== Languages ==========
     source_lang: str = "en"  # Source language code
     target_lang: str = "vi"  # Target language code
