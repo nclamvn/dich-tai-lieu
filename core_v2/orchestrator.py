@@ -25,6 +25,7 @@ from .output_converter import OutputConverter, OutputFormat
 from .verifier import QualityVerifier, VerificationResult
 from .vision_reader import VisionReader, VisionDocument
 from .reliability import ChunkTranslationError, backoff_delay, is_transient_error
+from .term_ledger import TermLedger, extract_terms, load_glossary_ledger
 
 # Optional wiring — degrade gracefully if config/cache modules are unavailable.
 try:
@@ -118,6 +119,8 @@ DOCUMENT DNA:
 
 PUBLISHING PROFILE:
 {profile_prompt}
+
+{glossary}
 
 CRITICAL REQUIREMENTS FOR MATHEMATICAL CONTENT:
 
@@ -328,6 +331,16 @@ class UniversalPublisher:
         self.backoff_base: float = float(_cfg("translation_backoff_base", 2.0))
         self.backoff_cap: float = float(_cfg("translation_backoff_cap", 60.0))
 
+        # --- Terminology ledger (auto-glossary + explicit glossaries) ---
+        # Built once per job in publish() and injected into the cached system
+        # prompt so proper nouns / key terms stay consistent across chunks.
+        self.auto_glossary_enabled = bool(_cfg("translation_auto_glossary_enabled", True))
+        self.glossary_max_terms = int(_cfg("translation_glossary_max_terms", 80))
+        self.glossary_ids = [
+            s.strip() for s in str(_cfg("translation_glossary_ids", "")).split(",") if s.strip()
+        ]
+        self._active_ledger = None  # set per-job in publish()
+
         # Cache signature: same (provider, model, temperature, prompt version)
         # => same cache key. Changing any of them invalidates reuse, which
         # prevents serving a translation produced under a different config.
@@ -345,8 +358,16 @@ class UniversalPublisher:
                 logger.warning(f"ChunkCache unavailable, continuing without cache: {e}")
 
     def _chunk_cache_key(self, source_text: str, source_lang: str,
-                         target_lang: str, profile_id: str) -> Optional[str]:
-        """Build a collision-safe cache key including model/temp/profile/version."""
+                         target_lang: str, profile_id: str,
+                         ledger_fingerprint: str = "noterms") -> Optional[str]:
+        """Build a collision-safe cache key including model/temp/profile/version.
+
+        ``ledger_fingerprint`` folds the active terminology ledger into the key
+        (via the existing ``glossary_name`` discriminator) so a chunk retranslated
+        under a different glossary can't serve a stale cached translation. The
+        default ``"noterms"`` reproduces the pre-ledger key for a chunk with no
+        terminology, keeping cache behavior identical when no ledger is active.
+        """
         if compute_chunk_key is None:
             return None
         return compute_chunk_key(
@@ -358,6 +379,7 @@ class UniversalPublisher:
             profile_id=profile_id or "essay",
             temperature=str(self.translation_temperature),
             prompt_version=self.prompt_version,
+            glossary_name=ledger_fingerprint or "noterms",
         )
 
     async def publish(
@@ -436,6 +458,27 @@ class UniversalPublisher:
             job.dna = await self._extract_dna(source_text, source_lang)
             logger.info(f"DNA extracted: genre={job.dna.genre}, {job.dna.word_count} words")
 
+            # Resolve the source language now (needed by the terminology ledger
+            # below and reused for translation): fall back to DNA-detected
+            # language when the caller requested 'auto'.
+            actual_source_lang = job.dna.language if source_lang == "auto" and job.dna.language else source_lang
+
+            # Build the terminology ledger ONCE per job (REQ-02/04/06): explicit
+            # glossary terms (if any) + optional auto-extracted terms, merged with
+            # glossary winning on conflicts. Never fails the job — any error
+            # degrades to an empty ledger and translation proceeds unchanged.
+            ledger = TermLedger()
+            try:
+                ledger.merge(load_glossary_ledger(self.glossary_ids, sample_text=source_text[:6000]))
+                if self.auto_glossary_enabled:
+                    ledger.merge(await extract_terms(
+                        source_text, self.llm_client, actual_source_lang, target_lang, max_terms=40
+                    ))
+            except Exception as e:
+                logger.warning(f"terminology ledger build failed, continuing without: {e}")
+            self._active_ledger = ledger
+            logger.info(f"Terminology ledger: {len(ledger)} terms")
+
             # Stage 2: Chunk document (55%)
             update_progress(0.55, "Chunking document")
             job.status = JobStatus.CHUNKING
@@ -445,8 +488,7 @@ class UniversalPublisher:
             # Stage 3: Translate chunks (55% - 90%)
             update_progress(0.55, "Translating")
             job.status = JobStatus.TRANSLATING
-            # Use detected language from DNA if source_lang is 'auto'
-            actual_source_lang = job.dna.language if source_lang == "auto" and job.dna.language else source_lang
+            # actual_source_lang resolved above (DNA-detected when 'auto').
             logger.info(f"Translation: {actual_source_lang} → {target_lang} (requested: {source_lang}, detected: {job.dna.language})")
             job.translated_chunks = await self._translate_chunks(
                 job.chunks,
@@ -536,11 +578,16 @@ class UniversalPublisher:
         completed = [0]  # Use list to allow modification in nested function
         total = len(chunks)
 
+        # The terminology ledger is built once per job in publish(); thread it
+        # through so every chunk shares the same (cached) glossary block.
+        active_ledger = getattr(self, "_active_ledger", None)
+
         async def translate_with_semaphore(chunk: SemanticChunk) -> tuple[int, str]:
             """Translate single chunk with semaphore control."""
             async with self._semaphore:
                 result = await self._translate_chunk(
-                    chunk, dna, profile, source_lang, target_lang, profile_id=profile_id
+                    chunk, dna, profile, source_lang, target_lang,
+                    profile_id=profile_id, ledger=active_ledger,
                 )
                 completed[0] += 1
                 if progress_callback:
@@ -636,6 +683,7 @@ class UniversalPublisher:
         target_lang: str,
         profile_id: str = "essay",
         max_retries: Optional[int] = None,
+        ledger=None,
     ) -> str:
         """Translate a single chunk.
 
@@ -649,11 +697,22 @@ class UniversalPublisher:
         """
         max_retries = self.max_retries if max_retries is None else max_retries
 
+        # Resolve the active terminology ledger (explicit arg wins; otherwise the
+        # per-job ledger built in publish()). An empty or absent ledger is falsy,
+        # so glossary_block == "" and the fingerprint stays "noterms" — i.e. the
+        # exact pre-ledger behavior: same system prompt, same cache key.
+        ledger = ledger if ledger is not None else getattr(self, "_active_ledger", None)
+        glossary_block = ledger.to_prompt_block(getattr(self, "glossary_max_terms", 80)) if ledger else ""
+        ledger_fp = ledger.fingerprint() if ledger else "noterms"
+
         # 1) Cache lookup (best-effort — must never break translation)
         cache_key: Optional[str] = None
         if self.chunk_cache is not None:
             try:
-                cache_key = self._chunk_cache_key(chunk.content, source_lang, target_lang, profile_id)
+                cache_key = self._chunk_cache_key(
+                    chunk.content, source_lang, target_lang, profile_id,
+                    ledger_fingerprint=ledger_fp,
+                )
                 if cache_key:
                     cached = self.chunk_cache.get(cache_key)
                     if cached is not None:
@@ -667,6 +726,7 @@ class UniversalPublisher:
         system_prompt = TRANSLATION_SYSTEM.format(
             dna_context=dna.to_context_prompt(),
             profile_prompt=profile.to_prompt(),
+            glossary=glossary_block,
         )
         if source_lang == 'ja':
             if target_lang == 'vi':

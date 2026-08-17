@@ -55,6 +55,16 @@ class Settings(BaseSettings):
     # Bump to invalidate all chunk-cache entries after a prompt/algorithm change.
     translation_prompt_version: str = "v2"
 
+    # ---- Terminology ledger (auto-glossary + explicit glossaries) ----
+    # Auto-extract key terms/proper nouns per document and inject them into the
+    # cached system prompt so terminology stays consistent across every chunk.
+    translation_auto_glossary_enabled: bool = True
+    # Max terms rendered into the prompt terminology block (highest priority first).
+    translation_glossary_max_terms: int = 80
+    # Comma-separated explicit glossary IDs to load (empty = none). Glossary terms
+    # outrank auto-extracted ones.
+    translation_glossary_ids: str = ""
+
     # ---- Reliability: retry / backoff for transient API errors ----
     translation_max_retries: int = 4        # attempts per chunk before failing the job
     translation_backoff_base: float = 2.0   # exponential base (seconds)
