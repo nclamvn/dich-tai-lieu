@@ -73,6 +73,11 @@ class Settings(BaseSettings):
     # is retried again (was: benched permanently for the whole process).
     provider_health_ttl_seconds: float = 300.0
 
+    # ---- Chunking: hard per-chunk token budget (structure-preserving) ----
+    # No emitted semantic chunk exceeds this estimate_tokens count; oversized
+    # chunks are split at the finest content-preserving boundary available.
+    chunk_max_tokens: int = 2000
+
     # ========== Languages ==========
     source_lang: str = "en"  # Source language code
     target_lang: str = "vi"  # Target language code
