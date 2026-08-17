@@ -102,6 +102,21 @@ Targeted upgrades to the live `core_v2` translation path (quality, cost, reliabi
 - `tests/unit/test_context_builder.py` (27) + `tests/unit/test_context_wiring.py` (7); all prior
   suites green (200 passing total).
 
+### Translation Memory leverage (Phase 6 — reuse approved translations)
+- New `core_v2/tm_gateway.py`: a guarded bridge to the existing (SQLite) Translation Memory that
+  the live translation path previously ignored. Per chunk it finds exact and fuzzy sentence
+  matches and renders them as prompt hints ("approved translations — reuse verbatim when the
+  segment matches"). The gateway is **active only when the TM holds ≥1 segment**, so an empty or
+  unavailable TM adds zero per-chunk cost, and it never raises into the caller.
+- `_translate_chunk` prepends the TM hints to the **dynamic user message** (never the cached
+  system prefix, never the templates), so a populated TM leverages prior work without breaking
+  prompt caching. TM state is intentionally not part of the chunk-cache key.
+- Read/hints path only; write-back is deferred (it needs sentence alignment to be worthwhile and
+  overlaps the chunk cache). Settings: `TM_REUSE_ENABLED` (default on), `TM_MAX_HINTS`; reuses the
+  existing `TM_FUZZY_THRESHOLD`.
+- `tests/unit/test_tm_gateway.py` (9, real temp sqlite TM) + `tests/unit/test_tm_wiring.py` (4);
+  all prior suites green (213 passing total).
+
 ## [3.3.0] - 2026-02-12
 
 ### New Feature: Screenplay Studio
