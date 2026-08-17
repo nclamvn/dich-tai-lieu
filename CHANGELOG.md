@@ -2,6 +2,42 @@
 
 All notable changes to AI Publisher Pro will be documented in this file.
 
+## [Unreleased] — Translation engine quick-wins
+
+Targeted upgrades to the live `core_v2` translation path (quality, cost, reliability).
+
+### Quality
+- Translation now runs at a low, configurable temperature (`TRANSLATION_TEMPERATURE`,
+  default 0.3) instead of the provider default (~1.0) → faithful, low-variance output.
+- Per-provider model registry is env-overridable; Anthropic default refreshed from the
+  stale `claude-sonnet-4-20250514` to `claude-sonnet-4-5-20250929`, Gemini from the
+  experimental `-exp` alias to stable `gemini-2.0-flash`.
+- Language-mismatch retry now reuses the full system prompt (keeps terminology/LaTeX
+  guidance) instead of a stripped prompt.
+
+### Cost
+- Translation prompt split into a static (cacheable) system prefix + small dynamic user
+  message, with Anthropic **prompt caching** (`cache_control`) on the prefix → ~30-50%
+  fewer input tokens on multi-chunk documents.
+- `ChunkCache` is now wired into `core_v2` with a collision-safe key
+  (model + temperature + profile + prompt version) → repeated/identical content is not
+  re-translated on re-runs.
+
+### Reliability
+- Failed chunks no longer ship a silent `[TRANSLATION ERROR: n]` hole in the document;
+  a `ChunkTranslationError` fails the job loudly with the chunk index.
+- Exponential backoff + full jitter for all transient errors (was 429-only, fixed 15/30/45s).
+- Rate limits back off in-place then fail over (were raised); providers are benched with a
+  TTL (`PROVIDER_HEALTH_TTL_SECONDS`) instead of for the whole process lifetime.
+- Output truncation (`finish_reason=length` / `stop_reason=max_tokens`) is now detected and
+  logged, and truncated chunks are never cached.
+
+### Tests
+- `tests/unit/test_engine_quickwins.py` — 28 unit tests covering backoff, error
+  classification, cache-key discrimination, model-registry env overrides, health TTL, and
+  `_translate_chunk` behaviour (temperature/cache_system forwarding, cache hit/miss/store,
+  transient-retry, fail-loud). No regressions in existing suites.
+
 ## [3.3.0] - 2026-02-12
 
 ### New Feature: Screenplay Studio
