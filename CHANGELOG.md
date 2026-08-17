@@ -54,6 +54,23 @@ Targeted upgrades to the live `core_v2` translation path (quality, cost, reliabi
 - Settings: `TRANSLATION_AUTO_GLOSSARY_ENABLED`, `TRANSLATION_GLOSSARY_MAX_TERMS`,
   `TRANSLATION_GLOSSARY_IDS`.
 
+### Token-aware chunking (Phase 3 — correctness & robustness)
+- New `core_v2/token_chunking.py`: dependency-free, structure-preserving chunking sized by an
+  estimated **token** budget (VN/CJK-aware) instead of raw character count. Guarantees every
+  chunk stays within budget by splitting oversized blocks finest-first
+  (lines → sentences → words → hard slices) without flattening newlines / paragraphs / LaTeX.
+- `core_v2/semantic_chunker.py`: `_finalize_chunks` now runs a hard token-cap pass first, so
+  **every** chunking path is guaranteed to emit no chunk over budget (`CHUNK_MAX_TOKENS`,
+  default 2000). This kills the long-standing **mega-chunk bug** where the LLM-boundary path
+  sampled only the first 10k chars but dumped everything after into one trailing chunk that
+  then blew past the model's `max_tokens` (silent truncation).
+- `_simple_chunk` rewritten to preserve structure (was `text.split()` + `' '.join()` — a blob
+  that destroyed all newlines/paragraphs/LaTeX). `_detect_boundaries_with_claude` now logs
+  failures instead of swallowing them. `_find_chapters` detects Vietnamese lowercase numbered
+  headings and markdown h1–h6.
+- `tests/unit/test_token_chunking.py` (22) + `tests/unit/test_chunker_tokencap.py` (8);
+  `test_semantic_chunker.py` and all Phase-1/2 suites remain green (138 passing total).
+
 ## [3.3.0] - 2026-02-12
 
 ### New Feature: Screenplay Studio
