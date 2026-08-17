@@ -71,6 +71,21 @@ Targeted upgrades to the live `core_v2` translation path (quality, cost, reliabi
 - `tests/unit/test_token_chunking.py` (22) + `tests/unit/test_chunker_tokencap.py` (8);
   `test_semantic_chunker.py` and all Phase-1/2 suites remain green (138 passing total).
 
+### Quality gate + bounded repair (Phase 4 — catch & fix silent failures)
+- New `core_v2/quality_gate.py`: deterministic, dependency-free checks that flag a translated
+  chunk as suspect — empty, `[TRANSLATION ERROR]` marker, truncated, **too_short** (dropped
+  content on a substantial source), **wrong_language**, and **latex_lost** (formulas dropped).
+  Tuned to avoid false positives (a Vietnamese translation longer than its English source, or a
+  shorter CJK one, stays clean).
+- `core_v2/orchestrator.py`: a new **Stage 3.5 repair pass** (`_repair_suspect_chunks`) runs the
+  gate over every translated chunk and re-translates ONLY the flagged ones — concurrently, under
+  the semaphore, bounded by `TRANSLATION_REPAIR_MAX_CHUNKS` — adopting a retry only when it is
+  *strictly* better. `_translate_chunk` gained `force_refresh` so repairs bypass the chunk-cache
+  GET (and overwrite it with the good result). Clean chunks are never touched; the default path
+  is unchanged.
+- `tests/unit/test_quality_gate.py` (22) + `tests/unit/test_repair_pass.py` (6); all prior suites
+  green (166 passing total). Settings: `TRANSLATION_REPAIR_ENABLED`, `TRANSLATION_REPAIR_MAX_CHUNKS`.
+
 ## [3.3.0] - 2026-02-12
 
 ### New Feature: Screenplay Studio
