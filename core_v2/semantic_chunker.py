@@ -14,6 +14,7 @@ from typing import List, Optional, Tuple, Any
 from enum import Enum
 
 from .token_chunking import estimate_tokens, chunk_text_by_tokens
+from .context_builder import build_chunk_contexts
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +101,15 @@ class SemanticChunker:
             except Exception:
                 resolved = None
         self.max_chunk_tokens = int(resolved) if resolved else self.MAX_CHUNK_TOKENS
+
+        # Rolling cross-chunk context window (deterministic; LLM-free). Resolved
+        # like max_chunk_tokens: settings override, else a sane default of 3.
+        try:
+            from config.settings import settings
+            cw = getattr(settings, "translation_context_window", None)
+        except Exception:
+            cw = None
+        self.context_window = int(cw) if cw else 3
 
     async def chunk(self, text: str, detect_boundaries: bool = True) -> List[SemanticChunk]:
         """
@@ -423,12 +433,12 @@ If no clear boundaries, return empty array: []
             chunk.total_chunks = total
             chunk.index = i
 
-            # Add previous summary (first 100 chars of previous chunk)
-            if i > 0:
-                prev = chunks[i - 1].content
-                chunk.previous_summary = prev[:100] + "..." if len(prev) > 100 else prev
-
-            # Add next preview (first 100 chars of next chunk)
-            if i < total - 1:
-                next_chunk = chunks[i + 1].content
-                chunk.next_preview = next_chunk[:100] + "..." if len(next_chunk) > 100 else next_chunk
+        # Rolling cross-chunk context (deterministic, LLM-free): preceding =
+        # older-context gist + exact tail of the immediately-preceding chunk;
+        # following = head of the next chunk. `preceding or None` keeps the FIRST
+        # chunk's previous_summary = None and the LAST chunk's next_preview = None.
+        contents = [c.content for c in chunks]
+        contexts = build_chunk_contexts(contents, window=self.context_window)
+        for c, (preceding, following) in zip(chunks, contexts):
+            c.previous_summary = preceding or None
+            c.next_preview = following or None

@@ -81,6 +81,14 @@ class Settings(BaseSettings):
     # Cap how many suspect chunks a single job repairs (bounds cost/latency).
     translation_repair_max_chunks: int = 20
 
+    # ---- Rolling cross-chunk context (deterministic, LLM-free by default) ----
+    # How many older chunks feed each chunk's rolling-context gist (preceding =
+    # older-context gist + exact tail of the immediately-preceding chunk).
+    translation_context_window: int = 3
+    # Optional LLM summary pre-pass: one short summary per chunk enriches the
+    # gist. Default OFF => no extra API calls; deterministic context stands.
+    translation_context_summary_enabled: bool = False
+
     # ---- Chunking: hard per-chunk token budget (structure-preserving) ----
     # No emitted semantic chunk exceeds this estimate_tokens count; oversized
     # chunks are split at the finest content-preserving boundary available.

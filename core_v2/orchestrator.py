@@ -26,6 +26,7 @@ from .verifier import QualityVerifier, VerificationResult
 from .vision_reader import VisionReader, VisionDocument
 from .reliability import ChunkTranslationError, backoff_delay, is_transient_error
 from .term_ledger import TermLedger, extract_terms, load_glossary_ledger
+from .context_builder import build_chunk_contexts
 
 # Optional wiring — degrade gracefully if config/cache modules are unavailable.
 try:
@@ -485,6 +486,22 @@ class UniversalPublisher:
             job.chunks = await self.chunker.chunk(source_text)
             logger.info(f"Document split into {len(job.chunks)} chunks")
 
+            # Optional LLM summary pre-pass (gated OFF by default): enrich the
+            # deterministic rolling context with a one-sentence summary per chunk.
+            # Disabled => no extra LLM calls; the chunker's deterministic context
+            # stands. Any failure keeps the deterministic context unchanged.
+            if bool(_cfg("translation_context_summary_enabled", False)) and len(job.chunks) > 1:
+                try:
+                    summaries = await self._summarize_chunks(job.chunks)
+                    contexts = build_chunk_contexts([c.content for c in job.chunks], summaries=summaries,
+                                                    window=int(_cfg("translation_context_window", 3)))
+                    for c, (preceding, following) in zip(job.chunks, contexts):
+                        c.previous_summary = preceding or None
+                        c.next_preview = following or None
+                    logger.info(f"[{job.job_id}] Context enriched with {sum(1 for s in summaries if s)} chunk summaries")
+                except Exception as e:
+                    logger.warning(f"context summary pre-pass failed, keeping deterministic context: {e}")
+
             # Stage 3: Translate chunks (55% - 90%)
             update_progress(0.55, "Translating")
             job.status = JobStatus.TRANSLATING
@@ -561,6 +578,19 @@ class UniversalPublisher:
             job.error = str(e)
 
         return job
+
+    async def _summarize_chunks(self, chunks) -> list:
+        """One-sentence summary per chunk (parallel, guarded). Empty string on any failure."""
+        async def _one(ch):
+            async with self._semaphore:
+                try:
+                    prompt = ("Summarize the following text in ONE short sentence, "
+                              "in its original language. Text:\n" + ch.content[:3000])
+                    resp = await self.llm_client.chat(messages=[{"role": "user", "content": prompt}], temperature=0.0)
+                    return (getattr(resp, "content", "") or "").strip()
+                except Exception:
+                    return ""
+        return list(await asyncio.gather(*[_one(c) for c in chunks]))
 
     async def _extract_dna(self, text: str, source_lang: str) -> DocumentDNA:
         """Extract document DNA."""
