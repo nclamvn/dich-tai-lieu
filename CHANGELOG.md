@@ -86,6 +86,22 @@ Targeted upgrades to the live `core_v2` translation path (quality, cost, reliabi
 - `tests/unit/test_quality_gate.py` (22) + `tests/unit/test_repair_pass.py` (6); all prior suites
   green (166 passing total). Settings: `TRANSLATION_REPAIR_ENABLED`, `TRANSLATION_REPAIR_MAX_CHUNKS`.
 
+### Rolling cross-chunk context (Phase 5 — narrative continuity)
+- New `core_v2/context_builder.py`: deterministic, LLM-free rolling context. For each chunk it
+  builds a "previous content" window from the **tail** (end) of the preceding chunk plus a
+  budgeted gist of older chunks, and a "next content" window from the head of the next chunk —
+  all at sentence boundaries. This replaces the previous behaviour where both windows were just
+  the first 100 characters of the neighbouring chunk (wrong end, sliced mid-word), a driver of
+  discontinuity across chapters.
+- `SemanticChunker._finalize_chunks` now populates `previous_summary` / `next_preview` from the
+  context builder (first-chunk previous and last-chunk next stay `None`). Being deterministic, it
+  adds no LLM cost and doesn't serialize the concurrent translation stage.
+- Optional LLM summary pre-pass (`_summarize_chunks`, gated OFF by
+  `TRANSLATION_CONTEXT_SUMMARY_ENABLED`) can enrich the gist with one-sentence chunk summaries
+  computed in parallel. Settings: `TRANSLATION_CONTEXT_WINDOW`, `TRANSLATION_CONTEXT_SUMMARY_ENABLED`.
+- `tests/unit/test_context_builder.py` (27) + `tests/unit/test_context_wiring.py` (7); all prior
+  suites green (200 passing total).
+
 ## [3.3.0] - 2026-02-12
 
 ### New Feature: Screenplay Studio
