@@ -803,7 +803,9 @@ class UniversalPublisher:
                     ledger_fingerprint=ledger_fp,
                 )
                 if cache_key:
-                    cached = self.chunk_cache.get(cache_key)
+                    # Off-loop: ChunkCache is sync sqlite (thread-local conns + WAL),
+                    # so run it in a worker thread to keep the event loop free.
+                    cached = await run_blocking(self.chunk_cache.get, cache_key)
                     if cached is not None:
                         logger.debug(f"[Chunk {chunk.index}] cache hit")
                         return cached
@@ -906,7 +908,10 @@ class UniversalPublisher:
                 lang_ok = detected in (target_lang, "unknown")
                 if self.chunk_cache is not None and cache_key and lang_ok and not truncated and not force_refresh:
                     try:
-                        self.chunk_cache.set(cache_key, translated, source_lang, target_lang, mode=profile_id)
+                        await run_blocking(
+                            self.chunk_cache.set,
+                            cache_key, translated, source_lang, target_lang, mode=profile_id,
+                        )
                     except Exception as e:  # pragma: no cover
                         logger.debug(f"[Chunk {chunk.index}] cache store skipped: {e}")
 
@@ -1063,7 +1068,10 @@ class UniversalPublisher:
                             ledger_fingerprint=fp,
                         )
                         if key:
-                            self.chunk_cache.set(key, new, source_lang, target_lang, mode=profile_id)
+                            await run_blocking(
+                                self.chunk_cache.set,
+                                key, new, source_lang, target_lang, mode=profile_id,
+                            )
                     except Exception:
                         pass
 
