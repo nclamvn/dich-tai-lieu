@@ -22,6 +22,8 @@ import Link from "next/link";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { QueryError } from "@/components/ui/query-error";
+import { API_BASE } from "@/lib/api/config";
 import { useJob, useCancelJob, useRestartJob } from "@/lib/api/hooks";
 import { jobs as jobsApi } from "@/lib/api/client";
 import { formatDate, statusVariant } from "@/lib/utils";
@@ -66,7 +68,7 @@ export default function JobDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { data: job, isLoading } = useJob(id);
+  const { data: job, isLoading, isError, error, refetch } = useJob(id);
   const { t } = useLocale();
   const cancelJob = useCancelJob();
   const restartJob = useRestartJob();
@@ -101,6 +103,10 @@ export default function JobDetailPage({
         <div className="h-40 skeleton" />
       </div>
     );
+  }
+
+  if (isError) {
+    return <QueryError error={error} onRetry={() => refetch()} />;
   }
 
   if (!job) {
@@ -594,7 +600,7 @@ export default function JobDetailPage({
             {outputs.some((o) => o.format === "pdf") && (
               <div className="mb-3">
                 <iframe
-                  src={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/api/v2/jobs/${id}/download/pdf`}
+                  src={`${API_BASE}/api/v2/jobs/${id}/download/pdf`}
                   style={{
                     width: "100%",
                     height: 400,
