@@ -49,7 +49,24 @@ Thợ (subagent) BUILD theo 1 TIP, Chủ thầu VERIFY độc lập (tự chạy
 
 **STATUS: READY.** Hai bug `:3000` (tải PDF + screenplay) đã hết; lỗi API giờ hiển thị tử tế ở 2 trang chính. Roll-out `<QueryError>` cho các trang còn lại là việc cơ học nối tiếp.
 
+---
+
+## sqlite off-loop (part 1) — ChunkCache ra khỏi event loop (VERIFY REPORT)
+
+Chủ thầu tự SCAN an-toàn-thread + implement (rule #8: 3 edit, phán đoán thread-safety giữ ở Chủ thầu) + VERIFY.
+
+**SCAN quyết định phạm vi (đây là mục "rủi ro vừa" đúng nghĩa):** sqlite có ràng buộc thread-affinity. Soi hai hộ dùng sqlite thô trên hot path:
+- **ChunkCache** (`core/cache/chunk_cache.py`): connection **thread-local** + `PRAGMA journal_mode=WAL` + busy timeout mặc định 5s → **an toàn** khi chạy đa luồng (mỗi worker thread có connection riêng, writer chờ nhau thay vì lỗi).
+- **JobRepository** (`api/job_repository.py` → `core/database/sqlite_backend.py`): backend **dùng chung MỘT connection** (`check_same_thread` theo persistence). Bọc qua thread sẽ **ProgrammingError hoặc đua transaction** → **KHÔNG bọc**, hoãn (cần backend per-call / một thread-writer riêng — thay đổi lớn hơn).
+
+**Làm:** bọc 3 call ChunkCache trên hot path dịch (`get` trong `_translate_chunk`; `set` trong `_translate_chunk` và vòng repair) bằng `await run_blocking(...)` (helper từ item 5). ChunkCache get/set chạy mỗi chunk → đây là sqlite-trên-loop tần suất cao nhất. Hành vi không đổi, chỉ đổi thread.
+
+**VERIFY (Chủ thầu chạy):** test then chốt — **24 thao tác get/set ChunkCache đồng thời** qua `run_blocking` (nhiều worker thread) trả **đúng giá trị, KHÔNG lỗi thread/lock** (chứng minh phân tích an-toàn: thread-local + WAL); test loop-responsive chạy 3 lần không flaky; **273 test engine pass, 0 hồi quy**; `import api.main` sạch.
+
+**STATUS: READY.** ChunkCache off-loop. Phần sqlite còn lại (JobRepository, tiến độ) hoãn có chủ đích vì backend dùng chung connection — sẽ là 1 chunk riêng khi nâng backend.
+
 ## Commit
 
 - `a5416c8` perf(engine): run blocking PDF extraction and DOCX/PDF rendering off the event loop
 - `7db5acf` fix(frontend): unify API base URL and surface query errors (P1-F1/F2)
+- `5bba18d` perf(engine): run ChunkCache sqlite off the event loop (sqlite off-loop pt.1)
