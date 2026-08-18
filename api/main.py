@@ -613,6 +613,22 @@ async def startup_ws_fanout():
     await manager.start_redis(settings.ws_redis_url, settings.ws_pubsub_channel)
 
 
+@app.on_event("startup")
+async def startup_job_coordinator():
+    """Enable cross-worker concurrency limit + cancel (#6 Pha 2/3).
+    No-op / local-only when ws_redis_url is empty."""
+    from api.aps_v2_service import get_v2_service
+    from config.settings import settings
+    svc = get_v2_service()
+    await svc._coordinator.start_redis(settings.ws_redis_url, settings.max_concurrent_jobs)
+
+
+@app.on_event("shutdown")
+async def shutdown_job_coordinator():
+    from api.aps_v2_service import get_v2_service
+    await get_v2_service()._coordinator.stop_redis()
+
+
 @app.on_event("shutdown")
 async def shutdown_ws_fanout():
     from api.deps import manager

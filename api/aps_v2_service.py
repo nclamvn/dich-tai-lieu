@@ -24,6 +24,7 @@ from api.services.provider_stats import ProviderStatsTracker, CallRecord
 from api.services.provider_router import ProviderRouter, RoutingMode
 from api.services.consistency_checker import ConsistencyChecker
 from api.services.layout_analyzer import LayoutAnalyzer
+from api.coordination import JobCoordinator
 from api.services.epub_renderer import EpubRenderer, is_available as epub_available
 
 from .job_repository import get_job_repository, JobRepository
@@ -168,7 +169,11 @@ class APSV2Service:
             max_jobs = get_settings().max_concurrent_jobs
         except (ImportError, AttributeError):
             max_jobs = 10
-        self._global_semaphore = asyncio.Semaphore(max_jobs)
+        # Cross-worker coordination: global concurrency limit + cancel. Falls
+        # back to a local asyncio.Semaphore(max_jobs) until start_redis() is
+        # called with a Redis URL (see startup_job_coordinator in api/main.py).
+        self._coordinator = JobCoordinator(max_jobs)
+        self._coordinator.set_cancel_handler(self._cancel_local_task)
 
         # Job storage - now backed by SQLite
         self._jobs: Dict[str, Dict] = {}
@@ -329,8 +334,8 @@ class APSV2Service:
         return job_record
 
     async def _process_job_with_limit(self, job_id: str, content: str, **kwargs):
-        """Wrapper that enforces global concurrency limit before processing."""
-        async with self._global_semaphore:
+        """Wrapper that enforces the (cross-worker) concurrency limit before processing."""
+        async with self._coordinator.acquire_slot(job_id):
             await self._process_job(job_id, content, **kwargs)
 
     async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None, docx_template: str = "auto", pdf_template: str = "auto", provider: Optional[str] = None, model: Optional[str] = None):
@@ -616,19 +621,21 @@ class APSV2Service:
                 pass
 
     def get_job(self, job_id: str) -> Optional[Dict]:
-        """Get job by ID (memory first, then database)."""
-        # Check memory first
-        job = self._jobs.get(job_id)
-        if job:
-            return job
+        """Get job by ID. If THIS worker is actively running the job, the
+        in-memory record is freshest; otherwise the durable store (SQLite) is
+        authoritative, because another worker may own it and this worker's
+        cached copy can be stale (multi-worker correctness)."""
+        task = self._job_tasks.get(job_id)
+        if task is not None and not task.done():
+            return self._jobs.get(job_id) or self._repo.get(job_id)
 
-        # Try database
+        # Not running locally -> trust the store over any stale local cache.
         job = self._repo.get(job_id)
         if job:
-            self._jobs[job_id] = job  # Cache it
+            self._jobs[job_id] = job
             return job
 
-        return None
+        return self._jobs.get(job_id)
 
     async def resume_pending_jobs(self):
         """Resume any pending/running jobs after server restart."""
@@ -754,20 +761,24 @@ class APSV2Service:
             completed_at=job.get("completed_at"),
         )
 
+    def _cancel_local_task(self, job_id: str) -> None:
+        """Cancel the asyncio task for a job IF it runs on THIS worker (no-op
+        otherwise). Registered as the coordinator's cancel handler, so both the
+        local fast path and cross-worker cancel signals reach it. The task's
+        CancelledError handler persists the CANCELLED status."""
+        task = self._job_tasks.get(job_id)
+        if task is not None and not task.done():
+            task.cancel()
+
     async def cancel_job(self, job_id: str) -> bool:
-        """Cancel a running job."""
-        job = self._jobs.get(job_id)
+        """Request cancellation of a job wherever it runs — this worker or
+        another. The owning worker cancels its task; that task's CancelledError
+        handler persists CANCELLED. Returns True if the job exists."""
+        job = self.get_job(job_id)
         if not job:
             return False
-
-        task = self._job_tasks.get(job_id)
-        if task and not task.done():
-            task.cancel()
-            job["status"] = JobStatusV2.CANCELLED
-            job["error"] = "Cancelled by user"
-            return True
-
-        return False
+        await self._coordinator.request_cancel(job_id)
+        return True
 
     async def restart_job(self, job_id: str) -> Optional[Dict]:
         """Restart a failed job by re-processing from saved content."""
