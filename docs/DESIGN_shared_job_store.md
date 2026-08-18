@@ -58,9 +58,9 @@ P0-6 (đã vá tạm): `render.yaml` chạy `--workers 2` nhưng state job giữ
 
 **Khi cần scale ngang:** **Phương án A**, làm **theo pha** để mỗi pha tự đứng được:
 - **Pha 1 — WS pub/sub qua Redis:** ✅ **XONG** (commit trên nhánh). `ConnectionManager.broadcast` giờ publish lên kênh Redis; mỗi worker chạy subscriber → broadcast cục bộ. Mọi call site `manager.broadcast(...)` cũ tự động fan-out chéo worker, **0 thay đổi call site**. Degrade an toàn về local khi `WS_REDIS_URL` rỗng/không nối được (mặc định). Test thật với redis: cross-worker fan-out + không nhân đôi + skip trung thực khi vắng redis. *(Giá trị lớn nhất, rủi ro thấp nhất.)*
-- **Pha 2 — Semaphore toàn cục** bằng lease Redis (giới hạn đồng thời đúng khi >1 worker).
-- **Pha 3 — Runtime state + cancel qua Redis** (bỏ phụ thuộc `_jobs` cache; cancel chéo worker).
-- **Pha 4 — Bật `--workers N`** ở `render.yaml` sau khi Pha 1–3 xanh.
+- **Pha 2 — Semaphore toàn cục** ✅ **XONG.** `api/coordination.py::JobCoordinator` giữ slot bằng **lease sorted-set Redis**, acquire **atomic bằng Lua** (zcard-rồi-zadd bị đua nếu không atomic), có heartbeat refresh lease và TTL thu hồi slot của worker chết. `_process_job_with_limit` giờ giữ slot của coordinator. Fallback: `asyncio.Semaphore` cục bộ khi không có Redis.
+- **Pha 3 — Cancel chéo worker + đọc state không stale** ✅ **XONG.** `cancel_job` publish sự kiện cancel; subscriber mỗi worker cancel task **nếu worker đó sở hữu** (handler `CancelledError` sẵn có ghi CANCELLED vào sqlite). `get_job` giờ tin store bền hơn cache cục bộ cho job worker này không chạy.
+- **Pha 4 — Bật `--workers N`** ✅ **SẴN SÀNG (opt-in).** `render.yaml` giữ `--workers 1` mặc định cho an toàn; bật multi-worker bằng cách **set `WS_REDIS_URL`** (Redis) rồi nâng `--workers`. **Không nâng workers khi chưa có Redis** — mỗi worker sẽ rơi về state cục bộ (đúng bug P0-6 cũ). Hướng dẫn + env mẫu đã ghi trong `render.yaml`.
 
 A là bước đệm: nếu sau này cần retry/backpressure bền thì tiến hoá lên B (arq) mà không phí công.
 

@@ -5,10 +5,14 @@ services:
     region: singapore
     plan: starter
     buildCommand: pip install -r requirements.txt
-    # Single worker on purpose: APSV2Service keeps job/task/semaphore state
-    # in-process (no shared store yet), so >1 worker means a job created on one
-    # worker is invisible to another → random "job not found". Matches the
-    # Dockerfile CMD. Raise this only after job state moves to a shared store.
+    # Default single worker. Multi-worker is now SUPPORTED but OPT-IN: job
+    # records persist in SQLite, and #6 Pha 1-3 add Redis-backed WS fan-out,
+    # a GLOBAL concurrency limit, and cross-worker cancel. To scale out:
+    #   1) provision Redis and set WS_REDIS_URL (see envVars below),
+    #   2) then raise --workers to N.
+    # Do NOT raise --workers without WS_REDIS_URL, or each worker falls back to
+    # local-only state (progress fan-out, concurrency cap and cancel all become
+    # per-process again — the old "job not found" / N x limit behaviour).
     startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /health
     autoDeploy: true
@@ -21,5 +25,12 @@ services:
         value: "https://translate.prismy.in,https://prismy.in"
       - key: PYTHON_VERSION
         value: "3.11.0"
+      # Uncomment + point at your Redis to enable multi-worker (then raise
+      # --workers above). Empty/unset = local-only single-worker (default).
+      # - key: WS_REDIS_URL
+      #   fromService:
+      #     type: redis
+      #     name: aps-redis
+      #     property: connectionString
     domains:
       - translate.prismy.in
