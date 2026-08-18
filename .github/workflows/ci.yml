@@ -33,8 +33,13 @@ jobs:
       - name: Install production requirements only (no dev/test extras)
         run: pip install -r requirements.txt
       - name: Import api.main + resolve get_settings()
+        # Also import core.health_monitor: the /health route imports it lazily
+        # (inside the handler), so a plain `import api.main` does NOT surface a
+        # missing prod dep like psutil — it only 500s at request time. Importing
+        # it here turns that runtime outage into a red import-smoke, and guards
+        # against psutil being dropped from requirements.txt again.
         run: |
-          python -c "import api.main; from config.settings import get_settings; assert get_settings() is not None; print('import-smoke OK')"
+          python -c "import api.main; import core.health_monitor; from config.settings import get_settings; assert get_settings() is not None; print('import-smoke OK')"
         env:
           DATABASE_BACKEND: sqlite
           OPENAI_API_KEY: test-key

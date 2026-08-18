@@ -41,6 +41,9 @@ anyio==4.11.0
 sniffio==1.3.1
 six==1.17.0
 
+# --- System Metrics (health monitoring: core/health_monitor.py, streaming) ---
+psutil==7.2.2
+
 # --- Web API ---
 fastapi==0.121.1
 starlette==0.49.3
