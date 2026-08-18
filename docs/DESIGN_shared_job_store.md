@@ -57,7 +57,7 @@ P0-6 (đã vá tạm): `render.yaml` chạy `--workers 2` nhưng state job giữ
 **Trước mắt:** xác nhận anh có **thực sự cần multi-worker bây giờ** không. Nếu tải một-worker (đã nới nhờ item 5) còn dư → **Phương án D**, để #6 lại, làm việc giá trị hơn.
 
 **Khi cần scale ngang:** **Phương án A**, làm **theo pha** để mỗi pha tự đứng được:
-- **Pha 1 — WS pub/sub qua Redis:** thay `manager.broadcast` cục bộ bằng publish→subscribe. Bật `--workers 2` mà tiến độ vẫn tới đúng client. *(Giá trị lớn nhất, rủi ro thấp nhất.)*
+- **Pha 1 — WS pub/sub qua Redis:** ✅ **XONG** (commit trên nhánh). `ConnectionManager.broadcast` giờ publish lên kênh Redis; mỗi worker chạy subscriber → broadcast cục bộ. Mọi call site `manager.broadcast(...)` cũ tự động fan-out chéo worker, **0 thay đổi call site**. Degrade an toàn về local khi `WS_REDIS_URL` rỗng/không nối được (mặc định). Test thật với redis: cross-worker fan-out + không nhân đôi + skip trung thực khi vắng redis. *(Giá trị lớn nhất, rủi ro thấp nhất.)*
 - **Pha 2 — Semaphore toàn cục** bằng lease Redis (giới hạn đồng thời đúng khi >1 worker).
 - **Pha 3 — Runtime state + cancel qua Redis** (bỏ phụ thuộc `_jobs` cache; cancel chéo worker).
 - **Pha 4 — Bật `--workers N`** ở `render.yaml` sau khi Pha 1–3 xanh.

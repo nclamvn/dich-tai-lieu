@@ -605,6 +605,20 @@ async def startup_recover_stuck_v1_jobs():
         logger.debug(f"V1 stuck job recovery skipped: {e}")
 
 
+@app.on_event("startup")
+async def startup_ws_fanout():
+    """Enable Redis WS fan-out across workers (no-op if ws_redis_url is empty)."""
+    from api.deps import manager
+    from config.settings import settings
+    await manager.start_redis(settings.ws_redis_url, settings.ws_pubsub_channel)
+
+
+@app.on_event("shutdown")
+async def shutdown_ws_fanout():
+    from api.deps import manager
+    await manager.stop_redis()
+
+
 # Batch Processing: Include batch job routes
 app.include_router(batch_router)
 

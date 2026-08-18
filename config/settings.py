@@ -218,6 +218,11 @@ class Settings(BaseSettings):
     database_url: Optional[str] = None
     database_dir: Path = BASE_DIR / "data"
 
+    # WebSocket fan-out across workers (#6 Pha 1). Empty ws_redis_url => local-only
+    # broadcast (single worker; current behaviour). Set to e.g. redis://host:6379/0.
+    ws_redis_url: str = ""
+    ws_pubsub_channel: str = "aps:events"
+
     # ========== Cleanup / Retention ==========
     cleanup_upload_retention_days: int = 7
     cleanup_output_retention_days: int = 30
