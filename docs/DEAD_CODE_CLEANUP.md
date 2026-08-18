@@ -32,9 +32,9 @@ Xoá + verify: `import api.main` OK, **2012 test collect không lỗi**, **378 t
 - Còn sống qua lazy: `health_monitor, latex, latex_utils, ocr, quality, services, stem, streaming`.
 - `glossary/` (top-level) — **không phải code**, là thư mục **dữ liệu** `.json` (default/finance/stem…). Không thuộc diện code chết.
 
-## Chờ anh duyệt — Batch 2 (chết cho app, chỉ test dùng)
+## ✅ ĐÃ XOÁ — Batch 2 (chết cho app, chỉ test dùng) — anh đã duyệt
 
-Xoá được **nhưng phải xoá kèm test của chúng** (test đang test code chết). Vì việc này bỏ luôn phần coverage đó nên em để anh quyết:
+Xoá kèm test của chúng. `test_stress_suite` giữ lại (còn test module sống); method dùng formatting/segmentation nay **skip trung thực** khi module vắng.
 
 | module chết | test phải xoá kèm |
 |-------------|-------------------|
@@ -43,9 +43,9 @@ Xoá được **nhưng phải xoá kèm test của chúng** (test đang test cod
 | `core/layout_preserve/` | `tests/test_translategemma_integration.py` |
 | `core/segmentation/` | `tests/stress/test_stress_suite.py` |
 
-## Chờ anh xác nhận — Batch 3 (chết cho app, nhưng script/CLI còn gọi)
+## ✅ ĐÃ XOÁ — Batch 3 (chết cho app, script/CLI còn gọi) — anh xác nhận đã ngừng dùng
 
-Xoá sẽ làm hỏng các entrypoint rời. Xác nhận các script/CLI này đã ngừng dùng rồi mới xoá:
+Xoá module **kèm luôn** các script/CLI phụ thuộc (demo_phase2, benchmark_optimized/template, xray_classification, translate_pdf, translate_pdf_preserve_layout):
 
 | module | bị gọi bởi |
 |--------|-----------|
@@ -55,6 +55,8 @@ Xoá sẽ làm hỏng các entrypoint rời. Xác nhận các script/CLI này đ
 | `core/document_classifier.py` | `tests/core/test_document_classifier.py` + `translate_pdf.py` (CLI gốc) |
 | `core/layout_preserving_translator.py` | `translate_pdf_preserve_layout.py` (CLI gốc) |
 
-## Đề xuất
+## Tổng kết
 
-Batch 1 an toàn tuyệt đối → đã làm. Batch 2/3 cần quyết định của anh (xoá kèm test / xác nhận script ngừng dùng). Nói em batch nào thì em xoá tiếp theo cùng cách (xoá → verify import + test → commit từng mẻ nhỏ).
+Batch 1 + 2 + 3 **đã xoá xong**: **~29.8K dòng** code chết (Batch 1 ~13.7K + Batch 2/3 ~16.1K, 72 file). Mỗi mẻ verify: `import api.main` OK, 2300 test collect không lỗi, `tests/core` xanh. 15 lỗi `tests/integration` là **có sẵn, không liên quan** (14 = bug `Heading(metadata=)` trong `core/rendering` — không đụng tới; 1 = `ui_dashboard` 404 — không đổi route nào; cả hai fail y hệt khi stash phần xoá; integration chạy continue-on-error trong CI).
+
+Không còn "bẫy" nào bị xoá nhầm: `export.py` (nạp theo path), `layout_cleaner` (lazy qua stem), `glossary_legacy` (translator dùng), `pdf_renderer_v2`, `book_writer` (lỗi-nhưng-được-tham-chiếu) — đều **giữ nguyên**.
