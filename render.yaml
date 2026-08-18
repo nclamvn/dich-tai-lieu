@@ -5,7 +5,11 @@ services:
     region: singapore
     plan: starter
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT --workers 2
+    # Single worker on purpose: APSV2Service keeps job/task/semaphore state
+    # in-process (no shared store yet), so >1 worker means a job created on one
+    # worker is invisible to another → random "job not found". Matches the
+    # Dockerfile CMD. Raise this only after job state moves to a shared store.
+    startCommand: uvicorn api.main:app --host 0.0.0.0 --port $PORT --workers 1
     healthCheckPath: /health
     autoDeploy: true
     envVars:
