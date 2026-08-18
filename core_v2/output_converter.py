@@ -22,6 +22,8 @@ from core.docx_engine import DocxRenderer, create_template
 # Professional PDF rendering
 from core.pdf_engine import PdfRenderer, create_pdf_template
 
+from core_v2.aio_utils import run_blocking
+
 logger = logging.getLogger(__name__)
 
 
@@ -875,24 +877,27 @@ class OutputConverter:
 
         output_path = Path(output_path)
 
-        # Create renderer with selected template
-        renderer = DocxRenderer(template=template)
+        def _render():
+            # Create renderer with selected template
+            renderer = DocxRenderer(template=template)
 
-        # Build meta with language so renderers use correct i18n strings
-        meta = DocumentMeta(title=title, author=author, language=language)
+            # Build meta with language so renderers use correct i18n strings
+            meta = DocumentMeta(title=title, author=author, language=language)
 
-        # Render from markdown with language-aware meta
-        normalizer = renderer.normalizer
-        doc = normalizer.from_markdown(markdown_content, meta)
+            # Render from markdown with language-aware meta
+            normalizer = renderer.normalizer
+            doc = normalizer.from_markdown(markdown_content, meta)
 
-        # Update TOC/glossary/bibliography titles based on language
-        doc.toc.title = get_string("table_of_contents", language)
-        if doc.glossary:
-            doc.glossary.title = get_string("glossary", language)
-        if doc.bibliography:
-            doc.bibliography.title = get_string("references", language)
+            # Update TOC/glossary/bibliography titles based on language
+            doc.toc.title = get_string("table_of_contents", language)
+            if doc.glossary:
+                doc.glossary.title = get_string("glossary", language)
+            if doc.bibliography:
+                doc.bibliography.title = get_string("references", language)
 
-        result_path = renderer.render_document(doc, str(output_path))
+            return renderer.render_document(doc, str(output_path))
+
+        result_path = await run_blocking(_render)
 
         logger.info(f"Professional DOCX from markdown: {result_path}")
         return result_path
@@ -978,22 +983,25 @@ class OutputConverter:
 
         output_path = Path(output_path)
 
-        # Create renderer with selected template
-        renderer = PdfRenderer(template=template)
+        def _render():
+            # Create renderer with selected template
+            renderer = PdfRenderer(template=template)
 
-        # Build document with language-aware meta
-        normalizer = DocumentNormalizer()
-        meta = DocumentMeta(title=title, author=author, language=language)
-        document = normalizer.from_markdown(markdown_content, meta)
+            # Build document with language-aware meta
+            normalizer = DocumentNormalizer()
+            meta = DocumentMeta(title=title, author=author, language=language)
+            document = normalizer.from_markdown(markdown_content, meta)
 
-        # Update section titles based on language
-        document.toc.title = get_string("table_of_contents", language)
-        if document.glossary:
-            document.glossary.title = get_string("glossary", language)
-        if document.bibliography:
-            document.bibliography.title = get_string("references", language)
+            # Update section titles based on language
+            document.toc.title = get_string("table_of_contents", language)
+            if document.glossary:
+                document.glossary.title = get_string("glossary", language)
+            if document.bibliography:
+                document.bibliography.title = get_string("references", language)
 
-        result_path = renderer.render(document, str(output_path), include_toc=True, include_glossary=False)
+            return renderer.render(document, str(output_path), include_toc=True, include_glossary=False)
+
+        result_path = await run_blocking(_render)
 
         logger.info(f"Professional PDF from markdown: {result_path}")
         return result_path

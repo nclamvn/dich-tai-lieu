@@ -27,6 +27,7 @@ from .vision_reader import VisionReader, VisionDocument
 from .reliability import ChunkTranslationError, backoff_delay, is_transient_error
 from .term_ledger import TermLedger, extract_terms, load_glossary_ledger
 from .context_builder import build_chunk_contexts
+from core_v2.aio_utils import run_blocking
 
 # Optional wiring — degrade gracefully if config/cache modules are unavailable.
 try:
@@ -277,6 +278,33 @@ JAPANESE → ENGLISH SPECIFIC REQUIREMENTS:
    - Japanese-specific concepts (tatami, hanami, etc.)
    - Cultural references that Western readers may not understand
 """
+
+
+def _extract_pdf_text_sync(pdf_path: Path) -> str:
+    """Synchronous legacy PDF text extraction.
+
+    Blocking (fitz/pdfplumber) work extracted from _extract_pdf_text_legacy so
+    it can be run off the event loop via run_blocking.
+    """
+    try:
+        import fitz  # PyMuPDF
+        doc = fitz.open(str(pdf_path))
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        doc.close()
+        logger.info(f"Legacy PDF extraction: {len(text)} chars")
+        return text
+    except ImportError:
+        try:
+            import pdfplumber
+            with pdfplumber.open(str(pdf_path)) as pdf:
+                text = ""
+                for page in pdf.pages:
+                    text += page.extract_text() or ""
+                return text
+        except ImportError:
+            raise RuntimeError("PyMuPDF or pdfplumber required for PDF extraction")
 
 
 class UniversalPublisher:
@@ -1317,25 +1345,7 @@ class UniversalPublisher:
 
         Use Vision mode instead for better formula preservation.
         """
-        try:
-            import fitz  # PyMuPDF
-            doc = fitz.open(str(pdf_path))
-            text = ""
-            for page in doc:
-                text += page.get_text()
-            doc.close()
-            logger.info(f"Legacy PDF extraction: {len(text)} chars")
-            return text
-        except ImportError:
-            try:
-                import pdfplumber
-                with pdfplumber.open(str(pdf_path)) as pdf:
-                    text = ""
-                    for page in pdf.pages:
-                        text += page.extract_text() or ""
-                    return text
-            except ImportError:
-                raise RuntimeError("PyMuPDF or pdfplumber required for PDF extraction")
+        return await run_blocking(_extract_pdf_text_sync, pdf_path)
 
 
 # ==================== CONVENIENCE FUNCTIONS ====================
