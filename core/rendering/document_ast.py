@@ -135,7 +135,10 @@ class Block:
     block_type: BlockType = field(init=False, default=BlockType.PARAGRAPH)
     # init=False so subclasses can add required fields without kw_only (Python 3.9 compat)
     style: Optional[ParagraphStyle] = field(init=False, default=None)
-    metadata: Dict[str, Any] = field(init=False, default_factory=dict)
+    # metadata IS constructor-settable, but keyword-only so subclasses can still
+    # declare required positional fields (the ASTBuilder passes per-node metadata,
+    # e.g. Heading(level, text, number, metadata=...)). Requires Python 3.10+.
+    metadata: Dict[str, Any] = field(default_factory=dict, kw_only=True)
 
 
 @dataclass
