@@ -431,3 +431,17 @@ class Settings(BaseSettings):
 
 # Global settings instance
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """Return the process-wide ``Settings`` singleton.
+
+    Several API modules import this accessor (``api.main``, ``api.deps``,
+    ``api.auth_router``, ``api.aps_v2_service``). Before it existed those
+    imports failed at call time, surfacing as HTTP 500 on ``/ws`` and on the
+    password-reset flow, and — in ``api.deps.get_current_user_id`` — being
+    swallowed by a broad ``except`` so auth silently fell through to
+    ``"default_user"`` (auth fail-open). Returning the same instance created
+    above keeps configuration consistent everywhere.
+    """
+    return settings
