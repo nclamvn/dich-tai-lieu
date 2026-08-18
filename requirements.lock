@@ -68,6 +68,10 @@ email-validator==2.3.0
 # --- Cache ---
 redis==7.1.0
 
+# --- Database / ORM (glossary + Translation Memory v1) ---
+# Known-good floor; SQLAlchemy 2.0 API is stable, bump freely within 2.0.x.
+SQLAlchemy==2.0.36
+
 # --- Security ---
 fastapi-csrf-protect==0.3.4
 
