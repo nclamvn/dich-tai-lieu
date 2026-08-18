@@ -27,11 +27,9 @@ class TestAPIBasics:
         assert response.status_code == 200
         assert "text/html" in response.headers.get("content-type", "")
 
-    def test_ui_dashboard_endpoint(self, client):
-        """Test UI dashboard endpoint."""
-        response = client.get("/ui")
-        assert response.status_code == 200
-        assert "text/html" in response.headers.get("content-type", "")
+    # NOTE: removed test_ui_dashboard_endpoint (GET /ui) — the backend is
+    # API-only; the UI is the separate frontend/ Next.js app, so there is no /ui
+    # route to serve HTML. `/` redirects to /docs (see test_root_endpoint).
 
     def test_health_check(self, client):
         """Test that API is responsive."""
