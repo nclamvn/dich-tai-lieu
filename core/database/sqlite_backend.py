@@ -59,10 +59,18 @@ class SQLiteBackend:
     protected by a threading.Lock for thread safety.
     """
 
-    def __init__(self, db_path: str | Path, persistent: bool = False):
+    def __init__(self, db_path: str | Path, persistent: bool = False,
+                 busy_timeout: float = 5.0):
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._persistent = persistent
+        # Busy timeout (seconds) a connection waits for a held write lock before
+        # raising "database is locked". Matters under concurrency: WAL allows one
+        # writer at a time, so with per-call connections (non-persistent) or
+        # multiple worker processes, concurrent writers must WAIT rather than
+        # fail. Set both the connect() timeout and PRAGMA busy_timeout so it
+        # applies regardless of how the driver routes it.
+        self._busy_timeout = max(0.0, float(busy_timeout))
         self._conn: Optional[sqlite3.Connection] = None
         self._lock: Optional[threading.Lock] = threading.Lock() if persistent else None
 
@@ -70,8 +78,10 @@ class SQLiteBackend:
         conn = sqlite3.connect(
             str(self.db_path),
             check_same_thread=not self._persistent,
+            timeout=self._busy_timeout,
         )
         conn.execute("PRAGMA journal_mode=WAL")
+        conn.execute(f"PRAGMA busy_timeout={int(self._busy_timeout * 1000)}")
         conn.execute("PRAGMA foreign_keys=ON")
         conn.row_factory = sqlite3.Row
         return conn

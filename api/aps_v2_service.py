@@ -25,6 +25,7 @@ from api.services.provider_router import ProviderRouter, RoutingMode
 from api.services.consistency_checker import ConsistencyChecker
 from api.services.layout_analyzer import LayoutAnalyzer
 from api.coordination import JobCoordinator
+from core_v2.aio_utils import run_blocking
 from api.services.epub_renderer import EpubRenderer, is_available as epub_available
 
 from .job_repository import get_job_repository, JobRepository
@@ -260,7 +261,7 @@ class APSV2Service:
 
         # QA-15: Queue overflow protection
         max_queued = int(os.getenv("MAX_QUEUED_JOBS", "100"))
-        active_jobs = self._repo.get_pending_jobs()
+        active_jobs = await run_blocking(self._repo.get_pending_jobs)
         if len(active_jobs) >= max_queued:
             raise ValueError(
                 f"Queue limit reached ({max_queued} active jobs). "
@@ -318,7 +319,7 @@ class APSV2Service:
         }
 
         # Save to database FIRST
-        self._repo.save(job_record)
+        await run_blocking(self._repo.save, job_record)
         self._jobs[job_id] = job_record
 
         # Start processing in background with Vision mode (respects global concurrency limit)
@@ -556,10 +557,10 @@ class APSV2Service:
             if result.error:
                 job["error"] = result.error
                 job["status"] = JobStatusV2.FAILED
-                self._repo.mark_failed(job_id, result.error)
+                await run_blocking(self._repo.mark_failed, job_id, result.error)
             else:
                 # Save completion to database
-                self._repo.mark_complete(job_id, job["output_paths"])
+                await run_blocking(self._repo.mark_complete, job_id, job["output_paths"])
 
             # QAPR: record call outcome for future routing decisions
             try:
@@ -593,17 +594,17 @@ class APSV2Service:
         except asyncio.CancelledError:
             job["status"] = JobStatusV2.CANCELLED
             job["error"] = "Job cancelled"
-            self._repo.mark_failed(job_id, "Job cancelled by user")
+            await run_blocking(self._repo.mark_failed, job_id, "Job cancelled by user")
             logger.info(f"[{job_id}] Job cancelled")
         except (FileNotFoundError, ValueError, OSError, RuntimeError) as e:
             job["status"] = JobStatusV2.FAILED
             job["error"] = str(e)
-            self._repo.mark_failed(job_id, str(e))
+            await run_blocking(self._repo.mark_failed, job_id, str(e))
             logger.error(f"[{job_id}] Job failed: {e}")
         except Exception as e:
             job["status"] = JobStatusV2.FAILED
             job["error"] = str(e)
-            self._repo.mark_failed(job_id, str(e))
+            await run_blocking(self._repo.mark_failed, job_id, str(e))
             logger.error(f"[{job_id}] Job failed (unexpected): {e}", exc_info=True)
 
             # QAPR: record failure
@@ -639,7 +640,7 @@ class APSV2Service:
 
     async def resume_pending_jobs(self):
         """Resume any pending/running jobs after server restart."""
-        pending_jobs = self._repo.get_pending_jobs()
+        pending_jobs = await run_blocking(self._repo.get_pending_jobs)
         resumed = 0
 
         for job in pending_jobs:
@@ -653,7 +654,7 @@ class APSV2Service:
             content_path = job.get("content_path")
             if not content_path or not Path(content_path).exists():
                 logger.warning(f"[{job_id}] Cannot resume: content file missing")
-                self._repo.mark_failed(job_id, "Content file missing after restart")
+                await run_blocking(self._repo.mark_failed, job_id, "Content file missing after restart")
                 continue
 
             # Ensure publisher is initialized
@@ -804,7 +805,7 @@ class APSV2Service:
         job["current_stage"] = ""
         job["error"] = None
         job["completed_at"] = None
-        self._repo.save(job)
+        await run_blocking(self._repo.save, job)
 
         # Re-process in background
         task = asyncio.create_task(self._process_job_with_limit(
