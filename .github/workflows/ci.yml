@@ -17,6 +17,29 @@ jobs:
       - run: pip install ruff
       - run: ruff check .
 
+  import-smoke:
+    # Clean-room import check: install ONLY requirements.txt — exactly what
+    # Render's buildCommand does — then prove the app imports and the settings
+    # accessor resolves. Catches a missing production dependency (e.g.
+    # SQLAlchemy, imported by the glossary/TM routers) and a missing
+    # get_settings() before they reach production. Both were real P0 outages.
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install production requirements only (no dev/test extras)
+        run: pip install -r requirements.txt
+      - name: Import api.main + resolve get_settings()
+        run: |
+          python -c "import api.main; from config.settings import get_settings; assert get_settings() is not None; print('import-smoke OK')"
+        env:
+          DATABASE_BACKEND: sqlite
+          OPENAI_API_KEY: test-key
+          ANTHROPIC_API_KEY: test-key
+
   backend-tests:
     runs-on: ubuntu-latest
     needs: lint
