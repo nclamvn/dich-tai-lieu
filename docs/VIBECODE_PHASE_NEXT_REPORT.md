@@ -34,8 +34,22 @@ Module mới `core_v2/aio_utils.py::run_blocking(func, *args, **kwargs)` = wrapp
 - **sqlite đồng bộ rải rác trên loop** (progress `update_progress`, đọc TM/glossary): cần gom về tầng repository + xử thread-safety cho kết nối sqlite → nên làm thành 1 chunk riêng, cẩn thận.
 - **Resume thật theo cache (#7)**: *giá trị đã giảm* — ChunkCache (Phase 1) khiến re-run tài liệu trùng gần như miễn phí + ra kết quả y hệt (đã chứng minh ở e2e smoke). Lợi ích còn lại chủ yếu là UX (%) + khỏi re-extract/re-assemble; ưu tiên thấp hơn.
 - **State job ra store dùng chung (#6)** và **dọn hai-stack (#8)**: thay đổi kiến trúc lớn/nhiều rủi ro → mỗi cái là một phase riêng.
-- **Frontend base-URL + error state (#9)**: gọn, verify offline được (tsc/build); ứng viên tốt cho phiên kế.
+
+---
+
+## Item 9 — Frontend: hợp nhất base-URL + hiện lỗi query (VERIFY REPORT)
+
+Thợ (subagent) BUILD theo 1 TIP, Chủ thầu VERIFY độc lập (tự chạy `tsc`, đọc diff, chạy test).
+
+**F1 — base-URL split-brain (nặng hơn sổ nợ ghi):** URL backend bị lặp ở `client.ts`, `hooks.ts`, trang job detail, client screenplay và panel settings — và **HAI** chỗ mặc định `:3000` (cổng Next.js) thay vì `:8000`: iframe xem trước PDF **và** toàn bộ API screenplay → trỏ nhầm server ở dev. Thêm `src/lib/api/config.ts` (một `API_BASE` + `WS_URL`), mọi nơi import từ đó. Sau sửa: `grep localhost` chỉ còn đúng `config.ts`.
+
+**F2 — nuốt lỗi query:** trang job detail và jobs list chỉ lấy `isLoading`, bỏ `isError` → request lỗi hiện màn trắng/"not found" thay vì báo lỗi. Thêm component tái dùng `<QueryError>` (khớp style `empty-state`, có nút "Thử lại") và render khi `isError` ở cả hai trang. (Dashboard gộp 4 query, không phải drop-in 3 dòng → hoãn, ghi rõ.)
+
+**VERIFY:** `npx tsc --noEmit` **sạch (exit 0)**; **56/56 test frontend pass**; `grep localhost:3000|8000` chỉ còn `config.ts`; đọc diff xác nhận cả 2 bug `:3000` đã mất, chèn `if (isError)` đúng vị trí (sau loading, trước `!job`).
+
+**STATUS: READY.** Hai bug `:3000` (tải PDF + screenplay) đã hết; lỗi API giờ hiển thị tử tế ở 2 trang chính. Roll-out `<QueryError>` cho các trang còn lại là việc cơ học nối tiếp.
 
 ## Commit
 
 - `a5416c8` perf(engine): run blocking PDF extraction and DOCX/PDF rendering off the event loop
+- `7db5acf` fix(frontend): unify API base URL and surface query errors (P1-F1/F2)
