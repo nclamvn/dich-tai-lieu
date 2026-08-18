@@ -33,6 +33,77 @@ class Settings(BaseSettings):
     model: str = "gpt-4o-mini"
     quality_mode: str = "balanced"  # fast | balanced | quality
 
+    # ---- Per-provider model registry (env-overridable) ----
+    # These feed ai_providers.unified_client so model IDs can be refreshed
+    # from .env WITHOUT touching code. Defaults track the newest family the
+    # repo already standardized on (see core/book_writer/prompts.py).
+    anthropic_text_model: str = "claude-sonnet-4-5-20250929"
+    anthropic_vision_model: str = "claude-sonnet-4-5-20250929"
+    openai_text_model: str = "gpt-4o-mini"
+    openai_vision_model: str = "gpt-4o"
+    deepseek_text_model: str = "deepseek-chat"
+    gemini_text_model: str = "gemini-2.0-flash"
+    gemini_vision_model: str = "gemini-2.0-flash"
+
+    # ---- Translation determinism & caching (live core_v2 path) ----
+    # Low temperature => faithful, low-variance translation. The live
+    # orchestrator previously ran at provider-default (~1.0).
+    translation_temperature: float = 0.3
+    # Anthropic prompt caching of the static system prefix (role + LaTeX
+    # rules + profile + DNA). Cuts input tokens ~30-50% on multi-chunk docs.
+    translation_prompt_cache_enabled: bool = True
+    # Bump to invalidate all chunk-cache entries after a prompt/algorithm change.
+    translation_prompt_version: str = "v2"
+
+    # ---- Terminology ledger (auto-glossary + explicit glossaries) ----
+    # Auto-extract key terms/proper nouns per document and inject them into the
+    # cached system prompt so terminology stays consistent across every chunk.
+    translation_auto_glossary_enabled: bool = True
+    # Max terms rendered into the prompt terminology block (highest priority first).
+    translation_glossary_max_terms: int = 80
+    # Comma-separated explicit glossary IDs to load (empty = none). Glossary terms
+    # outrank auto-extracted ones.
+    translation_glossary_ids: str = ""
+
+    # ---- Reliability: retry / backoff for transient API errors ----
+    translation_max_retries: int = 4        # attempts per chunk before failing the job
+    translation_backoff_base: float = 2.0   # exponential base (seconds)
+    translation_backoff_cap: float = 60.0   # max single backoff (seconds)
+    # How long a provider stays benched after a transient failure before it
+    # is retried again (was: benched permanently for the whole process).
+    provider_health_ttl_seconds: float = 300.0
+
+    # ---- Bounded repair pass for suspect chunks ----
+    # After translation, re-translate ONLY the chunks the deterministic quality
+    # gate flags (empty / truncated / wrong-language / dropped-formula) and adopt
+    # a retry only when it is strictly better. Off => today's behavior unchanged.
+    translation_repair_enabled: bool = True
+    # Cap how many suspect chunks a single job repairs (bounds cost/latency).
+    translation_repair_max_chunks: int = 20
+
+    # ---- Optional semantic faithfulness pass feeding the repair loop ----
+    # Opt-in LLM check that judges whether a translation faithfully renders its
+    # source (catches meaning drift the deterministic gate is blind to). Only
+    # deterministically-clean chunks are checked, and any judged unfaithful feed
+    # the SAME bounded repair loop. Off (default) => no extra LLM calls, repair
+    # behavior byte-for-byte unchanged.
+    translation_semantic_verify_enabled: bool = False
+    # Cap how many chunks a single job semantically checks (bounds cost).
+    translation_semantic_verify_max: int = 30
+
+    # ---- Rolling cross-chunk context (deterministic, LLM-free by default) ----
+    # How many older chunks feed each chunk's rolling-context gist (preceding =
+    # older-context gist + exact tail of the immediately-preceding chunk).
+    translation_context_window: int = 3
+    # Optional LLM summary pre-pass: one short summary per chunk enriches the
+    # gist. Default OFF => no extra API calls; deterministic context stands.
+    translation_context_summary_enabled: bool = False
+
+    # ---- Chunking: hard per-chunk token budget (structure-preserving) ----
+    # No emitted semantic chunk exceeds this estimate_tokens count; oversized
+    # chunks are split at the finest content-preserving boundary available.
+    chunk_max_tokens: int = 2000
+
     # ========== Languages ==========
     source_lang: str = "en"  # Source language code
     target_lang: str = "vi"  # Target language code
@@ -120,6 +191,10 @@ class Settings(BaseSettings):
     # Translation Memory
     tm_enabled: bool = True
     tm_fuzzy_threshold: float = 0.85  # 85% similarity for fuzzy matches
+    # Inject approved TM translations into the live prompt as reuse hints
+    # (read/hints path only — no-op when the TM is empty/unavailable).
+    tm_reuse_enabled: bool = True
+    tm_max_hints: int = 5  # Max approved TM hints prepended to a chunk's prompt
 
     # AST Pipeline (experimental - for PDF export enhancement)
     use_ast_pipeline: bool = False  # Default OFF for backward compatibility
@@ -142,6 +217,11 @@ class Settings(BaseSettings):
     database_backend: str = "sqlite"  # sqlite | postgresql (Sprint 2)
     database_url: Optional[str] = None
     database_dir: Path = BASE_DIR / "data"
+
+    # WebSocket fan-out across workers (#6 Pha 1). Empty ws_redis_url => local-only
+    # broadcast (single worker; current behaviour). Set to e.g. redis://host:6379/0.
+    ws_redis_url: str = ""
+    ws_pubsub_channel: str = "aps:events"
 
     # ========== Cleanup / Retention ==========
     cleanup_upload_retention_days: int = 7
@@ -356,3 +436,17 @@ class Settings(BaseSettings):
 
 # Global settings instance
 settings = Settings()
+
+
+def get_settings() -> Settings:
+    """Return the process-wide ``Settings`` singleton.
+
+    Several API modules import this accessor (``api.main``, ``api.deps``,
+    ``api.auth_router``, ``api.aps_v2_service``). Before it existed those
+    imports failed at call time, surfacing as HTTP 500 on ``/ws`` and on the
+    password-reset flow, and — in ``api.deps.get_current_user_id`` — being
+    swallowed by a broad ``except`` so auth silently fell through to
+    ``"default_user"`` (auth fail-open). Returning the same instance created
+    above keeps configuration consistent everywhere.
+    """
+    return settings

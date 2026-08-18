@@ -58,7 +58,8 @@ COPY integration_bridge/ ./integration_bridge/
 COPY services/ ./services/
 COPY beautification/ ./beautification/
 COPY glossary/ ./glossary/
-COPY ui/ ./ui/
+# No `COPY ui/` — the web UI is a separate Next.js app under `frontend/`,
+# built and deployed independently. This image is the API backend only.
 
 # Create data directories
 RUN mkdir -p data/uploads data/outputs data/cache data/checkpoints \

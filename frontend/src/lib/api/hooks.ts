@@ -8,10 +8,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { jobs, glossaries, dashboard, profiles, bookWriter, bookWriterV2, engines, settingsApi, tm, batch, editor } from "./client";
 import type { TranslateRequest, CreateBookRequest, ApproveOutlineRequest, BookV2CreateRequest, TMSegment, DraftUploadResponse, DraftAnalysisResponse } from "./types";
-
-const WS_URL =
-  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
-    .replace(/^http/, "ws") + "/ws";
+import { API_BASE, WS_URL } from "./config";
 
 // ─── WebSocket ───
 
@@ -273,9 +270,7 @@ export function useReaderContent(jobId: string | null) {
 
 // ─── Book Writer WebSocket ───
 
-const BOOK_WS_BASE =
-  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
-    .replace(/^http/, "ws") + "/api/v2/books";
+const BOOK_WS_BASE = API_BASE.replace(/^http/, "ws") + "/api/v2/books";
 
 /**
  * Real-time book pipeline progress via WebSocket.
@@ -477,9 +472,7 @@ export function useDeleteBook() {
 
 // ─── Book Writer v2 (9-agent pipeline) ───
 
-const BOOK_V2_WS_BASE =
-  (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000")
-    .replace(/^http/, "ws") + "/api/v2/books-v2";
+const BOOK_V2_WS_BASE = API_BASE.replace(/^http/, "ws") + "/api/v2/books-v2";
 
 const BOOK_V2_TERMINAL = new Set(["completed", "failed", "paused"]);
 

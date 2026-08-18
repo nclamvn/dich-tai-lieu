@@ -702,7 +702,10 @@ class TestHeadingPatternsStress:
 
     def test_japanese_heading_detection_stress(self):
         """Stress test Japanese heading detection - focus on stability"""
-        from core.formatting.utils.heading_patterns import get_heading_level, detect_language
+        try:
+            from core.formatting.utils.heading_patterns import get_heading_level, detect_language
+        except ImportError:
+            pytest.skip("core.formatting removed (dead code cleanup #8)")
 
         test_headings = [
             "第一章：はじめに",

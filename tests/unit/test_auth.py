@@ -80,11 +80,12 @@ class TestUserModels:
         """UserCreate model should validate required fields."""
         from core.auth.models import UserCreate
 
-        # Valid user
+        # Valid user — password must satisfy the UserCreate policy:
+        # >= 12 chars, and at least one upper, lower, digit and special char.
         user = UserCreate(
             email="test@example.com",
             username="testuser",
-            password="password123"
+            password="Password1234!"
         )
         assert user.email == "test@example.com"
         assert user.username == "testuser"

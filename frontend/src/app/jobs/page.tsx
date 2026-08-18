@@ -7,6 +7,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/ui/empty-state";
+import { QueryError } from "@/components/ui/query-error";
 import { useJobs, useBulkDeleteJobs, useCancelJob } from "@/lib/api/hooks";
 import { jobs as jobsApi } from "@/lib/api/client";
 import { formatDate, statusVariant } from "@/lib/utils";
@@ -16,7 +17,7 @@ const STATUS_FILTERS = ["all", "processing", "pending", "completed", "failed", "
 const JOBS_PER_PAGE = 20;
 
 export default function JobsPage() {
-  const { data, isLoading } = useJobs({ limit: 200 });
+  const { data, isLoading, isError, error, refetch } = useJobs({ limit: 200 });
   const bulkDelete = useBulkDeleteJobs();
   const cancelJob = useCancelJob();
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -130,6 +131,10 @@ export default function JobsPage() {
         ))}
       </div>
     );
+  }
+
+  if (isError) {
+    return <QueryError error={error} onRetry={() => refetch()} />;
   }
 
   if (allJobs.length === 0) {

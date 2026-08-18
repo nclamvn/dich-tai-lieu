@@ -5,6 +5,7 @@ import { useLocale } from "@/lib/i18n";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useSettingsSection, useUpdateSettings, useResetSettings } from "@/lib/api/hooks";
+import { API_BASE } from "@/lib/api/config";
 import { FieldInput, FieldSelect, FieldToggle, FieldSection } from "./form-fields";
 import type { AdvancedSettingsConfig } from "@/lib/api/types";
 import { RotateCcw, Save, Check, AlertTriangle } from "lucide-react";
@@ -159,7 +160,7 @@ export function AdvancedPanel() {
           <div className="grid grid-cols-2 gap-2 text-sm">
             <span style={{ color: "var(--fg-tertiary)" }}>{t.settings.backendUrl}</span>
             <span className="font-mono text-xs" style={{ color: "var(--fg-secondary)" }}>
-              {process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}
+              {API_BASE}
             </span>
             <span style={{ color: "var(--fg-tertiary)" }}>{t.settings.version}</span>
             <span style={{ color: "var(--fg-secondary)" }}>{t.settings.versionInfo}</span>

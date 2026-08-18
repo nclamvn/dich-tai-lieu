@@ -24,8 +24,29 @@ from .publishing_profiles import PublishingProfile, PROFILES, get_profile, BASE_
 from .output_converter import OutputConverter, OutputFormat
 from .verifier import QualityVerifier, VerificationResult
 from .vision_reader import VisionReader, VisionDocument
+from .reliability import ChunkTranslationError, backoff_delay, is_transient_error
+from .term_ledger import TermLedger, extract_terms, load_glossary_ledger
+from .context_builder import build_chunk_contexts
+from core_v2.aio_utils import run_blocking
+
+# Optional wiring — degrade gracefully if config/cache modules are unavailable.
+try:
+    from config.settings import settings as _settings
+except Exception:  # pragma: no cover
+    _settings = None
+
+try:
+    from core.cache.chunk_cache import ChunkCache, compute_chunk_key
+except Exception:  # pragma: no cover
+    ChunkCache = None
+    compute_chunk_key = None
 
 logger = logging.getLogger(__name__)
+
+
+def _cfg(name: str, default):
+    """Read a setting with a safe fallback when settings are unavailable."""
+    return getattr(_settings, name, default) if _settings is not None else default
 
 
 class JobStatus(Enum):
@@ -87,7 +108,13 @@ class PublishingJob:
 
 # ==================== TRANSLATION PROMPTS ====================
 
-TRANSLATION_PROMPT = """You are a professional translator and publisher.
+# The translation prompt is split into a STATIC system block (role + math
+# rules + profile + document DNA — constant across every chunk of a document)
+# and a DYNAMIC user block (per-chunk context + source text). This lets the
+# static prefix be cached (Anthropic prompt caching / OpenAI automatic caching),
+# cutting input tokens 30-50% on multi-chunk documents, and keeps per-chunk
+# messages small.
+TRANSLATION_SYSTEM = """You are a professional translator and publisher.
 
 DOCUMENT DNA:
 {dna_context}
@@ -95,16 +122,7 @@ DOCUMENT DNA:
 PUBLISHING PROFILE:
 {profile_prompt}
 
-CONTEXT:
-- This is chunk {chunk_index} of {total_chunks}
-- Previous content: {previous_summary}
-- Next content: {next_preview}
-
-TRANSLATION TASK:
-Translate the following text from {source_lang} to {target_lang}.
-
-Source Text:
-{source_text}
+{glossary}
 
 CRITICAL REQUIREMENTS FOR MATHEMATICAL CONTENT:
 
@@ -142,6 +160,22 @@ OUTPUT:
 Provide ONLY the translated text. Preserve ALL LaTeX math notation exactly as in the original.
 Do not add explanations or meta-commentary.
 """
+
+# Dynamic, per-chunk portion (kept small so the cached system prefix dominates).
+TRANSLATION_USER = """CONTEXT:
+- This is chunk {chunk_index} of {total_chunks}
+- Previous content: {previous_summary}
+- Next content: {next_preview}
+
+TRANSLATION TASK:
+Translate the following text from {source_lang} to {target_lang}.
+
+Source Text:
+{source_text}"""
+
+# Back-compat: a single combined prompt (system + user) for any caller/test
+# that still expects the original one-shot template.
+TRANSLATION_PROMPT = TRANSLATION_SYSTEM + "\n\n" + TRANSLATION_USER
 
 ASSEMBLY_PROMPT = """You are a professional editor preparing a translated document for publication.
 
@@ -246,6 +280,33 @@ JAPANESE → ENGLISH SPECIFIC REQUIREMENTS:
 """
 
 
+def _extract_pdf_text_sync(pdf_path: Path) -> str:
+    """Synchronous legacy PDF text extraction.
+
+    Blocking (fitz/pdfplumber) work extracted from _extract_pdf_text_legacy so
+    it can be run off the event loop via run_blocking.
+    """
+    try:
+        import fitz  # PyMuPDF
+        doc = fitz.open(str(pdf_path))
+        text = ""
+        for page in doc:
+            text += page.get_text()
+        doc.close()
+        logger.info(f"Legacy PDF extraction: {len(text)} chars")
+        return text
+    except ImportError:
+        try:
+            import pdfplumber
+            with pdfplumber.open(str(pdf_path)) as pdf:
+                text = ""
+                for page in pdf.pages:
+                    text += page.extract_text() or ""
+                return text
+        except ImportError:
+            raise RuntimeError("PyMuPDF or pdfplumber required for PDF extraction")
+
+
 class UniversalPublisher:
     """
     The main orchestrator for Claude-native publishing.
@@ -290,6 +351,82 @@ class UniversalPublisher:
 
         # Semaphore for concurrency control
         self._semaphore = asyncio.Semaphore(concurrency)
+
+        # --- Translation quality / cost knobs (env-overridable via settings) ---
+        self.translation_temperature: float = float(_cfg("translation_temperature", 0.3))
+        self.prompt_cache_enabled: bool = bool(_cfg("translation_prompt_cache_enabled", True))
+        self.prompt_version: str = str(_cfg("translation_prompt_version", "v2"))
+        self.max_retries: int = int(_cfg("translation_max_retries", 4))
+        self.backoff_base: float = float(_cfg("translation_backoff_base", 2.0))
+        self.backoff_cap: float = float(_cfg("translation_backoff_cap", 60.0))
+
+        # --- Terminology ledger (auto-glossary + explicit glossaries) ---
+        # Built once per job in publish() and injected into the cached system
+        # prompt so proper nouns / key terms stay consistent across chunks.
+        self.auto_glossary_enabled = bool(_cfg("translation_auto_glossary_enabled", True))
+        self.glossary_max_terms = int(_cfg("translation_glossary_max_terms", 80))
+        self.glossary_ids = [
+            s.strip() for s in str(_cfg("translation_glossary_ids", "")).split(",") if s.strip()
+        ]
+        self._active_ledger = None  # set per-job in publish()
+
+        # Cache signature: same (provider, model, temperature, prompt version)
+        # => same cache key. Changing any of them invalidates reuse, which
+        # prevents serving a translation produced under a different config.
+        self._provider_sig = str(_cfg("provider", ""))
+        self._model_sig = str(_cfg("model", ""))
+
+        # --- Chunk cache (persistent translation memoization) ---
+        self.chunk_cache = None
+        cache_on = bool(_cfg("chunk_cache_enabled", True)) and bool(_cfg("cache_enabled", True))
+        if cache_on and ChunkCache is not None and compute_chunk_key is not None:
+            try:
+                self.chunk_cache = ChunkCache()  # defaults to settings.cache_dir/chunks.db
+                logger.info("ChunkCache enabled for core_v2 translation path")
+            except Exception as e:  # pragma: no cover - cache is best-effort
+                logger.warning(f"ChunkCache unavailable, continuing without cache: {e}")
+
+        # --- Translation Memory gateway (read/hints path — reuse approved
+        # translations as prompt hints). Built once per publisher and guarded:
+        # an empty/unavailable/disabled TM makes lookups a zero-cost no-op, and
+        # any construction failure degrades to no TM reuse (translation proceeds).
+        self.tm_gateway = None
+        if bool(_cfg("tm_reuse_enabled", True)) and bool(_cfg("tm_enabled", True)):
+            try:
+                from .tm_gateway import TMGateway
+                self.tm_gateway = TMGateway(
+                    enabled=True,
+                    threshold=float(_cfg("tm_fuzzy_threshold", 0.85)),
+                    max_hints=int(_cfg("tm_max_hints", 5)),
+                )
+            except Exception as e:
+                logger.warning(f"TM gateway unavailable, continuing without TM reuse: {e}")
+                self.tm_gateway = None
+
+    def _chunk_cache_key(self, source_text: str, source_lang: str,
+                         target_lang: str, profile_id: str,
+                         ledger_fingerprint: str = "noterms") -> Optional[str]:
+        """Build a collision-safe cache key including model/temp/profile/version.
+
+        ``ledger_fingerprint`` folds the active terminology ledger into the key
+        (via the existing ``glossary_name`` discriminator) so a chunk retranslated
+        under a different glossary can't serve a stale cached translation. The
+        default ``"noterms"`` reproduces the pre-ledger key for a chunk with no
+        terminology, keeping cache behavior identical when no ledger is active.
+        """
+        if compute_chunk_key is None:
+            return None
+        return compute_chunk_key(
+            source_text=source_text,
+            source_lang=source_lang or "auto",
+            target_lang=target_lang or "vi",
+            mode=profile_id or "essay",
+            model=f"{self._provider_sig}:{self._model_sig}",
+            profile_id=profile_id or "essay",
+            temperature=str(self.translation_temperature),
+            prompt_version=self.prompt_version,
+            glossary_name=ledger_fingerprint or "noterms",
+        )
 
     async def publish(
         self,
@@ -367,17 +504,53 @@ class UniversalPublisher:
             job.dna = await self._extract_dna(source_text, source_lang)
             logger.info(f"DNA extracted: genre={job.dna.genre}, {job.dna.word_count} words")
 
+            # Resolve the source language now (needed by the terminology ledger
+            # below and reused for translation): fall back to DNA-detected
+            # language when the caller requested 'auto'.
+            actual_source_lang = job.dna.language if source_lang == "auto" and job.dna.language else source_lang
+
+            # Build the terminology ledger ONCE per job (REQ-02/04/06): explicit
+            # glossary terms (if any) + optional auto-extracted terms, merged with
+            # glossary winning on conflicts. Never fails the job — any error
+            # degrades to an empty ledger and translation proceeds unchanged.
+            ledger = TermLedger()
+            try:
+                ledger.merge(load_glossary_ledger(self.glossary_ids, sample_text=source_text[:6000]))
+                if self.auto_glossary_enabled:
+                    ledger.merge(await extract_terms(
+                        source_text, self.llm_client, actual_source_lang, target_lang, max_terms=40
+                    ))
+            except Exception as e:
+                logger.warning(f"terminology ledger build failed, continuing without: {e}")
+            self._active_ledger = ledger
+            logger.info(f"Terminology ledger: {len(ledger)} terms")
+
             # Stage 2: Chunk document (55%)
             update_progress(0.55, "Chunking document")
             job.status = JobStatus.CHUNKING
             job.chunks = await self.chunker.chunk(source_text)
             logger.info(f"Document split into {len(job.chunks)} chunks")
 
+            # Optional LLM summary pre-pass (gated OFF by default): enrich the
+            # deterministic rolling context with a one-sentence summary per chunk.
+            # Disabled => no extra LLM calls; the chunker's deterministic context
+            # stands. Any failure keeps the deterministic context unchanged.
+            if bool(_cfg("translation_context_summary_enabled", False)) and len(job.chunks) > 1:
+                try:
+                    summaries = await self._summarize_chunks(job.chunks)
+                    contexts = build_chunk_contexts([c.content for c in job.chunks], summaries=summaries,
+                                                    window=int(_cfg("translation_context_window", 3)))
+                    for c, (preceding, following) in zip(job.chunks, contexts):
+                        c.previous_summary = preceding or None
+                        c.next_preview = following or None
+                    logger.info(f"[{job.job_id}] Context enriched with {sum(1 for s in summaries if s)} chunk summaries")
+                except Exception as e:
+                    logger.warning(f"context summary pre-pass failed, keeping deterministic context: {e}")
+
             # Stage 3: Translate chunks (55% - 90%)
             update_progress(0.55, "Translating")
             job.status = JobStatus.TRANSLATING
-            # Use detected language from DNA if source_lang is 'auto'
-            actual_source_lang = job.dna.language if source_lang == "auto" and job.dna.language else source_lang
+            # actual_source_lang resolved above (DNA-detected when 'auto').
             logger.info(f"Translation: {actual_source_lang} → {target_lang} (requested: {source_lang}, detected: {job.dna.language})")
             job.translated_chunks = await self._translate_chunks(
                 job.chunks,
@@ -387,6 +560,17 @@ class UniversalPublisher:
                 target_lang,
                 lambda p: update_progress(0.55 + p * 0.35, f"Translating chunk {int(p * len(job.chunks))}/{len(job.chunks)}"),
             )
+
+            # Stage 3.5: Bounded repair pass — re-translate only the chunks the
+            # deterministic quality gate flags as suspect (empty / truncated /
+            # wrong-language / dropped-formula), adopting a retry only when it is
+            # strictly better. Gated by config; degrades to a no-op on any issue.
+            if bool(_cfg("translation_repair_enabled", True)):
+                update_progress(0.90, "Checking & repairing translation")
+                job.translated_chunks, repaired = await self._repair_suspect_chunks(
+                    job.chunks, job.translated_chunks, job.dna, profile_id, actual_source_lang, target_lang)
+                if repaired:
+                    logger.info(f"[{job.job_id}] Repaired {repaired} suspect chunk(s)")
 
             # Stage 4: Assemble (92%)
             update_progress(0.92, "Assembling document")
@@ -440,6 +624,19 @@ class UniversalPublisher:
 
         return job
 
+    async def _summarize_chunks(self, chunks) -> list:
+        """One-sentence summary per chunk (parallel, guarded). Empty string on any failure."""
+        async def _one(ch):
+            async with self._semaphore:
+                try:
+                    prompt = ("Summarize the following text in ONE short sentence, "
+                              "in its original language. Text:\n" + ch.content[:3000])
+                    resp = await self.llm_client.chat(messages=[{"role": "user", "content": prompt}], temperature=0.0)
+                    return (getattr(resp, "content", "") or "").strip()
+                except Exception:
+                    return ""
+        return list(await asyncio.gather(*[_one(c) for c in chunks]))
+
     async def _extract_dna(self, text: str, source_lang: str) -> DocumentDNA:
         """Extract document DNA."""
         try:
@@ -467,22 +664,39 @@ class UniversalPublisher:
         completed = [0]  # Use list to allow modification in nested function
         total = len(chunks)
 
+        # The terminology ledger is built once per job in publish(); thread it
+        # through so every chunk shares the same (cached) glossary block.
+        active_ledger = getattr(self, "_active_ledger", None)
+
         async def translate_with_semaphore(chunk: SemanticChunk) -> tuple[int, str]:
             """Translate single chunk with semaphore control."""
             async with self._semaphore:
                 result = await self._translate_chunk(
-                    chunk, dna, profile, source_lang, target_lang
+                    chunk, dna, profile, source_lang, target_lang,
+                    profile_id=profile_id, ledger=active_ledger,
                 )
                 completed[0] += 1
                 if progress_callback:
                     progress_callback(completed[0] / total)
                 return (chunk.index, result)
 
-        # Launch all translations concurrently (semaphore limits parallelism)
+        # Launch all translations concurrently (semaphore limits parallelism).
+        # return_exceptions=True so one failing chunk doesn't orphan the rest;
+        # we then fail the whole job loudly rather than shipping a partial doc.
         tasks = [translate_with_semaphore(chunk) for chunk in chunks]
-        results_with_index = await asyncio.gather(*tasks)
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        errors = [r for r in results if isinstance(r, BaseException)]
+        if errors:
+            first = errors[0]
+            logger.error(
+                f"Translation aborted: {len(errors)}/{total} chunk(s) failed; "
+                f"first error: {first}"
+            )
+            raise first
 
         # Sort by original index to maintain order
+        results_with_index = list(results)
         results_with_index.sort(key=lambda x: x[0])
         translated = [r[1] for r in results_with_index]
 
@@ -553,12 +767,65 @@ class UniversalPublisher:
         profile: PublishingProfile,
         source_lang: str,
         target_lang: str,
-        max_retries: int = 3,
+        profile_id: str = "essay",
+        max_retries: Optional[int] = None,
+        ledger=None,
+        force_refresh: bool = False,
     ) -> str:
-        """Translate a single chunk with retry logic for rate limits."""
-        prompt = TRANSLATION_PROMPT.format(
+        """Translate a single chunk.
+
+        Improvements over the original:
+        - Static (cacheable) system prompt + small dynamic user prompt.
+        - Low, configurable temperature for faithful, low-variance output.
+        - Persistent chunk cache (keyed by model/temperature/profile/version).
+        - Exponential backoff + jitter on transient errors, and a raised
+          ``ChunkTranslationError`` on permanent failure — so the job fails
+          loudly instead of silently shipping a ``[TRANSLATION ERROR]`` hole.
+        """
+        max_retries = self.max_retries if max_retries is None else max_retries
+
+        # Resolve the active terminology ledger (explicit arg wins; otherwise the
+        # per-job ledger built in publish()). An empty or absent ledger is falsy,
+        # so glossary_block == "" and the fingerprint stays "noterms" — i.e. the
+        # exact pre-ledger behavior: same system prompt, same cache key.
+        ledger = ledger if ledger is not None else getattr(self, "_active_ledger", None)
+        glossary_block = ledger.to_prompt_block(getattr(self, "glossary_max_terms", 80)) if ledger else ""
+        ledger_fp = ledger.fingerprint() if ledger else "noterms"
+
+        # 1) Cache lookup (best-effort — must never break translation).
+        # A forced refresh (repair pass) skips the GET so we always re-translate,
+        # but still computes cache_key below only when a store could happen.
+        cache_key: Optional[str] = None
+        if self.chunk_cache is not None and not force_refresh:
+            try:
+                cache_key = self._chunk_cache_key(
+                    chunk.content, source_lang, target_lang, profile_id,
+                    ledger_fingerprint=ledger_fp,
+                )
+                if cache_key:
+                    # Off-loop: ChunkCache is sync sqlite (thread-local conns + WAL),
+                    # so run it in a worker thread to keep the event loop free.
+                    cached = await run_blocking(self.chunk_cache.get, cache_key)
+                    if cached is not None:
+                        logger.debug(f"[Chunk {chunk.index}] cache hit")
+                        return cached
+            except Exception as e:  # pragma: no cover
+                logger.debug(f"[Chunk {chunk.index}] cache lookup skipped: {e}")
+                cache_key = None
+
+        # 2) Build system (static/cacheable) + user (dynamic) prompts
+        system_prompt = TRANSLATION_SYSTEM.format(
             dna_context=dna.to_context_prompt(),
             profile_prompt=profile.to_prompt(),
+            glossary=glossary_block,
+        )
+        if source_lang == 'ja':
+            if target_lang == 'vi':
+                system_prompt += "\n\n" + JAPANESE_TRANSLATION_ADDITIONS
+            elif target_lang == 'en':
+                system_prompt += "\n\n" + JAPANESE_TO_ENGLISH_ADDITIONS
+
+        user_prompt = TRANSLATION_USER.format(
             chunk_index=chunk.index + 1,
             total_chunks=chunk.total_chunks,
             previous_summary=chunk.previous_summary or "Start of document",
@@ -568,74 +835,247 @@ class UniversalPublisher:
             source_text=chunk.content,
         )
 
-        # Add Japanese-specific instructions for JA source
-        if source_lang == 'ja':
-            if target_lang == 'vi':
-                prompt += "\n\n" + JAPANESE_TRANSLATION_ADDITIONS
-                logger.debug(f"[Chunk {chunk.index}] Added JA→VI translation instructions")
-            elif target_lang == 'en':
-                prompt += "\n\n" + JAPANESE_TO_ENGLISH_ADDITIONS
-                logger.debug(f"[Chunk {chunk.index}] Added JA→EN translation instructions")
+        # Prepend approved Translation-Memory hints to the DYNAMIC user message
+        # (never the cached system prefix / template, so no KeyError and no cache
+        # thrash). TM state is deliberately NOT in the chunk-cache key, so a cache
+        # HIT legitimately returns above before hints are ever computed. Guarded via
+        # getattr so publishers built without __init__ (tests) are unaffected; an
+        # inactive/None gateway yields "" and leaves user_prompt byte-for-byte
+        # identical to the prior prompt.
+        gw = getattr(self, "tm_gateway", None)
+        if gw is not None:
+            try:
+                _hints = gw.lookup_hints(chunk.content, source_lang, target_lang)
+                _tm_block = gw.render_hints_block(_hints)
+                if _tm_block:
+                    user_prompt = _tm_block + "\n\n" + user_prompt
+            except Exception:
+                pass
 
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
+
+        last_error: Optional[Exception] = None
         for attempt in range(max_retries):
             try:
                 response = await self.llm_client.chat(
-                    messages=[{"role": "user", "content": prompt}]
+                    messages=messages,
+                    temperature=self.translation_temperature,
+                    cache_system=self.prompt_cache_enabled,
                 )
                 translated = response.content.strip()
+                truncated = bool(getattr(response, "truncated", False))
 
                 # Verify LaTeX preservation if document has formulas
                 if dna.has_formulas:
                     translated = self._verify_latex_preservation(chunk.content, translated, chunk.index)
 
-                # Verify translation is in the target language
+                # Language check + strengthened retry (REUSING the full system
+                # prompt so terminology/formula guidance is preserved).
                 detected = self._detect_language(translated)
                 if detected != "unknown" and detected != target_lang:
                     logger.warning(
-                        f"[Chunk {chunk.index}] Language mismatch: "
-                        f"expected '{target_lang}', detected '{detected}'. "
-                        f"Retrying with explicit instruction."
+                        f"[Chunk {chunk.index}] Language mismatch: expected '{target_lang}', "
+                        f"detected '{detected}'. Retrying with stronger instruction."
                     )
-                    # Retry with a stronger, focused prompt
-                    retry_prompt = (
-                        f"CRITICAL INSTRUCTION: Translate the following text "
-                        f"from {source_lang} to {target_lang}.\n"
-                        f"Your output MUST be entirely in {target_lang}. "
-                        f"Do NOT include any {source_lang} text. "
-                        f"Do NOT echo the original. ONLY output the translation.\n\n"
-                        f"Text to translate:\n{chunk.content}"
+                    strong_user = (
+                        user_prompt
+                        + f"\n\nCRITICAL: Your output MUST be entirely in {target_lang}. "
+                        f"Do NOT include any {source_lang} text and do NOT echo the original."
                     )
                     retry_response = await self.llm_client.chat(
-                        messages=[{"role": "user", "content": retry_prompt}]
+                        messages=[
+                            {"role": "system", "content": system_prompt},
+                            {"role": "user", "content": strong_user},
+                        ],
+                        temperature=self.translation_temperature,
+                        cache_system=self.prompt_cache_enabled,
                     )
                     retranslated = retry_response.content.strip()
-
+                    truncated = bool(getattr(retry_response, "truncated", False))
                     detected2 = self._detect_language(retranslated)
-                    if detected2 == target_lang or detected2 == "unknown":
-                        logger.info(f"[Chunk {chunk.index}] Retry succeeded: now in '{target_lang}'")
-                        return retranslated
-                    else:
+                    if detected2 not in (target_lang, "unknown"):
                         logger.error(
-                            f"[Chunk {chunk.index}] Still wrong language after retry "
-                            f"(detected '{detected2}'). Using retry result anyway."
+                            f"[Chunk {chunk.index}] Still '{detected2}' after retry; using it anyway."
                         )
-                        return retranslated
+                    translated = retranslated
+                    detected = detected2
+
+                # 3) Store in cache — only cache "good" results (right language,
+                # not truncated) so we never memoize a corrupted chunk.
+                lang_ok = detected in (target_lang, "unknown")
+                if self.chunk_cache is not None and cache_key and lang_ok and not truncated and not force_refresh:
+                    try:
+                        await run_blocking(
+                            self.chunk_cache.set,
+                            cache_key, translated, source_lang, target_lang, mode=profile_id,
+                        )
+                    except Exception as e:  # pragma: no cover
+                        logger.debug(f"[Chunk {chunk.index}] cache store skipped: {e}")
 
                 return translated
-            except Exception as e:
-                error_str = str(e).lower()
-                # Check for rate limit error
-                if "429" in str(e) or "rate_limit" in error_str:
-                    wait_time = (attempt + 1) * 15  # 15s, 30s, 45s
-                    logger.warning(f"Rate limit hit for chunk {chunk.index}, waiting {wait_time}s (attempt {attempt+1}/{max_retries})")
-                    await asyncio.sleep(wait_time)
-                    continue
-                else:
-                    logger.error(f"Translation failed for chunk {chunk.index}: {e}")
-                    return f"[TRANSLATION ERROR: {chunk.index}]"
 
-        logger.error(f"Translation failed for chunk {chunk.index} after {max_retries} retries")
-        return f"[TRANSLATION ERROR: {chunk.index}]"
+            except ChunkTranslationError:
+                raise
+            except Exception as e:
+                last_error = e
+                if is_transient_error(e) and attempt < max_retries - 1:
+                    delay = backoff_delay(attempt, self.backoff_base, self.backoff_cap)
+                    logger.warning(
+                        f"[Chunk {chunk.index}] transient error "
+                        f"(attempt {attempt + 1}/{max_retries}): {str(e)[:160]} — "
+                        f"retrying in {delay:.1f}s"
+                    )
+                    await asyncio.sleep(delay)
+                    continue
+                # Permanent error, or retries exhausted: fail loudly.
+                logger.error(f"[Chunk {chunk.index}] translation failed permanently: {e}")
+                raise ChunkTranslationError(chunk.index, str(e)[:200]) from e
+
+        raise ChunkTranslationError(chunk.index, f"exhausted {max_retries} retries: {last_error}")
+
+    async def _repair_suspect_chunks(
+        self,
+        chunks,
+        translated,
+        dna,
+        profile_id,
+        source_lang,
+        target_lang,
+    ) -> tuple[list, int]:
+        """Bounded, best-effort repair pass over suspect translated chunks.
+
+        Runs the deterministic quality gate over every (source, translation)
+        pair; for each flagged chunk it re-translates ONCE with the cache GET
+        bypassed (``force_refresh=True``) and adopts the new translation only if
+        it has *strictly* fewer issues. Clean chunks are never touched. Returns
+        the (possibly repaired) translation list and the number of chunks
+        replaced. Never raises — a hard translation failure keeps the original.
+
+        When ``translation_semantic_verify_enabled`` is set, an OPTIONAL LLM
+        faithfulness pass additionally checks the deterministically-clean chunks
+        (capped by ``translation_semantic_verify_max``, run under the semaphore)
+        and folds any chunk it judges unfaithful (>= major) into the SAME bounded
+        repair loop as a one-issue ``["semantic"]`` suspect — so a chunk is
+        deterministic-suspect OR semantic-suspect, never both. Disabled (the
+        default) => none of the semantic code runs and this method behaves
+        byte-for-byte like the deterministic-only pass.
+        """
+        from .quality_gate import check_chunk
+
+        profile = get_profile(profile_id) or PROFILES.get("essay")
+        max_repairs = int(_cfg("translation_repair_max_chunks", 20))
+        semantic_enabled = bool(_cfg("translation_semantic_verify_enabled", False))
+        semantic_max = int(_cfg("translation_semantic_verify_max", 30))
+
+        # Identify suspect chunks deterministically (no LLM calls). Also record
+        # the deterministically-clean indices so an optional semantic pass can
+        # scrutinize only those.
+        suspects: list[tuple[int, list]] = []
+        clean: list[int] = []
+        for i, (src, tr) in enumerate(zip(chunks, translated)):
+            issues = check_chunk(
+                src.content, tr, target_lang,
+                detected_lang=self._detect_language(tr),
+                has_formulas=dna.has_formulas,
+            )
+            if issues:
+                suspects.append((i, issues))
+            else:
+                clean.append(i)
+
+        # Optional semantic faithfulness pass (opt-in, bounded, under the
+        # semaphore). Only deterministically-clean chunks are checked; any judged
+        # unfaithful (>= major) joins the repair loop as a ["semantic"] suspect.
+        if semantic_enabled and clean:
+            from .semantic_verifier import verify_chunk, is_unfaithful
+
+            to_check = clean[:semantic_max]
+
+            async def _sem(i):
+                async with self._semaphore:
+                    v = await verify_chunk(
+                        chunks[i].content, translated[i],
+                        source_lang, target_lang, self.llm_client,
+                    )
+                    return (i, is_unfaithful(v, min_severity="major"))
+
+            for i, bad in await asyncio.gather(*[_sem(i) for i in to_check]):
+                if bad:
+                    suspects.append((i, ["semantic"]))
+
+        if not suspects:
+            return (translated, 0)
+
+        # Stable order after merging deterministic + semantic suspects (the
+        # deterministic pass already yields ascending indices, so with semantic
+        # disabled this sort is a no-op and the result is unchanged).
+        suspects.sort(key=lambda x: x[0])
+
+        to_repair = suspects[:max_repairs]
+        if len(suspects) > max_repairs:
+            logger.warning(
+                f"{len(suspects)} suspect chunk(s) found; repairing only the first "
+                f"{max_repairs} (translation_repair_max_chunks)."
+            )
+
+        async def _repair_one(i, orig_issues):
+            async with self._semaphore:
+                try:
+                    new = await self._translate_chunk(
+                        chunks[i], dna, profile, source_lang, target_lang,
+                        profile_id=profile_id, force_refresh=True,
+                    )
+                except ChunkTranslationError:
+                    return (i, None)  # keep original on hard failure
+                new_issues = check_chunk(
+                    chunks[i].content, new, target_lang,
+                    detected_lang=self._detect_language(new),
+                    has_formulas=dna.has_formulas,
+                )
+                # For a semantic suspect, re-verify the repair so a faithful+clean
+                # re-translation falls to 0 issues (adopted) while a still-unfaithful
+                # one stays at 1 (rejected), unifying with the deterministic count.
+                if semantic_enabled and "semantic" in orig_issues:
+                    from .semantic_verifier import verify_chunk, is_unfaithful
+                    v = await verify_chunk(
+                        chunks[i].content, new, source_lang, target_lang, self.llm_client,
+                    )
+                    if is_unfaithful(v, min_severity="major"):
+                        new_issues = new_issues + ["semantic"]
+                # Adopt only when the repair is strictly better (fewer issues).
+                if len(new_issues) < len(orig_issues):
+                    return (i, new)
+                return (i, None)
+
+        results = await asyncio.gather(*[_repair_one(i, iss) for (i, iss) in to_repair])
+
+        repaired = list(translated)
+        count = 0
+        for (i, new) in results:
+            if new is not None:
+                repaired[i] = new
+                count += 1
+                # Best-effort: overwrite the cache with the good repair so a later
+                # run serves the improved translation instead of the bad one.
+                if self.chunk_cache is not None:
+                    try:
+                        fp = self._active_ledger.fingerprint() if getattr(self, "_active_ledger", None) else "noterms"
+                        key = self._chunk_cache_key(
+                            chunks[i].content, source_lang, target_lang, profile_id,
+                            ledger_fingerprint=fp,
+                        )
+                        if key:
+                            await run_blocking(
+                                self.chunk_cache.set,
+                                key, new, source_lang, target_lang, mode=profile_id,
+                            )
+                    except Exception:
+                        pass
+
+        return (repaired, count)
 
     def _verify_latex_preservation(self, original: str, translated: str, chunk_index: int) -> str:
         """
@@ -711,7 +1151,8 @@ class UniversalPublisher:
 
         try:
             response = await self.llm_client.chat(
-                messages=[{"role": "user", "content": prompt}]
+                messages=[{"role": "user", "content": prompt}],
+                temperature=self.translation_temperature,
             )
             assembled = response.content.strip()
 
@@ -912,25 +1353,7 @@ class UniversalPublisher:
 
         Use Vision mode instead for better formula preservation.
         """
-        try:
-            import fitz  # PyMuPDF
-            doc = fitz.open(str(pdf_path))
-            text = ""
-            for page in doc:
-                text += page.get_text()
-            doc.close()
-            logger.info(f"Legacy PDF extraction: {len(text)} chars")
-            return text
-        except ImportError:
-            try:
-                import pdfplumber
-                with pdfplumber.open(str(pdf_path)) as pdf:
-                    text = ""
-                    for page in pdf.pages:
-                        text += page.extract_text() or ""
-                    return text
-            except ImportError:
-                raise RuntimeError("PyMuPDF or pdfplumber required for PDF extraction")
+        return await run_blocking(_extract_pdf_text_sync, pdf_path)
 
 
 # ==================== CONVENIENCE FUNCTIONS ====================

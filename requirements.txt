@@ -28,6 +28,16 @@ aiofiles>=23.0.0
 tqdm>=4.66.0
 python-dateutil>=2.8.0
 
+# System metrics (health monitoring)
+# core/health_monitor.py (served by the /health routes) and
+# core/streaming/streaming_processor.py import psutil. It's imported lazily
+# inside the route handler, so import-smoke (which only does `import api.main`)
+# does NOT catch a missing psutil — but /health 500s in production, and the
+# unit test that patches core.health_monitor fails to resolve its target on a
+# clean install. On Python 3.12 mock.patch resolves via pkgutil.resolve_name,
+# which surfaces the missing dep as an AttributeError. Declare it.
+psutil>=5.9.0
+
 # Web API (Phase 6)
 fastapi>=0.109.0
 uvicorn[standard]>=0.27.0
@@ -41,10 +51,19 @@ jieba>=0.42.1
 # Authentication (P1)
 PyJWT>=2.8.0
 passlib[bcrypt]>=1.7.4
+# passlib 1.7.x is incompatible with bcrypt>=4.1 (its detect_wrap_bug raises
+# "password cannot be longer than 72 bytes"), so every password hash 500s.
+# Pin to the 4.0.x line, matching requirements.lock (bcrypt==4.0.1). Render's
+# buildCommand installs this file directly, so an unpinned bcrypt breaks auth
+# in production even though the Docker image (built from the lock) is fine.
+bcrypt>=4.0,<4.1
 pydantic[email]>=2.6.0
 
 # Cache
 redis[hiredis]>=5.0.0
+
+# Database / ORM (glossary + Translation Memory v1 use SQLAlchemy 2.0 typed ORM)
+SQLAlchemy>=2.0,<3
 
 # Testing
 pytest>=8.0.0

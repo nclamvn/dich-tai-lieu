@@ -6,8 +6,11 @@ import pytest
 class TestGlossaryEndpoints:
     """Glossary management routes (/api/glossary/*)."""
 
-    # Note: glossary router mounted at /api/glossary with its own /api/glossary prefix
-    GLOSSARY_BASE = "/api/glossary/api/glossary"
+    # glossary_router declares prefix="/api/glossary" and is included without a
+    # second prefix, so endpoints live at /api/glossary/* (previously this test
+    # asserted the doubled /api/glossary/api/glossary path caused by a bug in
+    # main.py's include_router — fixed under P0-4).
+    GLOSSARY_BASE = "/api/glossary"
 
     def test_glossary_list(self, client):
         response = client.get(f"{self.GLOSSARY_BASE}/")

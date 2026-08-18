@@ -59,3 +59,6 @@ dist/
 build/
 *.egg-info/
 ui/node_modules/
+
+# Runtime-generated per-deployment secret — never commit
+data/.encryption_key

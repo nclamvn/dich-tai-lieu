@@ -605,12 +605,45 @@ async def startup_recover_stuck_v1_jobs():
         logger.debug(f"V1 stuck job recovery skipped: {e}")
 
 
+@app.on_event("startup")
+async def startup_ws_fanout():
+    """Enable Redis WS fan-out across workers (no-op if ws_redis_url is empty)."""
+    from api.deps import manager
+    from config.settings import settings
+    await manager.start_redis(settings.ws_redis_url, settings.ws_pubsub_channel)
+
+
+@app.on_event("startup")
+async def startup_job_coordinator():
+    """Enable cross-worker concurrency limit + cancel (#6 Pha 2/3).
+    No-op / local-only when ws_redis_url is empty."""
+    from api.aps_v2_service import get_v2_service
+    from config.settings import settings
+    svc = get_v2_service()
+    await svc._coordinator.start_redis(settings.ws_redis_url, settings.max_concurrent_jobs)
+
+
+@app.on_event("shutdown")
+async def shutdown_job_coordinator():
+    from api.aps_v2_service import get_v2_service
+    await get_v2_service()._coordinator.stop_redis()
+
+
+@app.on_event("shutdown")
+async def shutdown_ws_fanout():
+    from api.deps import manager
+    await manager.stop_redis()
+
+
 # Batch Processing: Include batch job routes
 app.include_router(batch_router)
 
 # Multi-AI Provider: Include provider management routes
-app.include_router(provider_router, prefix="/api/v2/providers", tags=["AI Providers"])
-app.include_router(glossary_router, prefix="/api/glossary", tags=["Glossary"])
+# Prefixes are already declared on these routers (provider_routes.py and
+# glossary_router.py both call APIRouter(prefix=...)). Do NOT repeat the prefix
+# here or every path doubles up, e.g. /api/v2/providers/api/v2/providers.
+app.include_router(provider_router)
+app.include_router(glossary_router)
 
 # P1: Authentication routes (JWT-based)
 app.include_router(auth_router)
@@ -668,65 +701,15 @@ chunk_cache = ChunkCache(cache_db_path)
 # =============================================================================
 # WebSocket Manager
 # =============================================================================
-
-class ConnectionManager:
-    """
-    Manage WebSocket connections for real-time updates.
-
-    Handles client connections and broadcasts job progress, status
-    changes, and queue statistics to all connected clients.
-
-    Attributes:
-        active_connections: List of currently connected WebSocket clients.
-
-    Example:
-        >>> manager = ConnectionManager()
-        >>> await manager.connect(websocket)
-        >>> await manager.broadcast({"event": "job_completed", "job_id": "123"})
-    """
-
-    def __init__(self):
-        """Initialize connection manager with empty connection list."""
-        self.active_connections: List[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        """
-        Accept and register a new WebSocket connection.
-
-        Args:
-            websocket: The WebSocket connection to register.
-        """
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        """
-        Remove a WebSocket connection from the active list.
-
-        Args:
-            websocket: The WebSocket connection to remove.
-        """
-        self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: dict):
-        """
-        Broadcast a message to all connected clients.
-
-        Args:
-            message: Dictionary message to send as JSON.
-
-        Note:
-            Silently ignores send failures to individual clients.
-        """
-        for connection in self.active_connections:
-            try:
-                await connection.send_json(message)
-            except Exception:
-                # Silently ignore connection errors (client may have disconnected)
-                pass
-
-
-manager = ConnectionManager()
+# The ConnectionManager + `manager` singleton live in api.deps (the shared
+# module every route file already imports). The /ws endpoint below registers
+# clients on THIS `manager`, while the job-progress broadcasters
+# (api.aps_service and the live api.aps_v2_service) do
+# `from api.deps import manager`. A duplicate manager used to be defined here,
+# so /ws clients and the broadcasters held DIFFERENT instances — progress was
+# broadcast to a manager with zero connected clients (the frozen progress bar).
+# Importing the single instance from api.deps keeps them in sync.
+from api.deps import ConnectionManager, manager  # noqa: E402,F401
 
 # Initialize APS service with queue and websocket manager
 # (BatchProcessor will be added when start_processor is called)

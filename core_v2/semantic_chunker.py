@@ -7,10 +7,16 @@ for complex documents.
 """
 
 import json
+import logging
 import re
 from dataclasses import dataclass
 from typing import List, Optional, Tuple, Any
 from enum import Enum
+
+from .token_chunking import estimate_tokens, chunk_text_by_tokens
+from .context_builder import build_chunk_contexts
+
+logger = logging.getLogger(__name__)
 
 
 class ChunkType(Enum):
@@ -81,8 +87,29 @@ class SemanticChunker:
     TARGET_CHUNK = 4000     # Target chunk size
     MAX_CHUNK = 8000        # Maximum chunk size
 
-    def __init__(self, llm_client: Optional[Any] = None):
+    # Hard token budget: no emitted chunk may exceed this estimate_tokens count.
+    MAX_CHUNK_TOKENS = 2000
+
+    def __init__(self, llm_client: Optional[Any] = None, max_chunk_tokens: Optional[int] = None):
         self.llm_client = llm_client
+
+        resolved = max_chunk_tokens
+        if resolved is None:
+            try:
+                from config.settings import settings
+                resolved = getattr(settings, "chunk_max_tokens", None)
+            except Exception:
+                resolved = None
+        self.max_chunk_tokens = int(resolved) if resolved else self.MAX_CHUNK_TOKENS
+
+        # Rolling cross-chunk context window (deterministic; LLM-free). Resolved
+        # like max_chunk_tokens: settings override, else a sane default of 3.
+        try:
+            from config.settings import settings
+            cw = getattr(settings, "translation_context_window", None)
+        except Exception:
+            cw = None
+        self.context_window = int(cw) if cw else 3
 
     async def chunk(self, text: str, detect_boundaries: bool = True) -> List[SemanticChunk]:
         """
@@ -145,11 +172,12 @@ class SemanticChunker:
             r'^(CHƯƠNG\s+\d+[.:]\s*.*)$',
             r'^(Phần\s+\d+[.:]\s*.*)$',
 
-            # Numbered sections
-            r'^(\d+\.\s+[A-Z].{5,50})$',
+            # Numbered sections (REQ-35: allow lowercase / non-Latin starts,
+            # e.g. Vietnamese "1. giới thiệu về máy học")
+            r'^(\d+\.\s+\S.{4,60})$',
 
             # Markdown headers
-            r'^(#{1,2}\s+.+)$',
+            r'^(#{1,6}\s+.+)$',
         ]
 
         chapters = []
@@ -291,23 +319,15 @@ class SemanticChunker:
         return chunks
 
     def _simple_chunk(self, text: str) -> List[SemanticChunk]:
-        """Simple chunking when no semantic boundaries found."""
-        chunks = []
-        words = text.split()
-        target_words = self.TARGET_CHUNK // 5  # Approximate words per chunk
+        """Simple chunking when no semantic boundaries found.
 
-        for i in range(0, len(words), target_words):
-            chunk_words = words[i:i + target_words]
-            content = ' '.join(chunk_words)
-
-            chunks.append(SemanticChunk(
-                content=content,
-                chunk_type=ChunkType.PARAGRAPH,
-                index=len(chunks),
-                total_chunks=0,
-                word_count=len(chunk_words),
-            ))
-
+        Structure-preserving: splits on token budget via chunk_text_by_tokens so
+        newlines / paragraphs / LaTeX survive (no ' '.join blob) while still
+        guaranteeing every chunk stays under budget and no word is lost.
+        """
+        pieces = chunk_text_by_tokens(text, self.max_chunk_tokens)
+        chunks = [SemanticChunk(content=p, chunk_type=ChunkType.PARAGRAPH, index=i,
+                                total_chunks=0, word_count=len(p.split())) for i, p in enumerate(pieces)]
         self._finalize_chunks(chunks)
         return chunks
 
@@ -340,9 +360,10 @@ If no clear boundaries, return empty array: []
             boundaries = json.loads(response.content)
             if isinstance(boundaries, list):
                 return [b for b in boundaries if isinstance(b, int)]
-        except (json.JSONDecodeError, AttributeError, TypeError, Exception):
-            # Failed to call LLM or parse response as JSON boundaries
-            pass
+        except Exception as e:
+            # Failed to call LLM or parse response as JSON boundaries. Log the
+            # cause instead of silently swallowing, then fall through to [].
+            logger.warning("boundary detection failed: %s", e)
 
         return []
 
@@ -369,19 +390,55 @@ If no clear boundaries, return empty array: []
         self._finalize_chunks(chunks)
         return chunks
 
+    def _enforce_token_cap(self, chunks: List[SemanticChunk]) -> List[SemanticChunk]:
+        """Split any chunk whose content exceeds the token budget.
+
+        For each chunk in order: if its content is already within
+        ``self.max_chunk_tokens`` it is kept as-is (same object). Otherwise its
+        content is re-split with ``chunk_text_by_tokens`` and one NEW
+        SemanticChunk is emitted per piece, copying ``chunk_type``, ``title``,
+        ``parent_title``, ``char_start`` and ``char_end`` from the parent.
+        ``word_count`` is recomputed per piece; ``index`` / ``total_chunks`` are
+        set to 0 here (``_finalize_chunks`` resets them). Overall order is
+        preserved and no content is dropped.
+        """
+        result: List[SemanticChunk] = []
+        for chunk in chunks:
+            if estimate_tokens(chunk.content) <= self.max_chunk_tokens:
+                result.append(chunk)
+                continue
+            for piece in chunk_text_by_tokens(chunk.content, self.max_chunk_tokens):
+                result.append(SemanticChunk(
+                    content=piece,
+                    chunk_type=chunk.chunk_type,
+                    index=0,
+                    total_chunks=0,
+                    title=chunk.title,
+                    parent_title=chunk.parent_title,
+                    char_start=chunk.char_start,
+                    char_end=chunk.char_end,
+                    word_count=len(piece.split()),
+                ))
+        return result
+
     def _finalize_chunks(self, chunks: List[SemanticChunk]):
         """Update total counts and add context to chunks."""
+        # Hard token-cap pass FIRST: mutate in-place so any caller holding a
+        # reference to `chunks` sees the split result. No-op for chunks already
+        # under budget (e.g. tiny/finalize-direct chunks).
+        chunks[:] = self._enforce_token_cap(chunks)
+
         total = len(chunks)
         for i, chunk in enumerate(chunks):
             chunk.total_chunks = total
             chunk.index = i
 
-            # Add previous summary (first 100 chars of previous chunk)
-            if i > 0:
-                prev = chunks[i - 1].content
-                chunk.previous_summary = prev[:100] + "..." if len(prev) > 100 else prev
-
-            # Add next preview (first 100 chars of next chunk)
-            if i < total - 1:
-                next_chunk = chunks[i + 1].content
-                chunk.next_preview = next_chunk[:100] + "..." if len(next_chunk) > 100 else next_chunk
+        # Rolling cross-chunk context (deterministic, LLM-free): preceding =
+        # older-context gist + exact tail of the immediately-preceding chunk;
+        # following = head of the next chunk. `preceding or None` keeps the FIRST
+        # chunk's previous_summary = None and the LAST chunk's next_preview = None.
+        contents = [c.content for c in chunks]
+        contexts = build_chunk_contexts(contents, window=self.context_window)
+        for c, (preceding, following) in zip(chunks, contexts):
+            c.previous_summary = preceding or None
+            c.next_preview = following or None
