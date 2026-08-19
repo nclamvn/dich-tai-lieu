@@ -35,11 +35,24 @@ drop.
    Immediate win: the already-live EPUB path stops flattening them. Foundation
    for feeding the AST renderers from the live translated markdown.
 2. **Parity.** Bring `docx_adapter` / `pdf_adapter` up to the legacy engines'
-   output — styles, templates, book/academic layout, TOC, page setup. Drive from
-   the richest source available: prefer `ast_builder(DocNode → AST)` where the
-   semantic nodes still exist, else the enriched Markdown → AST. Add
-   **output-equivalence tests** (AST-DOCX vs engine-DOCX: same headings, tables,
-   figures, counts).
+   output. Split:
+   - **2a — content fidelity + the objective gate _(done)_.** An
+     output-equivalence harness (`tests/unit/test_ast_parity.py`): round-trip
+     fidelity (every block type survives DOCX/PDF), and a legacy-vs-AST DOCX
+     check that the AST path loses no heading/paragraph/list/table content the
+     legacy `DocxRenderer` captures. Fixed the concrete correctness gaps the
+     audit found: the DOCX adapter no longer force-rewrites Georgia/Cambria →
+     Times New Roman (the AST font is honored), it now applies page size +
+     margins from `DocumentMetadata`, and the PDF adapter honors the metadata
+     page size instead of hardcoding A4. (Note: both adapters already dispatch
+     all 14 block types — nothing was being dropped — and they render images +
+     equations the legacy PDF engine drops.)
+   - **2b — document assembly + styling _(pending)_.** Title page, table of
+     contents, running headers/footers + page numbers, the `ebook`/`academic`/
+     `business` template system, and inline text runs (bold/italic/code inside
+     paragraphs — needs an inline-run model in the AST). Drive from the richest
+     source available: prefer `ast_builder(DocNode → AST)` where the semantic
+     nodes still exist, else the enriched Markdown → AST.
 3. **Wire behind a flag.** Expose the AST facade as an alternative output path
    (e.g. `OUTPUT_PIPELINE=ast`), parallel to the engines; exercise both in CI.
 4. **Flip the default** to the AST path, keeping the engines as fallback. Gate:
@@ -63,5 +76,7 @@ drop.
 
 ## Status
 
-Stage 1 shipped (this PR). Stages 2–5 are separate PRs; stage 4 depends on the
-eval baseline from `docs/EVAL_HARNESS.md`.
+Stage 1 (faithful Markdown → AST) and stage 2a (equivalence harness + content /
+page / font correctness fixes) shipped. Remaining: stage 2b (document assembly +
+styling), stage 3 (flag-wire), stage 4 (flip default — needs the eval baseline
+from `docs/EVAL_HARNESS.md`), stage 5 (retire the legacy engines).

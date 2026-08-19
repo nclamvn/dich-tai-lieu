@@ -248,7 +248,6 @@ class _PdfRenderer:
 
 def render_pdf_from_ast(ast: DocumentAST, output_path: Path, title: Optional[str] = None) -> None:
     """Render a DocumentAST to a PDF file."""
-    from reportlab.lib.pagesizes import A4
     from reportlab.lib.units import mm
     from reportlab.platypus import SimpleDocTemplate, Spacer
 
@@ -261,7 +260,9 @@ def render_pdf_from_ast(ast: DocumentAST, output_path: Path, title: Optional[str
 
     doc = SimpleDocTemplate(
         str(output_path),
-        pagesize=A4,
+        # Page size from metadata (defaults to A4) — parity with the legacy
+        # engine's page presets instead of a hardcoded A4.
+        pagesize=(md.page_width_mm * mm, md.page_height_mm * mm),
         topMargin=md.margin_top_mm * mm,
         bottomMargin=md.margin_bottom_mm * mm,
         leftMargin=md.margin_left_mm * mm,
