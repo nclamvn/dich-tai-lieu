@@ -55,6 +55,11 @@ from core.rendering.document_ast import (
     TheoremType,
     ProofBox,
     ReferenceEntry,
+    TableBlock,
+    Figure,
+    ListBlock,
+    Caption,
+    PageBreak,
     FontStyle,
     SpacingStyle,
     ParagraphStyle,
@@ -188,6 +193,16 @@ def _render_block(doc: Document, block: Block, ast: DocumentAST) -> None:
         _render_proof_box(doc, block, ast)
     elif isinstance(block, ReferenceEntry):
         _render_reference_entry(doc, block, ast)
+    elif isinstance(block, TableBlock):
+        _render_table(doc, block, ast)
+    elif isinstance(block, Figure):
+        _render_figure(doc, block, ast)
+    elif isinstance(block, ListBlock):
+        _render_list(doc, block, ast)
+    elif isinstance(block, Caption):
+        _render_caption(doc, block, ast)
+    elif isinstance(block, PageBreak):
+        _render_page_break(doc, block, ast)
     else:
         logger.warning(f"Unknown block type: {type(block)}")
 
@@ -458,6 +473,109 @@ def _render_reference_entry(doc: Document, ref: ReferenceEntry, ast: DocumentAST
     p.paragraph_format.first_line_indent = Inches(-0.5)
 
     logger.debug(f"Rendered reference: key={ref.key}")
+
+
+def _render_table(doc: Document, table_block: TableBlock, ast: DocumentAST) -> None:
+    """Render a table with a bordered grid; header rows are bold."""
+    rows = table_block.rows or []
+    if not rows:
+        return
+    n_cols = max((len(r) for r in rows), default=0)
+    if n_cols == 0:
+        return
+
+    table = doc.add_table(rows=len(rows), cols=n_cols)
+    try:
+        table.style = "Table Grid"  # visible borders
+    except Exception:
+        pass  # style may be absent in a stripped template
+
+    for r, row in enumerate(rows):
+        for c in range(n_cols):
+            cell = table.rows[r].cells[c]
+            cell.text = row[c] if c < len(row) else ""
+            if r < table_block.header_rows:
+                for paragraph in cell.paragraphs:
+                    for run in paragraph.runs:
+                        run.font.bold = True
+
+    if table_block.caption:
+        cap = doc.add_paragraph()
+        run = cap.add_run(table_block.caption)
+        run.font.italic = True
+        run.font.size = Pt(10.0)
+        cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    logger.debug(f"Rendered table: {len(rows)}x{n_cols}")
+
+
+def _render_figure(doc: Document, figure: Figure, ast: DocumentAST) -> None:
+    """Embed the figure image if the ref is a readable file, else a placeholder.
+
+    Extraction records ``image_ref`` as an identifier (e.g. a DOCX part name),
+    not the image bytes, so a round-tripped figure renders as a captioned
+    placeholder rather than a re-embedded image (carrying bytes is a follow-up).
+    """
+    added = False
+    ref = figure.image_ref or ""
+    try:
+        if ref and not ref.startswith(("embedded", "/word/")) and Path(ref).is_file():
+            if figure.width_pt:
+                doc.add_picture(ref, width=Inches(figure.width_pt / 72.0))
+            else:
+                doc.add_picture(ref)
+            added = True
+    except Exception as e:
+        logger.warning(f"Figure image add failed ({ref}): {e}")
+
+    if not added:
+        placeholder = doc.add_paragraph()
+        label = figure.alt_text or figure.caption or ref or "image"
+        run = placeholder.add_run(f"[Figure: {label}]")
+        run.font.italic = True
+        placeholder.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    if figure.caption:
+        cap = doc.add_paragraph()
+        prefix = f"Hình {figure.number}. " if figure.number else ""
+        run = cap.add_run(prefix + figure.caption)
+        run.font.italic = True
+        run.font.size = Pt(10.0)
+        cap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    logger.debug(f"Rendered figure: ref={ref}, embedded={added}")
+
+
+def _render_list(doc: Document, list_block: ListBlock, ast: DocumentAST) -> None:
+    """Render an ordered/unordered list using Word's list styles."""
+    style_name = "List Number" if list_block.ordered else "List Bullet"
+    for item in list_block.items:
+        try:
+            doc.add_paragraph(item, style=style_name)
+        except Exception:
+            # Template may lack the list style — fall back to a manual marker.
+            paragraph = doc.add_paragraph()
+            paragraph.add_run(("• " if not list_block.ordered else "- ") + item)
+    logger.debug(f"Rendered list: {len(list_block.items)} items, ordered={list_block.ordered}")
+
+
+def _render_caption(doc: Document, caption: Caption, ast: DocumentAST) -> None:
+    """Render a standalone caption (centered italic)."""
+    paragraph = doc.add_paragraph()
+    label = ""
+    if caption.target and caption.number:
+        label = f"{caption.target.capitalize()} {caption.number}. "
+    run = paragraph.add_run(label + caption.text)
+    run.font.italic = True
+    run.font.size = Pt(10.0)
+    paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    logger.debug(f"Rendered caption: target={caption.target}, number={caption.number}")
+
+
+def _render_page_break(doc: Document, page_break: PageBreak, ast: DocumentAST) -> None:
+    """Render an explicit page break."""
+    doc.add_page_break()
+    logger.debug("Rendered page break")
 
 
 # ============================================================================
