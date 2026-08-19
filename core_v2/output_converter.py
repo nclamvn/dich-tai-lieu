@@ -571,7 +571,45 @@ class OutputConverter:
         title: Optional[str],
         author: Optional[str],
     ) -> bool:
-        """Convert Markdown with LaTeX math ($...$) to EPUB"""
+        """Convert Markdown to EPUB via the AST renderer (ebooklib) — no pandoc
+        required. Falls back to pandoc (MathML) only if the ebooklib path fails
+        and pandoc is available.
+        """
+        try:
+            from core.rendering.document_extractor import extract_to_ast
+            from core.rendering.epub_adapter import render_epub_from_ast
+            from core_v2.aio_utils import run_blocking
+
+            temp_input = self.temp_dir / "temp_markdown_epub.md"
+            temp_input.write_text(content, encoding="utf-8")
+            try:
+                ast = await run_blocking(extract_to_ast, temp_input)
+            finally:
+                temp_input.unlink(missing_ok=True)
+
+            if title:
+                ast.metadata.title = title
+            if author:
+                ast.metadata.author = author
+
+            await run_blocking(render_epub_from_ast, ast, output_path, title)
+            logger.info(f"EPUB created via ebooklib (no pandoc): {output_path}")
+            return output_path.exists()
+        except Exception as e:
+            logger.error(f"ebooklib EPUB failed: {e}")
+            if self.has_pandoc:
+                logger.info("Falling back to pandoc for EPUB")
+                return await self._markdown_math_to_epub_pandoc(content, output_path, title, author)
+            return False
+
+    async def _markdown_math_to_epub_pandoc(
+        self,
+        content: str,
+        output_path: Path,
+        title: Optional[str],
+        author: Optional[str],
+    ) -> bool:
+        """Convert Markdown with LaTeX math ($...$) to EPUB via pandoc (MathML fallback)."""
 
         if not self.has_pandoc:
             logger.error("pandoc required for EPUB conversion")
