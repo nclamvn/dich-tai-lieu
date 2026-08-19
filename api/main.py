@@ -685,6 +685,14 @@ app.include_router(metrics_router)
 # Metrics middleware — records request count, latency, error rate
 app.add_middleware(MetricsMiddleware)
 
+# Request-ID + structured access logging. Added last so it is the OUTERMOST
+# middleware (Starlette: last added runs first) — it wraps the whole request,
+# stamps request.state.request_id before any inner middleware runs, and logs
+# one correlated access line per request.
+from api.middleware.request_context import RequestContextMiddleware
+
+app.add_middleware(RequestContextMiddleware)
+
 # Legacy ui/ removed — frontend is Next.js at frontend/
 
 # Global state
