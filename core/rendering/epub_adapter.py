@@ -2,8 +2,9 @@
 
 Third output path off the single L0 AST (with docx_adapter and pdf_adapter).
 Blocks are rendered to XHTML and split into chapters at H1 headings, with a
-generated nav/TOC. Figures render as captioned placeholders until image bytes
-are carried through extraction (a tracked follow-up).
+generated nav/TOC. Figures with carried ``image_bytes`` are embedded as real
+``<img>`` images (registered as EPUB image items); figures without bytes render
+as captioned placeholders.
 """
 
 from __future__ import annotations
@@ -11,7 +12,7 @@ from __future__ import annotations
 import html
 import logging
 from pathlib import Path
-from typing import List, Optional, Tuple
+from typing import Callable, List, Optional, Tuple
 
 from core.rendering.document_ast import (
     Block,
@@ -51,6 +52,33 @@ th { background: #eee; }
 """
 
 
+_MIME_EXT = {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/jpg": "jpg",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/bmp": "bmp",
+    "image/tiff": "tiff",
+    "image/svg+xml": "svg",
+}
+
+
+def _sniff_mime(data: bytes) -> Optional[str]:
+    """Best-effort image MIME from magic bytes (fallback when none was carried)."""
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return "image/png"
+    if data[:3] == b"\xff\xd8\xff":
+        return "image/jpeg"
+    if data[:6] in (b"GIF87a", b"GIF89a"):
+        return "image/gif"
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return "image/webp"
+    if data[:2] == b"BM":
+        return "image/bmp"
+    return None
+
+
 def _h1_level(block: Block) -> bool:
     return isinstance(block, Heading) and getattr(block.level, "value", 1) == 1
 
@@ -70,7 +98,10 @@ def _table_xhtml(block: TableBlock) -> str:
     return "".join(parts)
 
 
-def _block_to_xhtml(block: Block) -> str:
+def _block_to_xhtml(
+    block: Block,
+    register_image: Optional[Callable[[bytes, Optional[str]], str]] = None,
+) -> str:
     e = html.escape
     if isinstance(block, Heading):
         level = max(1, min(3, getattr(block.level, "value", 1)))
@@ -99,11 +130,15 @@ def _block_to_xhtml(block: Block) -> str:
     if isinstance(block, TableBlock):
         return _table_xhtml(block)
     if isinstance(block, Figure):
-        label = e(block.alt_text or block.caption or block.image_ref or "image")
         caption = ""
         if block.caption:
             prefix = f"Hình {e(block.number)}. " if block.number else ""
             caption = f"<figcaption>{prefix}{e(block.caption)}</figcaption>"
+        if block.image_bytes and register_image is not None:
+            src = register_image(block.image_bytes, block.content_type)
+            alt = e(block.alt_text or block.caption or "")
+            return f'<figure><img src="{e(src)}" alt="{alt}"/>{caption}</figure>'
+        label = e(block.alt_text or block.caption or block.image_ref or "image")
         return f'<figure><p class="caption">[Figure: {label}]</p>{caption}</figure>'
     if isinstance(block, ListBlock):
         tag = "ol" if block.ordered else "ul"
@@ -158,9 +193,25 @@ def render_epub_from_ast(ast: DocumentAST, output_path: Path, title: Optional[st
     )
     book.add_item(css)
 
+    # Register carried figure images as EPUB image items; return their href so
+    # the chapter XHTML can <img> them. Filenames are content-root relative,
+    # matching how chap_N.xhtml references style/main.css.
+    image_counter = {"n": 0}
+
+    def register_image(data: bytes, content_type: Optional[str]) -> str:
+        image_counter["n"] += 1
+        n = image_counter["n"]
+        mime = content_type or _sniff_mime(data) or "image/png"
+        ext = _MIME_EXT.get(mime, "png")
+        fname = f"images/fig_{n}.{ext}"
+        book.add_item(
+            epub.EpubItem(uid=f"img_{n}", file_name=fname, media_type=mime, content=data)
+        )
+        return fname
+
     chapters = []
     for idx, (chapter_title, blocks) in enumerate(_split_chapters(ast.blocks), start=1):
-        body = "".join(_block_to_xhtml(b) for b in blocks)
+        body = "".join(_block_to_xhtml(b, register_image) for b in blocks)
         item = epub.EpubHtml(
             title=chapter_title, file_name=f"chap_{idx}.xhtml", lang=md.language or "vi"
         )

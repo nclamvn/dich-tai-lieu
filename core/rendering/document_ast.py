@@ -263,13 +263,20 @@ class TableBlock(Block):
 @dataclass
 class Figure(Block):
     """An image/figure. ``image_ref`` is a path, id, or data: URI — the image
-    bytes themselves are NOT translated, only the caption is."""
+    bytes themselves are NOT translated, only the caption is.
+
+    ``image_bytes`` carries the raw image so every renderer can re-embed the
+    real picture (not a placeholder) after a round trip; ``content_type`` is its
+    MIME type (e.g. ``"image/png"``). Both are optional: a figure with no bytes
+    still renders as a captioned placeholder."""
     image_ref: str
     caption: Optional[str] = None
     alt_text: Optional[str] = None
     number: Optional[str] = None  # e.g., "1.2"
     width_pt: Optional[float] = None
     height_pt: Optional[float] = None
+    image_bytes: Optional[bytes] = None  # raw image, carried for re-embedding
+    content_type: Optional[str] = None  # MIME type, e.g. "image/png"
 
     def __post_init__(self):
         self.block_type = BlockType.FIGURE

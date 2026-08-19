@@ -225,18 +225,31 @@ class _PdfRenderer:
         out: list = []
         ref = block.image_ref or ""
         added = False
-        try:
-            if ref and not ref.startswith(("embedded", "/word/")) and Path(ref).is_file():
-                image = Image(ref)
-                max_w = 400.0
-                if image.drawWidth > max_w:
-                    ratio = max_w / image.drawWidth
-                    image.drawWidth *= ratio
-                    image.drawHeight *= ratio
-                out.append(image)
+
+        def _scaled(image) -> None:
+            max_w = 400.0
+            if image.drawWidth > max_w:
+                ratio = max_w / image.drawWidth
+                image.drawWidth *= ratio
+                image.drawHeight *= ratio
+            out.append(image)
+
+        if block.image_bytes:
+            try:
+                from io import BytesIO
+
+                _scaled(Image(BytesIO(block.image_bytes)))
                 added = True
-        except Exception as e:
-            logger.warning("PDF figure add failed (%s): %s", ref, e)
+            except Exception as e:  # fall through to ref/placeholder
+                logger.warning("PDF figure add from bytes failed: %s", e)
+
+        if not added:
+            try:
+                if ref and not ref.startswith(("embedded", "/word/")) and Path(ref).is_file():
+                    _scaled(Image(ref))
+                    added = True
+            except Exception as e:
+                logger.warning("PDF figure add failed (%s): %s", ref, e)
         if not added:
             label = block.alt_text or block.caption or ref or "image"
             out.append(P(f"[Figure: {escape(label)}]", self.caption))

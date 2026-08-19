@@ -16,6 +16,7 @@ restored by each block's ``__post_init__``.
 
 from __future__ import annotations
 
+import base64
 import dataclasses
 import json
 from enum import Enum
@@ -42,6 +43,10 @@ _DERIVED = {"block_type"}
 def _encode(obj: Any) -> Any:
     if isinstance(obj, Enum):
         return {"__enum__": type(obj).__name__, "value": obj.value}
+    if isinstance(obj, (bytes, bytearray)):
+        # bytes are not JSON-safe — tag + base64 so both the dict and the JSON
+        # round trips restore the exact bytes (e.g. a Figure's image_bytes).
+        return {"__bytes__": base64.b64encode(bytes(obj)).decode("ascii")}
     if dataclasses.is_dataclass(obj) and not isinstance(obj, type):
         return {
             "__dc__": type(obj).__name__,
@@ -62,6 +67,8 @@ def _decode(obj: Any) -> Any:
     if isinstance(obj, dict):
         if "__enum__" in obj:
             return _ENUMS[obj["__enum__"]](obj["value"])
+        if "__bytes__" in obj:
+            return base64.b64decode(obj["__bytes__"])
         if "__dc__" in obj:
             cls = _DATACLASSES[obj["__dc__"]]
             raw = {k: _decode(v) for k, v in obj["fields"].items()}
