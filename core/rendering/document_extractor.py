@@ -15,8 +15,11 @@ from pathlib import Path
 from typing import Iterator, Optional, Union
 
 from core.rendering.document_ast import (
+    Blockquote,
     DocumentAST,
     DocumentMetadata,
+    Equation,
+    EquationMode,
     Figure,
     Heading,
     HeadingLevel,
@@ -140,11 +143,31 @@ def extract_docx(path: Union[str, Path]) -> DocumentAST:
 # --------------------------------------------------------------------------- #
 _MD_HEADING = re.compile(r"^(#{1,3})\s+(.*)$")
 _MD_LIST = re.compile(r"^\s*([-*+]|\d+[.)])\s+(.*)$")
+_MD_IMAGE = re.compile(r'^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)\s*$')
+_MD_DISPLAY_MATH = re.compile(r"^\$\$(.*?)\$\$\s*$")
+
+
+def _is_table_sep(line: str) -> bool:
+    """True for a GFM table separator row, e.g. ``| --- | :--: |``."""
+    s = line.strip()
+    return bool(s) and "-" in s and set(s) <= set("|-: ")
+
+
+def _split_table_row(line: str) -> list:
+    return [c.strip() for c in line.strip().strip("|").split("|")]
 
 
 def extract_text(path: Union[str, Path]) -> DocumentAST:
+    """Extract a Markdown/plain-text file into a faithful DocumentAST.
+
+    Beyond headings, paragraphs and lists this recognises GFM tables, display
+    math (``$$…$$``), blockquotes (``>``) and image figures (``![alt](src)``),
+    so the AST — and therefore every renderer, including the live EPUB path —
+    keeps those structures instead of flattening them into prose.
+    """
     path = Path(path)
     ast = _new_ast(path.stem)
+    lines = path.read_text(encoding="utf-8").splitlines()
     pending_list: Optional[tuple] = None
 
     def flush_list() -> None:
@@ -154,10 +177,62 @@ def extract_text(path: Union[str, Path]) -> DocumentAST:
             ast.add_block(ListBlock(items=items, ordered=ordered))
             pending_list = None
 
-    for raw in path.read_text(encoding="utf-8").splitlines():
-        line = raw.strip()
+    i, n = 0, len(lines)
+    while i < n:
+        line = lines[i].strip()
+
         if not line:
             flush_list()
+            i += 1
+            continue
+
+        # Display math: $$ ... $$ (single- or multi-line)
+        if line.startswith("$$"):
+            flush_list()
+            one = _MD_DISPLAY_MATH.match(line)
+            if one:
+                ast.add_block(Equation(latex=one.group(1).strip(), mode=EquationMode.DISPLAY))
+                i += 1
+                continue
+            buf = [line[2:]]
+            i += 1
+            while i < n and "$$" not in lines[i]:
+                buf.append(lines[i])
+                i += 1
+            if i < n:  # closing "$$" line
+                buf.append(lines[i].split("$$", 1)[0])
+                i += 1
+            ast.add_block(Equation(latex="\n".join(buf).strip(), mode=EquationMode.DISPLAY))
+            continue
+
+        # GFM table: a header row immediately followed by a separator row
+        if "|" in line and i + 1 < n and _is_table_sep(lines[i + 1]):
+            flush_list()
+            rows = [_split_table_row(line)]
+            i += 2  # skip header + separator
+            while i < n and lines[i].strip() and "|" in lines[i]:
+                rows.append(_split_table_row(lines[i]))
+                i += 1
+            ast.add_block(TableBlock(rows=rows, header_rows=1))
+            continue
+
+        # Blockquote: consecutive ``>`` lines
+        if line.startswith(">"):
+            flush_list()
+            quote = []
+            while i < n and lines[i].strip().startswith(">"):
+                quote.append(lines[i].strip()[1:].strip())
+                i += 1
+            ast.add_block(Blockquote(text=" ".join(quote).strip()))
+            continue
+
+        # Image figure: ![alt](src)
+        image = _MD_IMAGE.match(line)
+        if image:
+            flush_list()
+            alt = image.group(1).strip()
+            ast.add_block(Figure(image_ref=image.group(2).strip(), alt_text=alt or None))
+            i += 1
             continue
 
         heading = _MD_HEADING.match(line)
@@ -166,6 +241,7 @@ def extract_text(path: Union[str, Path]) -> DocumentAST:
             ast.add_block(
                 Heading(level=HeadingLevel(len(heading.group(1))), text=heading.group(2).strip())
             )
+            i += 1
             continue
 
         list_item = _MD_LIST.match(line)
@@ -175,10 +251,12 @@ def extract_text(path: Union[str, Path]) -> DocumentAST:
                 flush_list()
                 pending_list = (ordered, [])
             pending_list[1].append(list_item.group(2).strip())
+            i += 1
             continue
 
         flush_list()
         ast.add_block(Paragraph(text=line))
+        i += 1
 
     flush_list()
     return ast
