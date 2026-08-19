@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 from typing import List, Optional
 
-from fastapi import Header, WebSocket
+from fastapi import Header, HTTPException, WebSocket
 
 from core.job_queue import JobQueue
 from core.cache.chunk_cache import ChunkCache
@@ -163,23 +163,32 @@ async def get_current_user_id(
     x_session_token: Optional[str] = Header(None, alias="X-Session-Token"),
 ) -> str:
     """
-    FastAPI dependency: extract user_id from session token.
+    FastAPI dependency: resolve the caller's user_id from the session token.
 
-    Returns "default_user" when auth is disabled or no token provided.
+    Security contract:
+    - When session auth is DISABLED (the development default), returns
+      ``"default_user"`` so local dev needs no token.
+    - When session auth is ENABLED (production/beta), a MISSING or INVALID token
+      is rejected with HTTP 401. It must NEVER silently fall through to
+      ``"default_user"`` — that fail-open granted anonymous callers full access
+      to every per-user route even with authentication turned on.
     """
+    # A misconfigured settings object is a hard error (surfaces as 500), never a
+    # silent open. get_settings() is a plain accessor and should not raise.
+    from config.settings import get_settings
+
+    if not get_settings().session_auth_enabled:
+        return "default_user"
+
+    # Auth is enforced from here on — no path may return "default_user".
     if not x_session_token:
-        return "default_user"
+        raise HTTPException(status_code=401, detail="Authentication required")
+
+    from api.security import security_manager
 
     try:
-        from config.settings import get_settings
-        if not get_settings().session_auth_enabled:
-            return "default_user"
-    except Exception:
-        return "default_user"
-
-    try:
-        from api.security import security_manager
         session = security_manager.validate_session(x_session_token)
-        return session.user_id
     except Exception:
-        return "default_user"
+        raise HTTPException(status_code=401, detail="Invalid or expired session")
+
+    return session.user_id

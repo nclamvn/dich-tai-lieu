@@ -6,9 +6,17 @@ import shutil
 import time
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
+
+from api.deps import get_current_user_id
 
 router = APIRouter(tags=["Health"])
+
+# Routes that expose system internals (resource usage, cost, audit, error logs)
+# require auth when auth is enforced. In development (auth disabled) they stay
+# open; in production get_current_user_id rejects anonymous callers with 401.
+# The basic /health liveness probe below is intentionally left public.
+_PROTECT = [Depends(get_current_user_id)]
 
 
 @router.get("/health")
@@ -29,7 +37,7 @@ async def health_check():
     return result
 
 
-@router.get("/api/health/detailed")
+@router.get("/api/health/detailed", dependencies=_PROTECT)
 async def detailed_health_check():
     """
     Detailed health check with all system components.
@@ -59,7 +67,7 @@ async def detailed_health_check():
         }
 
 
-@router.get("/api/monitoring/costs")
+@router.get("/api/monitoring/costs", dependencies=_PROTECT)
 async def get_cost_metrics(time_period_hours: int = 24):
     """
     Get cost tracking metrics.
@@ -88,7 +96,7 @@ async def get_cost_metrics(time_period_hours: int = 24):
         raise HTTPException(status_code=500, detail=f"Failed to get cost metrics: {str(e)}")
 
 
-@router.get("/api/monitoring/audit")
+@router.get("/api/monitoring/audit", dependencies=_PROTECT)
 async def get_audit_log(limit: int = 50):
     """Get recent audit log entries."""
     try:
@@ -100,7 +108,7 @@ async def get_audit_log(limit: int = 50):
         raise HTTPException(status_code=500, detail=f"Failed to get audit log: {str(e)}")
 
 
-@router.get("/api/monitoring/errors")
+@router.get("/api/monitoring/errors", dependencies=_PROTECT)
 async def get_error_stats(time_period_hours: int = 24):
     """
     Get error tracking statistics.
@@ -120,7 +128,7 @@ async def get_error_stats(time_period_hours: int = 24):
         raise HTTPException(status_code=500, detail=f"Failed to get error stats: {str(e)}")
 
 
-@router.get("/api/monitoring/errors/recent")
+@router.get("/api/monitoring/errors/recent", dependencies=_PROTECT)
 async def get_recent_errors(limit: int = 50, severity: Optional[str] = None):
     """
     Get recent error records.
