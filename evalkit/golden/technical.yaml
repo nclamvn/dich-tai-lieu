@@ -1,0 +1,32 @@
+# Golden set — technical EN<->VI. Each item: id, direction (en2vi|vi2en),
+# domain, source, reference (human translation), and optional terminology
+# constraints. Expand freely — add files here or append items.
+- id: tech-nn-01
+  direction: en2vi
+  domain: technical
+  source: "The neural network was trained on a large dataset."
+  reference: "Mạng nơ-ron được huấn luyện trên một tập dữ liệu lớn."
+  expect_terms: ["mạng nơ-ron", "tập dữ liệu"]
+
+- id: tech-transformer-02
+  direction: en2vi
+  domain: technical
+  source: "We fine-tuned the Transformer model using PyTorch."
+  reference: "Chúng tôi tinh chỉnh mô hình Transformer bằng PyTorch."
+  expect_terms: ["tinh chỉnh", "mô hình"]
+  expect_no_translate: ["Transformer", "PyTorch"]
+
+- id: tech-sqlite-03
+  direction: vi2en
+  domain: technical
+  source: "Hệ thống sử dụng cơ sở dữ liệu SQLite để lưu trạng thái công việc."
+  reference: "The system uses a SQLite database to store job state."
+  expect_terms: ["database", "job state"]
+  expect_no_translate: ["SQLite"]
+
+- id: tech-formula-04
+  direction: en2vi
+  domain: technical
+  source: 'The loss is defined as $L = -\sum y \log p$ for each batch.'
+  reference: 'Hàm mất mát được định nghĩa là $L = -\sum y \log p$ cho mỗi batch.'
+  expect_no_translate: ['$L = -\sum y \log p$']

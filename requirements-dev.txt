@@ -17,3 +17,6 @@ ruff>=0.1.0
 
 # Type checking (optional)
 mypy>=1.0.0
+
+# Translation-quality eval harness (evalkit / TIP-Q0)
+sacrebleu>=2.4  # chrF++ metric (reference-based). COMET is optional, not pinned.

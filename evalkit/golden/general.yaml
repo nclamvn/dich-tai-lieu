@@ -1,0 +1,14 @@
+# Golden set — general EN<->VI (everyday register).
+- id: gen-park-01
+  direction: vi2en
+  domain: general
+  source: "Hôm nay trời đẹp nên chúng tôi đi dạo trong công viên."
+  reference: "The weather is nice today, so we took a walk in the park."
+  expect_terms: ["park"]
+
+- id: gen-email-02
+  direction: en2vi
+  domain: general
+  source: "Thank you for your email. We will get back to you shortly."
+  reference: "Cảm ơn email của bạn. Chúng tôi sẽ phản hồi bạn trong thời gian sớm nhất."
+  expect_terms: ["email"]
