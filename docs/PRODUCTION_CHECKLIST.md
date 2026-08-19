@@ -44,8 +44,11 @@ than 32 chars, auth left disabled, or empty `CORS_ORIGINS`.
 ## 4. Before opening the beta
 
 - Run the full backend test suite green (incl. `tests/security/`).
-- Set up automated backups of the SQLite `.db` files under `data/` (see
-  `backup.sh`) and confirm a restore.
+- Set up automated backups of the SQLite `.db` files under `data/` with the
+  **WAL-safe** `python scripts/backup_db.py --dest <dir>` (SQLite online-backup
+  API — a plain `cp`/`tar` of a live WAL database can be torn) and confirm a
+  restore per `docs/BACKUP_RESTORE.md`. `backup.sh` (naive `cp` + `.env`/uploads
+  archive) is convenience only — do **not** rely on it for the databases.
 - Keep `--workers 1` unless `WS_REDIS_URL` is set (multi-worker is opt-in).
 - Watch `/api/monitoring/costs` for LLM spend; set per-user quotas (roadmap P6).
 
