@@ -93,6 +93,14 @@ jobs:
           OPENAI_API_KEY: test-key
           ANTHROPIC_API_KEY: test-key
 
+      - name: Run eval-harness tests (offline; scoring + gate logic)
+        # The evalkit scorers/runner are unit-tested with a mock translator and
+        # mock judge — no API key, no network. The live quality gate that runs
+        # the real engine needs a provider key and is run on demand, not in CI.
+        run: pytest tests/eval/ -q --tb=short --no-cov
+        env:
+          DATABASE_BACKEND: sqlite
+
       - name: Run integration tests
         run: pytest tests/integration/ -v --tb=short --no-cov
         continue-on-error: true
