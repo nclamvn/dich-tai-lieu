@@ -12,3 +12,32 @@
   source: "Thank you for your email. We will get back to you shortly."
   reference: "Cảm ơn email của bạn. Chúng tôi sẽ phản hồi bạn trong thời gian sớm nhất."
   expect_terms: ["email"]
+
+- id: gen-directions-03
+  direction: en2vi
+  domain: general
+  source: "Turn left at the second traffic light, then walk straight for two blocks."
+  reference: "Rẽ trái ở đèn giao thông thứ hai, rồi đi thẳng qua hai dãy nhà."
+  expect_terms: ["rẽ trái", "đi thẳng"]
+
+- id: gen-time-04
+  direction: vi2en
+  domain: general
+  source: "Cuộc họp bắt đầu lúc 9 giờ sáng thứ Hai tuần sau."
+  reference: "The meeting starts at 9 a.m. next Monday."
+  expect_terms: ["meeting", "Monday"]
+
+- id: gen-shopping-05
+  direction: en2vi
+  domain: general
+  source: "The store offers a 20% discount on all items this weekend."
+  reference: "Cửa hàng giảm giá 20% cho tất cả các mặt hàng vào cuối tuần này."
+  expect_terms: ["giảm giá", "cuối tuần"]
+  expect_no_translate: ["20%"]
+
+- id: gen-weather-06
+  direction: vi2en
+  domain: general
+  source: "Trời đang mưa to nên nhớ mang theo ô khi ra ngoài."
+  reference: "It's raining heavily, so remember to bring an umbrella when you go out."
+  expect_terms: ["umbrella"]

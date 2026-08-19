@@ -30,3 +30,43 @@
   source: 'The loss is defined as $L = -\sum y \log p$ for each batch.'
   reference: 'Hàm mất mát được định nghĩa là $L = -\sum y \log p$ cho mỗi batch.'
   expect_no_translate: ['$L = -\sum y \log p$']
+
+- id: tech-code-05
+  direction: en2vi
+  domain: technical
+  source: "Call `df.groupby('id').sum()` to aggregate the rows."
+  reference: "Gọi `df.groupby('id').sum()` để tổng hợp các hàng."
+  expect_terms: ["tổng hợp"]
+  expect_no_translate: ["`df.groupby('id').sum()`"]
+
+- id: tech-url-06
+  direction: vi2en
+  domain: technical
+  source: "Tải phiên bản v3.4 tại https://example.com/download và cài bằng pip."
+  reference: "Download version v3.4 from https://example.com/download and install it with pip."
+  expect_terms: ["download", "install"]
+  expect_no_translate: ["v3.4", "https://example.com/download", "pip"]
+
+- id: tech-list-07
+  direction: en2vi
+  domain: technical
+  source: |-
+    Before deploying, complete the checklist:
+    - set the environment variables
+    - run the database migration
+    - restart the worker process
+  reference: |-
+    Trước khi triển khai, hoàn tất danh sách kiểm tra:
+    - đặt các biến môi trường
+    - chạy migration cơ sở dữ liệu
+    - khởi động lại tiến trình worker
+  expect_terms: ["triển khai", "biến môi trường"]
+  expect_no_translate: ["migration", "worker"]
+
+- id: tech-api-08
+  direction: vi2en
+  domain: technical
+  source: "API trả về mã trạng thái 200 khi yêu cầu thành công."
+  reference: "The API returns status code 200 when the request succeeds."
+  expect_terms: ["status code", "request"]
+  expect_no_translate: ["API", "200"]
