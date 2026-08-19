@@ -54,6 +54,14 @@ class BlockType(Enum):
     # References
     REFERENCE_ENTRY = "reference_entry"
 
+    # Layout / structural (L0: complete the model so the layout pillar —
+    # tables, figures, lists, captions, page breaks — has faithful AST blocks)
+    TABLE = "table"
+    FIGURE = "figure"
+    LIST = "list"
+    CAPTION = "caption"
+    PAGE_BREAK = "page_break"
+
 
 class HeadingLevel(Enum):
     """Heading hierarchy levels."""
@@ -236,6 +244,67 @@ class ReferenceEntry(Block):
 
 
 # ============================================================================
+# Layout blocks (L0): tables, figures, lists, captions, page breaks
+# ============================================================================
+
+@dataclass
+class TableBlock(Block):
+    """A table. ``rows[r][c]`` is the (already-translated) cell text; the first
+    ``header_rows`` rows are header rows."""
+    rows: List[List[str]]
+    header_rows: int = 1
+    caption: Optional[str] = None
+    column_widths: Optional[List[float]] = None  # relative widths, sum need not be 1
+
+    def __post_init__(self):
+        self.block_type = BlockType.TABLE
+
+
+@dataclass
+class Figure(Block):
+    """An image/figure. ``image_ref`` is a path, id, or data: URI — the image
+    bytes themselves are NOT translated, only the caption is."""
+    image_ref: str
+    caption: Optional[str] = None
+    alt_text: Optional[str] = None
+    number: Optional[str] = None  # e.g., "1.2"
+    width_pt: Optional[float] = None
+    height_pt: Optional[float] = None
+
+    def __post_init__(self):
+        self.block_type = BlockType.FIGURE
+
+
+@dataclass
+class ListBlock(Block):
+    """An ordered or unordered list of items (flat; nested lists deferred)."""
+    items: List[str]
+    ordered: bool = False
+
+    def __post_init__(self):
+        self.block_type = BlockType.LIST
+
+
+@dataclass
+class Caption(Block):
+    """A standalone caption for a figure or table rendered as its own block."""
+    text: str
+    target: Optional[str] = None  # "figure" | "table"
+    number: Optional[str] = None
+
+    def __post_init__(self):
+        self.block_type = BlockType.CAPTION
+
+
+@dataclass
+class PageBreak(Block):
+    """An explicit page break."""
+
+    def __post_init__(self):
+        self.block_type = BlockType.PAGE_BREAK
+
+
+# ============================================================================
 # Document-level Classes
 # ============================================================================
 
@@ -390,7 +459,6 @@ class DocumentAST:
         Returns:
             Dict with counts of each block type
         """
-        from collections import Counter
         stats = {
             'headings': len([b for b in self.blocks if isinstance(b, Heading)]),
             'paragraphs': len([b for b in self.blocks if isinstance(b, Paragraph)]),
@@ -401,6 +469,11 @@ class DocumentAST:
             'theorems': len([b for b in self.blocks if isinstance(b, TheoremBox)]),
             'proofs': len([b for b in self.blocks if isinstance(b, ProofBox)]),
             'references': len([b for b in self.blocks if isinstance(b, ReferenceEntry)]),
+            'tables': len([b for b in self.blocks if isinstance(b, TableBlock)]),
+            'figures': len([b for b in self.blocks if isinstance(b, Figure)]),
+            'lists': len([b for b in self.blocks if isinstance(b, ListBlock)]),
+            'captions': len([b for b in self.blocks if isinstance(b, Caption)]),
+            'page_breaks': len([b for b in self.blocks if isinstance(b, PageBreak)]),
         }
         return stats
 
