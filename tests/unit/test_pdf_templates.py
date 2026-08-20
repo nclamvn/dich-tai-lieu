@@ -1,0 +1,66 @@
+"""PDF style templates (Option A, stage 2b.4).
+
+The PDF adapter now reads ast.styles and registers a serif + a sans family, so
+ebook/academic render serif and business renders sans — parity with the DOCX
+template system. Fonts are embedded, so the /BaseFont shows up via pypdf.
+"""
+
+import pypdf
+
+from core.rendering.document_ast import (
+    DocumentAST,
+    DocumentMetadata,
+    Heading,
+    HeadingLevel,
+    Paragraph,
+    StyleSheet,
+)
+from core.rendering.pdf_adapter import render_pdf_from_ast
+
+
+def _base_fonts(path) -> str:
+    reader = pypdf.PdfReader(str(path))
+    names = set()
+    for page in reader.pages:
+        fonts = (page.get("/Resources") or {}).get("/Font") or {}
+        for f in fonts.values():
+            obj = f.get_object()
+            if obj.get("/BaseFont"):
+                names.add(str(obj.get("/BaseFont")))
+            for df in obj.get("/DescendantFonts") or []:
+                d = df.get_object()
+                if d.get("/BaseFont"):
+                    names.add(str(d.get("/BaseFont")))
+    return " ".join(sorted(names))
+
+
+def _render(tmp_path, template) -> str:
+    ast = DocumentAST(metadata=DocumentMetadata(title="T"), styles=StyleSheet())
+    ast.add_block(Heading(level=HeadingLevel.H1, text="Chương một"))
+    ast.add_block(Paragraph(text="Đoạn văn tiếng Việt đủ dấu."))
+    out = tmp_path / f"{template or 'none'}.pdf"
+    render_pdf_from_ast(ast, out, template=template)
+    return _base_fonts(out)
+
+
+def test_ebook_is_serif_not_sans(tmp_path):
+    fonts = _render(tmp_path, "ebook")
+    assert "DejaVuSerif" in fonts and "DejaVuSans" not in fonts
+
+
+def test_business_is_sans_not_serif(tmp_path):
+    fonts = _render(tmp_path, "business")
+    assert "DejaVuSans" in fonts and "DejaVuSerif" not in fonts
+
+
+def test_academic_is_serif(tmp_path):
+    assert "DejaVuSerif" in _render(tmp_path, "academic")
+
+
+def test_default_no_template_uses_serif(tmp_path):
+    # default StyleSheet body font is Georgia -> serif
+    assert "DejaVuSerif" in _render(tmp_path, None)
+
+
+def test_ebook_and_business_differ(tmp_path):
+    assert _render(tmp_path, "ebook") != _render(tmp_path, "business")

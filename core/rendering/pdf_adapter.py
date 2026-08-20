@@ -62,74 +62,143 @@ _FONT_FAMILIES = [
     ),
 ]
 
-_FONT_NAME = "DocFont"
-_font_ready = False
+# Serif faces (drive the ebook/academic templates); sans reuses the list above.
+_SERIF_FAMILIES = [
+    (
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Italic.ttf",
+    ),
+    (
+        "/usr/share/fonts/truetype/liberation/LiberationSerif-Regular.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSerif-Bold.ttf",
+        "/usr/share/fonts/truetype/liberation/LiberationSerif-Italic.ttf",
+    ),
+]
+
+# AST font families that map to the *sans* face; everything else (Georgia,
+# Cambria, Times, "serif", …) maps to the serif face.
+_SANS_FAMILY_NAMES = {
+    "arial", "helvetica", "calibri", "verdana", "tahoma", "segoe ui",
+    "sans", "sans-serif", "dejavusans", "liberation sans",
+}
+
+_faces_ready = False
+_FACES = {"serif": "Helvetica", "sans": "Helvetica"}
 
 
-def _ensure_font() -> str:
-    """Register a Vietnamese-capable font family; return the family name.
-
-    Falls back to the built-in 'Helvetica' (limited Vietnamese) if no Unicode
-    TTF is found — a warning is logged so production can install one.
-    """
-    global _font_ready
-    if _font_ready:
-        return _FONT_NAME
-
+def _register_family(name: str, candidates) -> str:
+    """Register the first available (regular, bold, italic) TTF triple under
+    *name*; return *name* on success, else 'Helvetica'."""
     from reportlab.pdfbase import pdfmetrics
     from reportlab.pdfbase.ttfonts import TTFont
 
-    for regular, bold, italic in _FONT_FAMILIES:
+    for regular, bold, italic in candidates:
         if not Path(regular).is_file():
             continue
         try:
-            pdfmetrics.registerFont(TTFont(_FONT_NAME, regular))
-            pdfmetrics.registerFont(TTFont(f"{_FONT_NAME}-Bold", bold if Path(bold).is_file() else regular))
-            pdfmetrics.registerFont(TTFont(f"{_FONT_NAME}-Italic", italic if Path(italic).is_file() else regular))
+            pdfmetrics.registerFont(TTFont(name, regular))
+            pdfmetrics.registerFont(TTFont(f"{name}-Bold", bold if Path(bold).is_file() else regular))
+            pdfmetrics.registerFont(TTFont(f"{name}-Italic", italic if Path(italic).is_file() else regular))
             pdfmetrics.registerFontFamily(
-                _FONT_NAME,
-                normal=_FONT_NAME,
-                bold=f"{_FONT_NAME}-Bold",
-                italic=f"{_FONT_NAME}-Italic",
-                boldItalic=f"{_FONT_NAME}-Bold",
+                name, normal=name, bold=f"{name}-Bold",
+                italic=f"{name}-Italic", boldItalic=f"{name}-Bold",
             )
-            _font_ready = True
-            return _FONT_NAME
+            return name
         except Exception as e:  # pragma: no cover - registration edge cases
             logger.warning("Font registration failed for %s: %s", regular, e)
-
-    logger.warning(
-        "No Unicode TTF found; PDF falls back to Helvetica (limited Vietnamese). "
-        "Install a Vietnamese-capable font (e.g. DejaVuSans) for production."
-    )
     return "Helvetica"
 
 
+def _ensure_fonts() -> dict:
+    """Register a serif + a sans Vietnamese-capable family; return their names.
+
+    Serif drives the ebook/academic templates, sans the business template.
+    Falls back to Helvetica (limited Vietnamese) if no Unicode TTF is found.
+    """
+    global _faces_ready, _FACES
+    if _faces_ready:
+        return _FACES
+    _FACES = {
+        "serif": _register_family("DocSerif", _SERIF_FAMILIES),
+        "sans": _register_family("DocSans", _FONT_FAMILIES),
+    }
+    if _FACES["serif"] == "Helvetica" and _FACES["sans"] == "Helvetica":
+        logger.warning(
+            "No Unicode TTF found; PDF falls back to Helvetica (limited Vietnamese). "
+            "Install a Vietnamese-capable font (e.g. DejaVu) for production."
+        )
+    _faces_ready = True
+    return _FACES
+
+
+def _face_for(family: str, faces: dict) -> str:
+    """Pick the sans or serif registered face for an AST font-family name."""
+    key = (family or "").strip().lower()
+    return faces["sans"] if key in _SANS_FAMILY_NAMES else faces["serif"]
+
+
+def _stylesheet_for_template(name: str):
+    """Map a template name to a StyleSheet (kept in sync with
+    docx_adapter._stylesheet_for_template; de-duplicate in a later cleanup)."""
+    from core.rendering.document_ast import (
+        create_academic_stylesheet,
+        create_book_stylesheet,
+    )
+
+    key = (name or "").strip().lower()
+    if key in ("academic", "stem"):
+        return create_academic_stylesheet()
+    if key in ("business", "report"):
+        sheet = create_book_stylesheet()
+        for ps in (sheet.heading_1, sheet.heading_2, sheet.heading_3, sheet.body):
+            ps.font.family = "Arial"
+        sheet.body.alignment = "left"
+        sheet.body.spacing.first_line_indent_pt = 0.0
+        return sheet
+    return create_book_stylesheet()  # ebook / book / default
+
+
 class _PdfRenderer:
-    def __init__(self, ast: DocumentAST, font: str):
-        from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_RIGHT
+    def __init__(self, ast: DocumentAST, faces: dict):
+        from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT, TA_RIGHT
         from reportlab.lib.styles import ParagraphStyle
 
         self.ast = ast
-        self.font = font
-        bold = f"{font}-Bold" if font == _FONT_NAME else "Helvetica-Bold"
-        size = ast.metadata.body_size_pt
+        s = ast.styles
+        align_map = {"justify": TA_JUSTIFY, "left": TA_LEFT, "right": TA_RIGHT, "center": TA_CENTER}
 
-        self.body = ParagraphStyle("body", fontName=font, fontSize=size, leading=size * 1.35, alignment=TA_JUSTIFY)
+        def _bold(face):
+            return f"{face}-Bold" if face != "Helvetica" else "Helvetica-Bold"
+
+        body_face = _face_for(s.body.font.family, faces)
+        self.font = body_face
+        size = s.body.font.size_pt
+        self.body = ParagraphStyle(
+            "body", fontName=body_face, fontSize=size,
+            leading=size * (s.body.spacing.line_spacing or 1.35),
+            alignment=align_map.get(s.body.alignment, TA_JUSTIFY),
+        )
         self.headings = {
-            1: ParagraphStyle("h1", fontName=bold, fontSize=16, leading=20, spaceBefore=14, spaceAfter=8),
-            2: ParagraphStyle("h2", fontName=bold, fontSize=13, leading=17, spaceBefore=12, spaceAfter=6),
-            3: ParagraphStyle("h3", fontName=bold, fontSize=11.5, leading=15, spaceBefore=10, spaceAfter=5),
+            lvl: ParagraphStyle(
+                f"h{lvl}",
+                fontName=_bold(_face_for(hs.font.family, faces)),
+                fontSize=hs.font.size_pt,
+                leading=hs.font.size_pt * 1.25,
+                spaceBefore=hs.spacing.space_before_pt,
+                spaceAfter=hs.spacing.space_after_pt,
+            )
+            for lvl, hs in ((1, s.heading_1), (2, s.heading_2), (3, s.heading_3))
         }
-        self.caption = ParagraphStyle("cap", fontName=font, fontSize=9.5, leading=12, alignment=TA_CENTER)
+        self.caption = ParagraphStyle("cap", fontName=body_face, fontSize=9.5, leading=12, alignment=TA_CENTER)
         self.quote = ParagraphStyle(
-            "quote", fontName=font, fontSize=size - 0.5, leading=(size - 0.5) * 1.3,
+            "quote", fontName=body_face, fontSize=size - 0.5, leading=(size - 0.5) * 1.3,
             leftIndent=28, rightIndent=28, alignment=TA_JUSTIFY,
         )
-        self.right = ParagraphStyle("right", fontName=font, fontSize=size - 1, leading=size * 1.2, alignment=TA_RIGHT)
-        self.center = ParagraphStyle("center", fontName=font, fontSize=size, leading=size * 1.3, alignment=TA_CENTER)
-        self.cell = ParagraphStyle("cell", fontName=font, fontSize=size - 1, leading=(size - 1) * 1.2)
-        self.mono = ParagraphStyle("mono", fontName=font, fontSize=size, leading=size * 1.3, alignment=TA_CENTER)
+        self.right = ParagraphStyle("right", fontName=body_face, fontSize=size - 1, leading=size * 1.2, alignment=TA_RIGHT)
+        self.center = ParagraphStyle("center", fontName=body_face, fontSize=size, leading=size * 1.3, alignment=TA_CENTER)
+        self.cell = ParagraphStyle("cell", fontName=body_face, fontSize=size - 1, leading=(size - 1) * 1.2)
+        self.mono = ParagraphStyle("mono", fontName=body_face, fontSize=size, leading=size * 1.3, alignment=TA_CENTER)
 
     def flowables_for(self, block: Block) -> list:
         from reportlab.platypus import Paragraph as P
@@ -259,16 +328,28 @@ class _PdfRenderer:
         return out
 
 
-def render_pdf_from_ast(ast: DocumentAST, output_path: Path, title: Optional[str] = None) -> None:
-    """Render a DocumentAST to a PDF file."""
+def render_pdf_from_ast(
+    ast: DocumentAST,
+    output_path: Path,
+    title: Optional[str] = None,
+    template: Optional[str] = None,
+) -> None:
+    """Render a DocumentAST to a PDF file. ``template`` (ebook/academic/business)
+    swaps the stylesheet — serif face for ebook/academic, sans for business —
+    mirroring the DOCX renderer; when None, the AST's own styles are used."""
     from reportlab.lib.units import mm
     from reportlab.platypus import SimpleDocTemplate, Spacer
+
+    if template:
+        import dataclasses
+
+        ast = dataclasses.replace(ast, styles=_stylesheet_for_template(template))
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    font = _ensure_font()
-    renderer = _PdfRenderer(ast, font)
+    faces = _ensure_fonts()
+    renderer = _PdfRenderer(ast, faces)
     md = ast.metadata
 
     doc = SimpleDocTemplate(
