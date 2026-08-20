@@ -66,8 +66,17 @@ drop.
      that reads it keeps working. (Follow-up: carry runs into list items,
      blockquotes and table cells, and source them from `ast_builder(DocNode → AST)`
      where the semantic nodes still exist, not only from the enriched Markdown.)
-3. **Wire behind a flag.** Expose the AST facade as an alternative output path
-   (e.g. `OUTPUT_PIPELINE=ast`), parallel to the engines; exercise both in CI.
+3. **Wire behind a flag — _done_.** The live professional DOCX/PDF converters
+   (`core_v2/output_converter.convert_markdown_to_{docx,pdf}_professional`, the
+   functions the orchestrator calls) now consult `OUTPUT_PIPELINE`. Unset /
+   `engine` (default) keeps the legacy `docx_engine` / `pdf_engine` path exactly
+   as before; `OUTPUT_PIPELINE=ast` routes markdown → `extract_to_ast` →
+   `render_docx_from_ast` (ebook/academic/business template + title page + TOC +
+   header/footer) / `render_pdf_from_ast` (serif/sans template). The AST branch is
+   wrapped in a try/except that **falls back to the legacy engine on any error**,
+   so flipping the flag can never leave a job with no output. Env wins live (ops
+   can flip without a code change); the `output_pipeline` setting is the default.
+   Both branches are exercised by `tests/unit/test_output_pipeline_flag.py`.
 4. **Flip the default** to the AST path, keeping the engines as fallback. Gate:
    the eval baseline (needs a provider key) shows no regression, and the
    output-equivalence tests are green.
@@ -78,7 +87,8 @@ drop.
 
 ## Safety gates (every stage)
 
-- The live default does **not** change until stage 4.
+- The live default does **not** change until stage 4. (Stage 3 added the flag but
+  left `engine` the default; `ast` is opt-in and self-heals via legacy fallback.)
 - Full CI green on Python 3.11 + 3.12 (unit / api / security / core / integration
   / eval / import-smoke).
 - Output-equivalence tests must pass before any default flip.
@@ -90,8 +100,10 @@ drop.
 ## Status
 
 Stage 1 (faithful Markdown → AST), stage 2a (equivalence harness + correctness
-fixes) and **all of stage 2b** — **DOCX document assembly** (template + title page
-+ TOC + running header/footer), **PDF templates**, and **inline runs**
-(bold/italic/code, default-safe `Paragraph.runs` overlay) — shipped. Remaining:
-stage 3 (flag-wire `OUTPUT_PIPELINE=ast`), stage 4 (flip default — needs the eval
-baseline from `docs/EVAL_HARNESS.md`), stage 5 (retire the legacy engines).
+fixes), **all of stage 2b** — **DOCX document assembly** (template + title page +
+TOC + running header/footer), **PDF templates**, and **inline runs**
+(bold/italic/code, default-safe `Paragraph.runs` overlay) — and **stage 3**
+(flag-wire `OUTPUT_PIPELINE=ast` on the live DOCX/PDF converters, with automatic
+fallback to the legacy engine) — shipped. Remaining: stage 4 (flip the default —
+needs the eval baseline from `docs/EVAL_HARNESS.md` as the quality gate), stage 5
+(retire the legacy engines after a soak).
