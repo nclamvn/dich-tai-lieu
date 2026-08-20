@@ -1003,7 +1003,10 @@ class OutputConverter:
         tmpl = _ast_template(template)
 
         def _render() -> Path:
-            render_pdf_from_ast(ast, output_path, title=title, template=tmpl)
+            render_pdf_from_ast(
+                ast, output_path, title=title, template=tmpl,
+                title_page=True, toc=True, header_footer=True,
+            )
             return output_path
 
         result = await run_blocking(_render)

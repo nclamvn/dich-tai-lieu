@@ -32,6 +32,7 @@ from core.rendering.document_ast import (
     TableBlock,
     TheoremBox,
 )
+from core.rendering.inline import parse_inline
 
 logger = logging.getLogger(__name__)
 
@@ -91,7 +92,7 @@ def _table_xhtml(block: TableBlock) -> str:
     parts = ["<table>"]
     for r, row in enumerate(rows):
         tag = "th" if r < block.header_rows else "td"
-        parts.append("<tr>" + "".join(f"<{tag}>{e(c)}</{tag}>" for c in row) + "</tr>")
+        parts.append("<tr>" + "".join(f"<{tag}>{_inline_html(c)}</{tag}>" for c in row) + "</tr>")
     parts.append("</table>")
     if block.caption:
         parts.append(f'<p class="caption">{e(block.caption)}</p>')
@@ -115,6 +116,13 @@ def _runs_to_xhtml(runs) -> str:
     return "".join(parts)
 
 
+def _inline_html(text: str) -> str:
+    """Semantic XHTML for *text*: inline emphasis spans when the text has Markdown
+    markers, else the escaped plain text (unchanged)."""
+    runs = parse_inline(text)
+    return _runs_to_xhtml(runs) if runs else html.escape(text)
+
+
 def _block_to_xhtml(
     block: Block,
     register_image: Optional[Callable[[bytes, Optional[str]], str]] = None,
@@ -130,7 +138,7 @@ def _block_to_xhtml(
         return f"<p>{e(block.text)}</p>"
     if isinstance(block, Blockquote):
         attr = f"<br/>— {e(block.attribution)}" if block.attribution else ""
-        return f"<blockquote>{e(block.text)}{attr}</blockquote>"
+        return f"<blockquote>{_inline_html(block.text)}{attr}</blockquote>"
     if isinstance(block, Epigraph):
         attr = f"<br/>— {e(block.attribution)}" if block.attribution else ""
         return f'<p class="epigraph">{e(block.text)}{attr}</p>'
@@ -161,7 +169,7 @@ def _block_to_xhtml(
         return f'<figure><p class="caption">[Figure: {label}]</p>{caption}</figure>'
     if isinstance(block, ListBlock):
         tag = "ol" if block.ordered else "ul"
-        items = "".join(f"<li>{e(item)}</li>" for item in block.items)
+        items = "".join(f"<li>{_inline_html(item)}</li>" for item in block.items)
         return f"<{tag}>{items}</{tag}>"
     if isinstance(block, Caption):
         label = f"{e(block.target).capitalize()} {e(block.number)}. " if (block.target and block.number) else ""

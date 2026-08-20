@@ -63,9 +63,16 @@ drop.
      `docx_adapter` emits one Word run per span, `pdf_adapter` uses ReportLab
      `<b>`/`<i>` + built-in Courier, `epub_adapter` uses `<strong>`/`<em>`/`<code>`.
      `.text` stays a faithful plaintext view (markers removed), so every consumer
-     that reads it keeps working. (Follow-up: carry runs into list items,
-     blockquotes and table cells, and source them from `ast_builder(DocNode → AST)`
-     where the semantic nodes still exist, not only from the enriched Markdown.)
+     that reads it keeps working. **Polish _(done)_:** the same emphasis now also
+     renders inside **list items, blockquotes and table cells** — via the shared
+     `core.rendering.inline.parse_inline`, parsed at render time in all three
+     adapters, no AST model change (plain text stays plain). And the **PDF adapter
+     reached DOCX book parity**: `render_pdf_from_ast` gained default-off
+     `title_page` / `toc` (a real reportlab TableOfContents with page numbers via
+     multiBuild) / `header_footer` (centered page number, cover unnumbered), and
+     the live `OUTPUT_PIPELINE=ast` PDF path now requests them. (Remaining
+     follow-up: source runs from `ast_builder(DocNode → AST)` where the semantic
+     nodes still exist, not only from the enriched Markdown.)
 3. **Wire behind a flag — _done_.** The live professional DOCX/PDF converters
    (`core_v2/output_converter.convert_markdown_to_{docx,pdf}_professional`, the
    functions the orchestrator calls) now consult `OUTPUT_PIPELINE`. Unset /
