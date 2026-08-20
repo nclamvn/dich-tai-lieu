@@ -100,11 +100,34 @@ def _stylesheet_for_template(name: str):
     return create_book_stylesheet()  # ebook / book / default
 
 
+def _render_title_page(doc: Document, ast: DocumentAST, title: Optional[str]) -> None:
+    """Prepend a simple centered cover page (title + author) and a page break."""
+    md = ast.metadata
+    heading_font = ast.styles.heading_1.font.family
+    for _ in range(6):  # push the title toward the vertical middle
+        doc.add_paragraph()
+    tp = doc.add_paragraph()
+    tp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    tr = tp.add_run(title or md.title or "")
+    tr.bold = True
+    tr.font.size = Pt(26)
+    tr.font.name = heading_font
+    if md.author:
+        doc.add_paragraph()
+        ap = doc.add_paragraph()
+        ap.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        ar = ap.add_run(md.author)
+        ar.font.size = Pt(15)
+        ar.font.name = heading_font
+    doc.add_page_break()
+
+
 def render_docx_from_ast(
     ast: DocumentAST,
     output_path: Path,
     title: Optional[str] = None,
     template: Optional[str] = None,
+    title_page: bool = False,
 ) -> None:
     """
     Render DocumentAST to DOCX format.
@@ -117,6 +140,8 @@ def render_docx_from_ast(
             "academic" (Cambria) or "business" (Arial sans, left-aligned).
             When given, its stylesheet replaces ``ast.styles`` for this render;
             when None, the AST's own styles are used unchanged.
+        title_page: when True, prepend a centered title/author cover page and a
+            page break before the content.
 
     Raises:
         ValueError: If AST is invalid
@@ -139,6 +164,9 @@ def render_docx_from_ast(
 
     # Set document-level properties
     _setup_document_properties(doc, ast, title)
+
+    if title_page:
+        _render_title_page(doc, ast, title)
 
     # Render each block
     for idx, block in enumerate(ast.blocks):
@@ -709,10 +737,10 @@ def _apply_paragraph_style(p, para_style: ParagraphStyle) -> None:
 # ============================================================================
 
 def render_book_docx(ast: DocumentAST, output_path: Path) -> None:
-    """Render book-style DOCX (Georgia serif book template)."""
-    render_docx_from_ast(ast, output_path, template="ebook")
+    """Render book-style DOCX (Georgia serif book template, with title page)."""
+    render_docx_from_ast(ast, output_path, template="ebook", title_page=True)
 
 
 def render_academic_docx(ast: DocumentAST, output_path: Path) -> None:
-    """Render academic-style DOCX (Cambria academic template)."""
-    render_docx_from_ast(ast, output_path, template="academic")
+    """Render academic-style DOCX (Cambria academic template, with title page)."""
+    render_docx_from_ast(ast, output_path, template="academic", title_page=True)
