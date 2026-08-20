@@ -8,6 +8,7 @@ Properly handles LaTeX formulas:
 """
 
 import asyncio
+import os
 import subprocess
 import tempfile
 import shutil
@@ -25,6 +26,38 @@ from core.pdf_engine import PdfRenderer, create_pdf_template
 from core_v2.aio_utils import run_blocking
 
 logger = logging.getLogger(__name__)
+
+
+# --------------------------------------------------------------------------- #
+# Output pipeline selection (Option A, stage 3) — flag-gated, default-safe.
+# --------------------------------------------------------------------------- #
+def _output_pipeline() -> str:
+    """Resolve the active output pipeline, lowercased.
+
+    A live ``OUTPUT_PIPELINE`` env var wins (ops-flippable without a restart and
+    test-friendly), else the ``output_pipeline`` setting, else ``"engine"``.
+    """
+    value = os.getenv("OUTPUT_PIPELINE")
+    if value is None:
+        try:
+            from config.settings import settings
+
+            value = getattr(settings, "output_pipeline", None)
+        except Exception:  # pragma: no cover - settings optional
+            value = None
+    return (value or "engine").strip().lower()
+
+
+def _ast_pipeline_enabled() -> bool:
+    """True when the live DOCX/PDF export should route through the AST stack."""
+    return _output_pipeline() == "ast"
+
+
+def _ast_template(template: str) -> str:
+    """Map a professional-template name to an AST adapter template, defaulting
+    unknown / ``auto`` to ``ebook``."""
+    key = (template or "").strip().lower()
+    return key if key in ("ebook", "academic", "business") else "ebook"
 
 
 class OutputFormat(Enum):
@@ -887,6 +920,96 @@ class OutputConverter:
             logger.warning(f"Error reading manifest for template selection: {e}")
             return "ebook"
 
+    # =========================================================================
+    # AST pipeline (Option A, stage 3) — flag-gated alternative renderers.
+    # Selected by OUTPUT_PIPELINE=ast; the public converters below wrap these in
+    # a fallback to the legacy engine so a failure here never loses the output.
+    # =========================================================================
+
+    async def _markdown_to_docx_via_ast(
+        self,
+        markdown_content: str,
+        output_path: Path,
+        template: str,
+        title: str,
+        author: str,
+        language: str,
+    ) -> Path:
+        """Render professional DOCX through the DocumentAST + core/rendering stack.
+
+        Mirrors the legacy professional output (template + title page + TOC +
+        running header/footer) but drives it from the single AST.
+        """
+        from core.rendering.docx_adapter import render_docx_from_ast
+        from core.rendering.document_extractor import extract_to_ast
+
+        output_path = Path(output_path)
+        temp_input = self.temp_dir / "temp_markdown_docx_ast.md"
+        temp_input.write_text(markdown_content, encoding="utf-8")
+        try:
+            ast = await run_blocking(extract_to_ast, temp_input)
+        finally:
+            temp_input.unlink(missing_ok=True)
+
+        if title:
+            ast.metadata.title = title
+        if author:
+            ast.metadata.author = author
+        if language:
+            ast.metadata.language = language
+
+        tmpl = _ast_template(template)
+
+        def _render() -> Path:
+            render_docx_from_ast(
+                ast, output_path, title=title, template=tmpl,
+                title_page=True, toc=True, header_footer=True,
+            )
+            return output_path
+
+        result = await run_blocking(_render)
+        logger.info(f"Professional DOCX via AST pipeline: {result}")
+        return result
+
+    async def _markdown_to_pdf_via_ast(
+        self,
+        markdown_content: str,
+        output_path: Path,
+        template: str,
+        title: str,
+        author: str,
+        language: str,
+    ) -> Path:
+        """Render professional PDF through the DocumentAST + core/rendering stack
+        (serif/sans template parity with the DOCX path)."""
+        from core.rendering.document_extractor import extract_to_ast
+        from core.rendering.pdf_adapter import render_pdf_from_ast
+
+        output_path = Path(output_path)
+        temp_input = self.temp_dir / "temp_markdown_pdf_ast.md"
+        temp_input.write_text(markdown_content, encoding="utf-8")
+        try:
+            ast = await run_blocking(extract_to_ast, temp_input)
+        finally:
+            temp_input.unlink(missing_ok=True)
+
+        if title:
+            ast.metadata.title = title
+        if author:
+            ast.metadata.author = author
+        if language:
+            ast.metadata.language = language
+
+        tmpl = _ast_template(template)
+
+        def _render() -> Path:
+            render_pdf_from_ast(ast, output_path, title=title, template=tmpl)
+            return output_path
+
+        result = await run_blocking(_render)
+        logger.info(f"Professional PDF via AST pipeline: {result}")
+        return result
+
     async def convert_markdown_to_docx_professional(
         self,
         markdown_content: str,
@@ -910,10 +1033,20 @@ class OutputConverter:
         Returns:
             Path to created DOCX file
         """
+        output_path = Path(output_path)
+
+        if _ast_pipeline_enabled():
+            try:
+                return await self._markdown_to_docx_via_ast(
+                    markdown_content, output_path, template, title, author, language
+                )
+            except Exception as e:
+                logger.warning(
+                    "AST DOCX pipeline failed (%s); falling back to legacy engine", e
+                )
+
         from core.docx_engine.models import DocumentMeta
         from core.i18n import get_string
-
-        output_path = Path(output_path)
 
         def _render():
             # Create renderer with selected template
@@ -1015,11 +1148,21 @@ class OutputConverter:
         Returns:
             Path to created PDF file
         """
+        output_path = Path(output_path)
+
+        if _ast_pipeline_enabled():
+            try:
+                return await self._markdown_to_pdf_via_ast(
+                    markdown_content, output_path, template, title, author, language
+                )
+            except Exception as e:
+                logger.warning(
+                    "AST PDF pipeline failed (%s); falling back to legacy engine", e
+                )
+
         from core.docx_engine.models import DocumentMeta
         from core.docx_engine.normalizer import DocumentNormalizer
         from core.i18n import get_string
-
-        output_path = Path(output_path)
 
         def _render():
             # Create renderer with selected template

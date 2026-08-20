@@ -36,6 +36,13 @@ data/checkpoints/*
 data/temp/*
 data/*.db
 data/**/*.db
+# SQLite WAL/SHM/journal sidecars (created at runtime next to *.db)
+data/**/*.db-wal
+data/**/*.db-shm
+data/**/*.db-journal
+*.db-wal
+*.db-shm
+*.db-journal
 *.pyc
 
 # Screenshots & runtime artifacts

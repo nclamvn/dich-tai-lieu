@@ -55,6 +55,15 @@ class Settings(BaseSettings):
     # Bump to invalidate all chunk-cache entries after a prompt/algorithm change.
     translation_prompt_version: str = "v2"
 
+    # ---- Output pipeline (Option A: AST convergence) ----
+    # Which renderer stack the live DOCX/PDF export uses:
+    #   "engine" (default) -> the mature legacy docx_engine / pdf_engine
+    #   "ast"              -> the DocumentAST + core/rendering adapters
+    # Default-safe: unset/"engine" keeps current behavior. The AST path also
+    # auto-falls-back to the engine on any error, so flipping this can never
+    # leave a job with no output. Env override: OUTPUT_PIPELINE=ast.
+    output_pipeline: str = "engine"
+
     # ---- Terminology ledger (auto-glossary + explicit glossaries) ----
     # Auto-extract key terms/proper nouns per document and inject them into the
     # cached system prompt so terminology stays consistent across every chunk.
