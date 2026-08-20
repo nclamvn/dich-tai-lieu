@@ -67,21 +67,35 @@ def _iter_block_items(document) -> Iterator:
             yield Table(child, document)
 
 
-def _paragraph_image_ref(paragraph) -> Optional[str]:
-    """Return an image reference if the paragraph embeds a picture, else None."""
+def _paragraph_image(paragraph) -> Optional[tuple]:
+    """If the paragraph embeds a picture, return ``(ref, image_bytes,
+    content_type)``; else ``None``.
+
+    The bytes are carried through the AST so downstream renderers re-embed the
+    real image instead of a placeholder. Bytes/content-type are best-effort: a
+    ref is always returned when a picture is present, bytes only when the related
+    image part is readable.
+    """
     from docx.oxml.ns import qn
 
     blips = paragraph._p.findall(".//" + qn("a:blip"))
     if not blips:
         return None
     rid = blips[0].get(qn("r:embed"))
+    ref = rid or "embedded-image"
+    image_bytes: Optional[bytes] = None
+    content_type: Optional[str] = None
     try:
         part = paragraph.part.related_parts.get(rid)
         if part is not None:
-            return str(part.partname)
+            ref = str(part.partname)
+            blob = getattr(part, "blob", None)
+            if blob:
+                image_bytes = bytes(blob)
+            content_type = getattr(part, "content_type", None) or None
     except Exception:
         pass
-    return rid or "embedded-image"
+    return ref, image_bytes, content_type
 
 
 def extract_docx(path: Union[str, Path]) -> DocumentAST:
@@ -109,13 +123,21 @@ def extract_docx(path: Union[str, Path]) -> DocumentAST:
             continue
 
         paragraph = item
-        image_ref = _paragraph_image_ref(paragraph)
+        image = _paragraph_image(paragraph)
         text = paragraph.text.strip()
         style = (paragraph.style.name if paragraph.style else "") or ""
 
-        if image_ref:
+        if image:
             flush_list()
-            ast.add_block(Figure(image_ref=image_ref, caption=text or None))
+            image_ref, image_bytes, content_type = image
+            ast.add_block(
+                Figure(
+                    image_ref=image_ref,
+                    caption=text or None,
+                    image_bytes=image_bytes,
+                    content_type=content_type,
+                )
+            )
         elif not text:
             continue  # skip empty spacer paragraphs
         elif style.startswith("Heading") or style == "Title":

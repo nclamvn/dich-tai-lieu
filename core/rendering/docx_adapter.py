@@ -510,23 +510,38 @@ def _render_table(doc: Document, table_block: TableBlock, ast: DocumentAST) -> N
 
 
 def _render_figure(doc: Document, figure: Figure, ast: DocumentAST) -> None:
-    """Embed the figure image if the ref is a readable file, else a placeholder.
+    """Embed the figure image, else a captioned placeholder.
 
-    Extraction records ``image_ref`` as an identifier (e.g. a DOCX part name),
-    not the image bytes, so a round-tripped figure renders as a captioned
-    placeholder rather than a re-embedded image (carrying bytes is a follow-up).
+    Preference order: carried ``image_bytes`` (survives a round trip) → a
+    readable file at ``image_ref`` → a centered ``[Figure: …]`` placeholder when
+    no pixels are available.
     """
     added = False
     ref = figure.image_ref or ""
-    try:
-        if ref and not ref.startswith(("embedded", "/word/")) and Path(ref).is_file():
+
+    if figure.image_bytes:
+        try:
+            from io import BytesIO
+
+            stream = BytesIO(figure.image_bytes)
             if figure.width_pt:
-                doc.add_picture(ref, width=Inches(figure.width_pt / 72.0))
+                doc.add_picture(stream, width=Inches(figure.width_pt / 72.0))
             else:
-                doc.add_picture(ref)
+                doc.add_picture(stream)
             added = True
-    except Exception as e:
-        logger.warning(f"Figure image add failed ({ref}): {e}")
+        except Exception as e:  # fall through to ref/placeholder
+            logger.warning(f"Figure image add from bytes failed: {e}")
+
+    if not added:
+        try:
+            if ref and not ref.startswith(("embedded", "/word/")) and Path(ref).is_file():
+                if figure.width_pt:
+                    doc.add_picture(ref, width=Inches(figure.width_pt / 72.0))
+                else:
+                    doc.add_picture(ref)
+                added = True
+        except Exception as e:
+            logger.warning(f"Figure image add failed ({ref}): {e}")
 
     if not added:
         placeholder = doc.add_paragraph()
