@@ -11,8 +11,9 @@ clear NotImplementedError for it rather than returning a lossy result silently.
 from __future__ import annotations
 
 import re
+from dataclasses import replace
 from pathlib import Path
-from typing import Iterator, Optional, Union
+from typing import Iterator, List, Optional, Union
 
 from core.rendering.document_ast import (
     Blockquote,
@@ -23,6 +24,7 @@ from core.rendering.document_ast import (
     Figure,
     Heading,
     HeadingLevel,
+    InlineRun,
     ListBlock,
     Paragraph,
     StyleSheet,
@@ -52,6 +54,143 @@ def _heading_level(style_name: Optional[str]) -> HeadingLevel:
     match = re.search(r"(\d+)", style_name or "")
     level = int(match.group(1)) if match else 1
     return HeadingLevel(max(1, min(3, level)))
+
+
+# --------------------------------------------------------------------------- #
+# Inline formatting (bold / italic / code) -> Paragraph.runs
+# --------------------------------------------------------------------------- #
+# Emphasis markers, most specific first. Code (backticks) has highest precedence
+# and its content is literal. Underscore forms are guarded by ``(?<!\w)``/``(?!\w)``
+# so identifiers and file paths (snake_case, file_name.ext) are left untouched;
+# asterisk forms need no guard.
+_MD_INLINE = re.compile(
+    r"(?P<code>`+)(?P<code_text>.+?)(?P=code)"
+    r"|\*\*\*(?P<bi_a>.+?)\*\*\*"
+    r"|\*\*(?P<b_a>.+?)\*\*"
+    r"|\*(?P<i_a>.+?)\*"
+    r"|(?<!\w)___(?P<bi_u>.+?)___(?!\w)"
+    r"|(?<!\w)__(?P<b_u>.+?)__(?!\w)"
+    r"|(?<!\w)_(?P<i_u>.+?)_(?!\w)"
+)
+
+# Monospace faces / character-style hints that mark a DOCX run as inline code.
+_MONO_FONT_NAMES = {
+    "consolas", "courier", "courier new", "menlo", "monaco", "monospace",
+    "dejavu sans mono", "lucida console", "sf mono", "roboto mono", "cascadia code",
+}
+
+
+def parse_inline(text: str) -> Optional[List[InlineRun]]:
+    """Parse Markdown inline emphasis in *text* into ``InlineRun`` spans.
+
+    Returns ``None`` when *text* carries no inline markup — the paragraph then
+    stays plain and fully backward-compatible. Otherwise returns the spans whose
+    concatenated ``.text`` equals *text* with the markers stripped: bold
+    (``**``/``__``), italic (``*``/``_``), bold+italic (``***``/``___``) and
+    inline code (`` `…` ``, content kept literal, no nested emphasis).
+    """
+    runs: List[InlineRun] = []
+    pos = 0
+    matched = False
+    for m in _MD_INLINE.finditer(text):
+        if m.start() > pos:
+            runs.append(InlineRun(text=text[pos:m.start()]))
+        if m.group("code") is not None:
+            runs.append(InlineRun(text=m.group("code_text"), code=True))
+        elif m.group("bi_a") is not None:
+            runs.append(InlineRun(text=m.group("bi_a"), bold=True, italic=True))
+        elif m.group("b_a") is not None:
+            runs.append(InlineRun(text=m.group("b_a"), bold=True))
+        elif m.group("i_a") is not None:
+            runs.append(InlineRun(text=m.group("i_a"), italic=True))
+        elif m.group("bi_u") is not None:
+            runs.append(InlineRun(text=m.group("bi_u"), bold=True, italic=True))
+        elif m.group("b_u") is not None:
+            runs.append(InlineRun(text=m.group("b_u"), bold=True))
+        elif m.group("i_u") is not None:
+            runs.append(InlineRun(text=m.group("i_u"), italic=True))
+        pos = m.end()
+        matched = True
+
+    if not matched:
+        return None
+    if pos < len(text):
+        runs.append(InlineRun(text=text[pos:]))
+    runs = [r for r in runs if r.text]
+    return runs or None
+
+
+def _paragraph_with_inline(text: str) -> Paragraph:
+    """Build a Paragraph, attaching inline runs when *text* has Markdown emphasis.
+
+    Keeps ``.text`` a faithful plaintext view (markers removed) so every consumer
+    that reads ``.text`` still works, whether or not runs are present.
+    """
+    runs = parse_inline(text)
+    if runs is None:
+        return Paragraph(text=text)
+    return Paragraph(text="".join(r.text for r in runs), runs=runs)
+
+
+def _run_is_code(run) -> bool:
+    """Heuristic: a DOCX run is inline code if its font is monospace or its
+    character style name mentions code/verbatim/mono."""
+    fname = (getattr(run.font, "name", None) or "").strip().lower()
+    if fname in _MONO_FONT_NAMES:
+        return True
+    try:
+        sname = (run.style.name or "").lower()
+    except Exception:  # pragma: no cover - defensive
+        sname = ""
+    return "code" in sname or "verbatim" in sname or "mono" in sname
+
+
+def _trim_runs(runs: List[InlineRun]) -> List[InlineRun]:
+    """Trim leading/trailing whitespace across the list so the concatenation
+    equals ``"".join(...).strip()`` — matching how plain paragraph text is
+    stripped — while preserving each span's formatting and internal spacing."""
+    runs = [r for r in runs if r.text]
+    while runs and runs[0].text.strip() == "":
+        runs = runs[1:]
+    if runs:
+        runs[0] = replace(runs[0], text=runs[0].text.lstrip())
+    while runs and runs[-1].text.strip() == "":
+        runs = runs[:-1]
+    if runs:
+        runs[-1] = replace(runs[-1], text=runs[-1].text.rstrip())
+    return [r for r in runs if r.text]
+
+
+def _docx_runs(paragraph) -> Optional[List[InlineRun]]:
+    """Extract inline runs from a python-docx paragraph, or ``None`` when the
+    whole paragraph is unformatted (keeps it plain / backward-compatible).
+
+    Adjacent runs with identical formatting are merged (python-docx often splits
+    a visual span into several runs), and edges are trimmed so the concatenation
+    matches the stripped ``paragraph.text``.
+    """
+    merged: List[InlineRun] = []
+    any_format = False
+    for run in paragraph.runs:
+        if not run.text:
+            continue
+        bold, italic, code = bool(run.bold), bool(run.italic), _run_is_code(run)
+        if bold or italic or code:
+            any_format = True
+        if (
+            merged
+            and merged[-1].bold == bold
+            and merged[-1].italic == italic
+            and merged[-1].code == code
+        ):
+            merged[-1] = replace(merged[-1], text=merged[-1].text + run.text)
+        else:
+            merged.append(InlineRun(text=run.text, bold=bold, italic=italic, code=code))
+
+    if not any_format:
+        return None
+    trimmed = _trim_runs(merged)
+    return trimmed or None
 
 
 # --------------------------------------------------------------------------- #
@@ -154,7 +293,8 @@ def extract_docx(path: Union[str, Path]) -> DocumentAST:
             pending_list[1].append(text)
         else:
             flush_list()
-            ast.add_block(Paragraph(text=text))
+            runs = _docx_runs(paragraph)
+            ast.add_block(Paragraph(text=text, runs=runs) if runs else Paragraph(text=text))
 
     flush_list()
     return ast
@@ -277,7 +417,7 @@ def extract_text(path: Union[str, Path]) -> DocumentAST:
             continue
 
         flush_list()
-        ast.add_block(Paragraph(text=line))
+        ast.add_block(_paragraph_with_inline(line))
         i += 1
 
     flush_list()
