@@ -68,3 +68,48 @@ def test_load_real_golden_set_parses():
     items = load_golden(ROOT / "evalkit" / "golden")
     assert len(items) >= 4
     assert all(it.id and it.direction in ("en2vi", "vi2en") for it in items)
+
+
+def test_real_golden_ids_are_unique():
+    items = load_golden(ROOT / "evalkit" / "golden")
+    ids = [it.id for it in items]
+    assert len(ids) == len(set(ids)), "duplicate golden ids"
+
+
+def test_real_golden_reference_satisfies_own_constraints():
+    """Data-quality gate: each item's own human reference must satisfy the
+    terminology constraints declared for it — else the constraint is wrong."""
+    items = load_golden(ROOT / "evalkit" / "golden")
+    problems = []
+    for it in items:
+        if not it.reference:
+            continue
+        for term in it.expect_terms:
+            if term.lower() not in it.reference.lower():
+                problems.append(f"{it.id}: reference missing expect_term '{term}'")
+        for tok in it.expect_no_translate:  # verbatim, case-sensitive
+            if tok not in it.reference:
+                problems.append(f"{it.id}: reference missing verbatim '{tok}'")
+    assert not problems, "\n".join(problems)
+
+
+def test_real_golden_end_to_end_offline():
+    """Prove the harness runs end-to-end over the REAL golden set with no API
+    key: a reference-echo 'translator' should score near-perfect and trip no
+    terminology/format violations. When a key is added, only translate_fn swaps."""
+    items = load_golden(ROOT / "evalkit" / "golden")
+    ref_by_source = {it.source: it.reference for it in items}
+
+    report = run_eval(items, lambda source, direction: ref_by_source[source])
+
+    assert report.overall() is not None and report.overall() > 0.9
+    per = report.per_scorer()
+    assert per.get("chrf", 0) > 0.9
+    assert per.get("format_preservation", 0) > 0.95
+    # A perfect (reference-echo) translation must not violate any terminology rule.
+    term_violations = sum(
+        len(it.scores["terminology"].violations)
+        for it in report.items
+        if "terminology" in it.scores
+    )
+    assert term_violations == 0

@@ -1,0 +1,58 @@
+# Golden set — academic / STEM EN<->VI. Exercises format preservation:
+# display + inline formulas, numbered lists, and tables must survive translation.
+- id: acad-formula-01
+  direction: en2vi
+  domain: academic
+  source: 'By the chain rule, $\frac{dy}{dx} = \frac{dy}{du}\frac{du}{dx}$ holds.'
+  reference: 'Theo quy tắc dây chuyền, $\frac{dy}{dx} = \frac{dy}{du}\frac{du}{dx}$ đúng.'
+  expect_terms: ["quy tắc dây chuyền"]
+  expect_no_translate: ['$\frac{dy}{dx} = \frac{dy}{du}\frac{du}{dx}$']
+
+- id: acad-theorem-02
+  direction: en2vi
+  domain: academic
+  source: "Theorem 1. If $f$ is continuous on a closed interval, then $f$ attains its maximum."
+  reference: "Định lý 1. Nếu $f$ liên tục trên một khoảng đóng, thì $f$ đạt giá trị lớn nhất."
+  expect_terms: ["định lý", "liên tục"]
+  expect_no_translate: ["$f$"]
+
+- id: acad-list-03
+  direction: vi2en
+  domain: academic
+  source: |-
+    Quy trình thực nghiệm gồm ba bước:
+    1. thu thập dữ liệu
+    2. huấn luyện mô hình
+    3. đánh giá kết quả
+  reference: |-
+    The experimental procedure has three steps:
+    1. collect the data
+    2. train the model
+    3. evaluate the results
+  expect_terms: ["procedure", "train the model"]
+
+- id: acad-table-04
+  direction: en2vi
+  domain: academic
+  source: |-
+    Model results:
+    | Layer | Units |
+    | --- | --- |
+    | Input | 128 |
+    | Output | 10 |
+  reference: |-
+    Kết quả mô hình:
+    | Lớp | Nơ-ron |
+    | --- | --- |
+    | Đầu vào | 128 |
+    | Đầu ra | 10 |
+  expect_terms: ["mô hình"]
+  expect_no_translate: ["128", "10"]
+
+- id: acad-vi2en-05
+  direction: vi2en
+  domain: academic
+  source: "Giả thuyết được kiểm định ở mức ý nghĩa 5%."
+  reference: "The hypothesis is tested at the 5% significance level."
+  expect_terms: ["hypothesis", "significance"]
+  expect_no_translate: ["5%"]

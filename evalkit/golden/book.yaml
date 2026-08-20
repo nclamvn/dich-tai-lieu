@@ -1,0 +1,29 @@
+# Golden set — literary / book EN<->VI (narrative register, the product's
+# primary publishing use case). Judges fluency and voice, not just adequacy.
+- id: book-open-01
+  direction: en2vi
+  domain: book
+  source: "The old house stood at the end of the lane, its windows dark with years of silence."
+  reference: "Ngôi nhà cũ nằm ở cuối con hẻm, những ô cửa sổ tối sẫm sau bao năm lặng lẽ."
+  expect_terms: ["ngôi nhà", "cửa sổ"]
+
+- id: book-dialogue-02
+  direction: en2vi
+  domain: book
+  source: '"You came back," she whispered, hardly daring to believe it.'
+  reference: '"Anh đã trở về," cô thì thầm, gần như không dám tin điều đó.'
+  expect_terms: ["thì thầm", "trở về"]
+
+- id: book-vi2en-03
+  direction: vi2en
+  domain: book
+  source: "Chiều buông xuống, dòng sông ánh lên màu đỏ của hoàng hôn."
+  reference: "As evening fell, the river shimmered with the red of the sunset."
+  expect_terms: ["river", "sunset"]
+
+- id: book-metaphor-04
+  direction: en2vi
+  domain: book
+  source: "Hope flickered in his chest like a candle in a draughty room."
+  reference: "Hy vọng leo lét trong lồng ngực anh như ngọn nến trong căn phòng lộng gió."
+  expect_terms: ["hy vọng", "ngọn nến"]
