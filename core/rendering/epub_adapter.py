@@ -98,6 +98,23 @@ def _table_xhtml(block: TableBlock) -> str:
     return "".join(parts)
 
 
+def _runs_to_xhtml(runs) -> str:
+    """Render inline runs as semantic XHTML: ``<strong>``/``<em>``/``<code>``,
+    nested code → italic → bold (innermost to outermost). Run text is escaped."""
+    e = html.escape
+    parts = []
+    for r in runs:
+        t = e(r.text)
+        if r.code:
+            t = f"<code>{t}</code>"
+        if r.italic:
+            t = f"<em>{t}</em>"
+        if r.bold:
+            t = f"<strong>{t}</strong>"
+        parts.append(t)
+    return "".join(parts)
+
+
 def _block_to_xhtml(
     block: Block,
     register_image: Optional[Callable[[bytes, Optional[str]], str]] = None,
@@ -108,6 +125,8 @@ def _block_to_xhtml(
         prefix = f"{e(block.number)}. " if block.number else ""
         return f"<h{level}>{prefix}{e(block.text)}</h{level}>"
     if isinstance(block, Paragraph):
+        if block.runs:
+            return f"<p>{_runs_to_xhtml(block.runs)}</p>"
         return f"<p>{e(block.text)}</p>"
     if isinstance(block, Blockquote):
         attr = f"<br/>— {e(block.attribution)}" if block.attribution else ""

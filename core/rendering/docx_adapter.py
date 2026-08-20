@@ -73,6 +73,10 @@ from core.rendering.omml_converter import (
 
 logger = logging.getLogger(__name__)
 
+# Monospace face applied to inline-code runs (Word substitutes a metric-compatible
+# mono font when Consolas is absent).
+_CODE_FONT = "Consolas"
+
 
 # ============================================================================
 # Main Rendering Function
@@ -415,10 +419,24 @@ def _render_paragraph(doc: Document, para: Paragraph, ast: DocumentAST) -> None:
 
     # Add paragraph
     p = doc.add_paragraph()
-    run = p.add_run(para.text)
+    if para.runs:
+        # Inline-formatting overlay: one Word run per span. The base font/size/
+        # color come from the paragraph style; bold/italic/code are layered on
+        # top so a span inherits the design and only adds its own emphasis.
+        for span in para.runs:
+            run = p.add_run(span.text)
+            _apply_font_style(run, style.font)
+            if span.bold:
+                run.font.bold = True
+            if span.italic:
+                run.font.italic = True
+            if span.code:
+                run.font.name = _CODE_FONT
+    else:
+        run = p.add_run(para.text)
+        _apply_font_style(run, style.font)
 
     # Apply styling
-    _apply_font_style(run, style.font)
     _apply_paragraph_style(p, style)
 
     logger.debug(f"Rendered paragraph: role={para.role.name}, indent={style.spacing.first_line_indent_pt}pt")

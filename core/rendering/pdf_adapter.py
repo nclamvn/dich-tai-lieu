@@ -159,6 +159,27 @@ def _stylesheet_for_template(name: str):
     return create_book_stylesheet()  # ebook / book / default
 
 
+def _runs_to_rl_markup(runs) -> str:
+    """Render inline runs as ReportLab intra-paragraph markup.
+
+    ``<b>``/``<i>`` resolve to the registered font family's bold/italic faces
+    (see ``_register_family``'s ``registerFontFamily``); inline code uses the
+    always-available built-in ``Courier``. Run text is XML-escaped; the tags are
+    literal markup. Tags nest code → italic → bold (innermost to outermost).
+    """
+    parts = []
+    for r in runs:
+        t = escape(r.text)
+        if r.code:
+            t = f'<font face="Courier">{t}</font>'
+        if r.italic:
+            t = f"<i>{t}</i>"
+        if r.bold:
+            t = f"<b>{t}</b>"
+        parts.append(t)
+    return "".join(parts)
+
+
 class _PdfRenderer:
     def __init__(self, ast: DocumentAST, faces: dict):
         from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT, TA_RIGHT
@@ -210,6 +231,8 @@ class _PdfRenderer:
             prefix = f"{block.number}. " if block.number else ""
             return [P(f"<b>{escape(prefix + block.text)}</b>", style)]
         if isinstance(block, Paragraph):
+            if block.runs:
+                return [P(_runs_to_rl_markup(block.runs), self.body)]
             return [P(escape(block.text), self.body)]
         if isinstance(block, Blockquote):
             out = [P(escape(block.text), self.quote)]

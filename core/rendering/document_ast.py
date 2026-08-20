@@ -161,10 +161,34 @@ class Heading(Block):
 
 
 @dataclass
+class InlineRun:
+    """A styled span of text within a paragraph (bold / italic / code).
+
+    An *optional overlay* on ``Paragraph.text``. Not a Block — it never appears
+    at the document level, only inside ``Paragraph.runs``. Invariant kept by the
+    extractor: ``"".join(r.text for r in runs) == paragraph.text``, so ``.text``
+    stays a faithful plaintext view and every consumer that reads it keeps
+    working. Renderers that understand runs emit the styled spans; those that
+    don't fall back to ``.text`` unchanged.
+    """
+    text: str
+    bold: bool = False
+    italic: bool = False
+    code: bool = False
+
+
+@dataclass
 class Paragraph(Block):
-    """Paragraph of text."""
+    """Paragraph of text.
+
+    ``text`` is always the plaintext. ``runs`` is an optional formatting overlay:
+    when ``None`` the paragraph is plain (fully backward-compatible); when set it
+    carries the inline bold/italic/code spans whose text concatenates back to
+    ``text``.
+    """
     text: str
     role: ParagraphRole = ParagraphRole.BODY
+    runs: Optional[List["InlineRun"]] = None
 
     def __post_init__(self):
         self.block_type = BlockType.PARAGRAPH
