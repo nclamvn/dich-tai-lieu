@@ -122,12 +122,70 @@ def _render_title_page(doc: Document, ast: DocumentAST, title: Optional[str]) ->
     doc.add_page_break()
 
 
+def _append_field(run, instr: str, placeholder: str = "") -> None:
+    """Append a Word field (begin / instrText / separate / placeholder / end)
+    to *run* — used for the TOC and PAGE-number fields, which Word computes when
+    the document is opened/updated."""
+    begin = OxmlElement("w:fldChar")
+    begin.set(qn("w:fldCharType"), "begin")
+    itxt = OxmlElement("w:instrText")
+    itxt.set(qn("xml:space"), "preserve")
+    itxt.text = instr
+    sep = OxmlElement("w:fldChar")
+    sep.set(qn("w:fldCharType"), "separate")
+    ph = OxmlElement("w:t")
+    ph.text = placeholder
+    end = OxmlElement("w:fldChar")
+    end.set(qn("w:fldCharType"), "end")
+    for el in (begin, itxt, sep, ph, end):
+        run._r.append(el)
+
+
+def _render_toc(doc: Document, ast: DocumentAST) -> None:
+    """Insert a localized 'Table of contents' heading + an auto-updating Word
+    TOC field (levels 1–3), then a page break."""
+    lang = (ast.metadata.language or "").lower()
+    label = "Mục lục" if lang.startswith("vi") else "Table of Contents"
+    hp = doc.add_paragraph()
+    hr = hp.add_run(label)
+    hr.bold = True
+    hr.font.size = Pt(16)
+    hr.font.name = ast.styles.heading_1.font.family
+    field_p = doc.add_paragraph()
+    _append_field(
+        field_p.add_run(),
+        'TOC \\o "1-3" \\h \\z \\u',
+        "Cập nhật mục lục trong Word: Ctrl+A rồi F9." if lang.startswith("vi")
+        else "Update this field in Word: select all, then F9.",
+    )
+    doc.add_page_break()
+
+
+def _add_running_header_footer(doc: Document, ast: DocumentAST, title: Optional[str]) -> None:
+    """Running header (document title) + footer (centered PAGE number), with the
+    first page (cover) left blank via different-first-page."""
+    section = doc.sections[0]
+    section.different_first_page_header_footer = True
+
+    header = section.header
+    hp = header.paragraphs[0] if header.paragraphs else header.add_paragraph()
+    hp.text = title or ast.metadata.title or ""
+    hp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+
+    footer = section.footer
+    fp = footer.paragraphs[0] if footer.paragraphs else footer.add_paragraph()
+    fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    _append_field(fp.add_run(), "PAGE", "1")
+
+
 def render_docx_from_ast(
     ast: DocumentAST,
     output_path: Path,
     title: Optional[str] = None,
     template: Optional[str] = None,
     title_page: bool = False,
+    toc: bool = False,
+    header_footer: bool = False,
 ) -> None:
     """
     Render DocumentAST to DOCX format.
@@ -142,6 +200,10 @@ def render_docx_from_ast(
             when None, the AST's own styles are used unchanged.
         title_page: when True, prepend a centered title/author cover page and a
             page break before the content.
+        toc: when True, insert a localized heading + an auto-updating Word table
+            of contents (levels 1–3) after the cover.
+        header_footer: when True, add a running header (title) and a footer with
+            a centered page number (cover page left blank).
 
     Raises:
         ValueError: If AST is invalid
@@ -167,6 +229,12 @@ def render_docx_from_ast(
 
     if title_page:
         _render_title_page(doc, ast, title)
+
+    if toc:
+        _render_toc(doc, ast)
+
+    if header_footer:
+        _add_running_header_footer(doc, ast, title)
 
     # Render each block
     for idx, block in enumerate(ast.blocks):
@@ -737,10 +805,18 @@ def _apply_paragraph_style(p, para_style: ParagraphStyle) -> None:
 # ============================================================================
 
 def render_book_docx(ast: DocumentAST, output_path: Path) -> None:
-    """Render book-style DOCX (Georgia serif book template, with title page)."""
-    render_docx_from_ast(ast, output_path, template="ebook", title_page=True)
+    """Render book-style DOCX — Georgia serif template with full front matter
+    (title page + table of contents + running header/footer)."""
+    render_docx_from_ast(
+        ast, output_path, template="ebook",
+        title_page=True, toc=True, header_footer=True,
+    )
 
 
 def render_academic_docx(ast: DocumentAST, output_path: Path) -> None:
-    """Render academic-style DOCX (Cambria academic template, with title page)."""
-    render_docx_from_ast(ast, output_path, template="academic", title_page=True)
+    """Render academic-style DOCX — Cambria template with full front matter
+    (title page + table of contents + running header/footer)."""
+    render_docx_from_ast(
+        ast, output_path, template="academic",
+        title_page=True, toc=True, header_footer=True,
+    )
