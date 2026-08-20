@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Optional
 
 from docx import Document
-from docx.shared import Pt, RGBColor, Inches
+from docx.shared import Mm, Pt, RGBColor, Inches
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.oxml.ns import qn
 from docx.oxml import OxmlElement
@@ -150,15 +150,28 @@ def _setup_document_properties(
     ast: DocumentAST,
     title: Optional[str]
 ) -> None:
-    """Set document-level properties from AST metadata."""
+    """Set document core properties and page geometry from AST metadata."""
     # Set core properties
     props = doc.core_properties
     props.title = title or ast.metadata.title or ""
     props.author = ast.metadata.author or ""
     props.language = ast.metadata.language
 
-    # Set default font for entire document
-    # (This is a simplification - full implementation would modify styles.xml)
+    # Page geometry from metadata — parity with the legacy layout engine, which
+    # applies page size + margins. python-docx defaults to US Letter otherwise,
+    # so the AST's A4/margins (document_ast.DocumentMetadata) would be lost.
+    md = ast.metadata
+    try:
+        section = doc.sections[0]
+        section.page_width = Mm(md.page_width_mm)
+        section.page_height = Mm(md.page_height_mm)
+        section.top_margin = Mm(md.margin_top_mm)
+        section.bottom_margin = Mm(md.margin_bottom_mm)
+        section.left_margin = Mm(md.margin_left_mm)
+        section.right_margin = Mm(md.margin_right_mm)
+    except Exception as e:  # pragma: no cover - defensive
+        logger.warning(f"Page setup from metadata failed: {e}")
+
     logger.debug(f"Document properties set: title={props.title}, author={props.author}")
 
 
@@ -598,37 +611,19 @@ def _render_page_break(doc: Document, page_break: PageBreak, ast: DocumentAST) -
 # ============================================================================
 
 def _apply_font_style(run, font_style: FontStyle) -> None:
-    """
-    Apply font styling to a run with Vietnamese-safe font validation.
+    """Apply font styling to a run, honoring the AST's requested family.
 
-    Automatically falls back to Times New Roman if requested font isn't available,
-    preventing DOCX corruption and ensuring Vietnamese character rendering.
+    The chosen typography (e.g. the book stylesheet's Georgia, which supports
+    Vietnamese) is applied as-is so the DOCX matches the intended design and the
+    legacy engine's font handling — Georgia/Cambria are no longer silently
+    rewritten to Times New Roman. A genuine assignment error falls back to a
+    Vietnamese-safe face rather than dropping the styling.
     """
-    # Safe font assignment with auto-fallback
     try:
-        # Times New Roman is the universal fallback for Vietnamese compatibility
-        SAFE_FALLBACK_FONT = "Times New Roman"
-
-        # List of fonts known to support Vietnamese well
-        VIETNAMESE_SAFE_FONTS = ["Times New Roman", "Arial", "Calibri", "Verdana"]
-
-        requested_font = font_style.family
-
-        # Use fallback if requested font is known to be problematic
-        if requested_font in ["Georgia", "Cambria"]:
-            logger.info(f"Font '{requested_font}' has poor Vietnamese support, using '{SAFE_FALLBACK_FONT}' instead")
-            run.font.name = SAFE_FALLBACK_FONT
-        else:
-            # Attempt to use requested font
-            run.font.name = requested_font
-
-            # Log if using non-standard font
-            if requested_font not in VIETNAMESE_SAFE_FONTS:
-                logger.debug(f"Using non-standard font '{requested_font}' - may have limited Vietnamese support")
-
-    except Exception as e:
+        run.font.name = font_style.family
+    except Exception as e:  # pragma: no cover - defensive
         logger.warning(f"Font assignment failed for '{font_style.family}', using fallback: {e}")
-        run.font.name = SAFE_FALLBACK_FONT
+        run.font.name = "Times New Roman"
 
     # Apply other font properties
     run.font.size = Pt(font_style.size_pt)
