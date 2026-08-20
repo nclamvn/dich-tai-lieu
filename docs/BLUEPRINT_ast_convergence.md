@@ -50,13 +50,14 @@ drop.
    - **2b — document assembly + styling _(in progress)_.** Done for DOCX: the
      `ebook`/`academic`/`business` **template system**, a **title page**, a
      **table of contents** (an auto-updating Word TOC field) and **running
-     header/footer + page numbers** (cover left blank) — all wired into
-     `render_book_docx` / `render_academic_docx`, default-off on the plain
-     adapter. Remaining: a PDF template path (the PDF adapter still hardcodes its
-     styles) and inline text runs (bold/italic/code inside paragraphs — needs an
-     inline-run model in the AST). Drive from the richest source available:
-     prefer `ast_builder(DocNode → AST)` where the semantic nodes still exist,
-     else the enriched Markdown → AST.
+     header/footer + page numbers** — wired into `render_book_docx` /
+     `render_academic_docx`, default-off on the plain adapter. Done for **PDF**:
+     the same **template path** — the PDF adapter now reads `ast.styles` and
+     registers serif + sans families (ebook/academic → serif, business → sans),
+     instead of hardcoding one font and its sizes. Remaining: inline text runs
+     (bold/italic/code inside paragraphs — needs an inline-run model in the AST).
+     Drive from the richest source available: prefer `ast_builder(DocNode → AST)`
+     where the semantic nodes still exist, else the enriched Markdown → AST.
 3. **Wire behind a flag.** Expose the AST facade as an alternative output path
    (e.g. `OUTPUT_PIPELINE=ast`), parallel to the engines; exercise both in CI.
 4. **Flip the default** to the AST path, keeping the engines as fallback. Gate:
@@ -80,9 +81,9 @@ drop.
 
 ## Status
 
-Stage 1 (faithful Markdown → AST), stage 2a (equivalence harness + content /
-page / font correctness fixes) and stage 2b's **DOCX document assembly**
-(template system + title page + TOC + running header/footer) shipped. Remaining:
-the rest of stage 2b (PDF templates, inline runs), stage 3 (flag-wire), stage 4
-(flip default — needs the eval baseline from `docs/EVAL_HARNESS.md`), stage 5
-(retire the legacy engines).
+Stage 1 (faithful Markdown → AST), stage 2a (equivalence harness + correctness
+fixes) and most of stage 2b — **DOCX document assembly** (template + title page +
+TOC + running header/footer) and **PDF templates** — shipped. Remaining: inline
+runs (the last of stage 2b), stage 3 (flag-wire), stage 4 (flip default — needs
+the eval baseline from `docs/EVAL_HARNESS.md`), stage 5 (retire the legacy
+engines).
