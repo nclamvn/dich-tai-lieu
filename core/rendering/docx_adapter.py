@@ -78,10 +78,33 @@ logger = logging.getLogger(__name__)
 # Main Rendering Function
 # ============================================================================
 
+def _stylesheet_for_template(name: str):
+    """Map a template name to a StyleSheet (parity with the legacy renderer's
+    ``template=`` argument): ``ebook`` (Georgia serif book), ``academic``
+    (Cambria), ``business`` (Arial sans, left-aligned). Unknown → ebook."""
+    from core.rendering.document_ast import (
+        create_academic_stylesheet,
+        create_book_stylesheet,
+    )
+
+    key = (name or "").strip().lower()
+    if key in ("academic", "stem"):
+        return create_academic_stylesheet()
+    if key in ("business", "report"):
+        sheet = create_book_stylesheet()
+        for ps in (sheet.heading_1, sheet.heading_2, sheet.heading_3, sheet.body):
+            ps.font.family = "Arial"
+        sheet.body.alignment = "left"
+        sheet.body.spacing.first_line_indent_pt = 0.0
+        return sheet
+    return create_book_stylesheet()  # ebook / book / default
+
+
 def render_docx_from_ast(
     ast: DocumentAST,
     output_path: Path,
-    title: Optional[str] = None
+    title: Optional[str] = None,
+    template: Optional[str] = None,
 ) -> None:
     """
     Render DocumentAST to DOCX format.
@@ -90,6 +113,10 @@ def render_docx_from_ast(
         ast: The DocumentAST to render
         output_path: Path where the DOCX file will be saved
         title: Optional document title (overrides ast.metadata.title)
+        template: Optional style template — "ebook" (Georgia serif book),
+            "academic" (Cambria) or "business" (Arial sans, left-aligned).
+            When given, its stylesheet replaces ``ast.styles`` for this render;
+            when None, the AST's own styles are used unchanged.
 
     Raises:
         ValueError: If AST is invalid
@@ -97,8 +124,13 @@ def render_docx_from_ast(
 
     Example:
         >>> ast = build_book_ast(doc_nodes)
-        >>> render_docx_from_ast(ast, Path("book.docx"))
+        >>> render_docx_from_ast(ast, Path("book.docx"), template="ebook")
     """
+    if template:
+        import dataclasses
+
+        ast = dataclasses.replace(ast, styles=_stylesheet_for_template(template))
+
     logger.info(f"Rendering DocumentAST to DOCX: {output_path}")
     logger.info(f"AST summary: {ast}")
 
@@ -677,18 +709,10 @@ def _apply_paragraph_style(p, para_style: ParagraphStyle) -> None:
 # ============================================================================
 
 def render_book_docx(ast: DocumentAST, output_path: Path) -> None:
-    """
-    Convenience function for rendering book-style DOCX.
-
-    Equivalent to render_docx_from_ast but with book-specific defaults.
-    """
-    render_docx_from_ast(ast, output_path)
+    """Render book-style DOCX (Georgia serif book template)."""
+    render_docx_from_ast(ast, output_path, template="ebook")
 
 
 def render_academic_docx(ast: DocumentAST, output_path: Path) -> None:
-    """
-    Convenience function for rendering academic-style DOCX.
-
-    Equivalent to render_docx_from_ast but with academic-specific defaults.
-    """
-    render_docx_from_ast(ast, output_path)
+    """Render academic-style DOCX (Cambria academic template)."""
+    render_docx_from_ast(ast, output_path, template="academic")
