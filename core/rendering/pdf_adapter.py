@@ -35,6 +35,7 @@ from core.rendering.document_ast import (
     TableBlock,
     TheoremBox,
 )
+from core.rendering.inline import parse_inline
 
 logger = logging.getLogger(__name__)
 
@@ -180,6 +181,13 @@ def _runs_to_rl_markup(runs) -> str:
     return "".join(parts)
 
 
+def _inline_markup(text: str) -> str:
+    """ReportLab intra-paragraph markup for *text*: inline emphasis spans when the
+    text has Markdown markers, else the escaped plain text (unchanged)."""
+    runs = parse_inline(text)
+    return _runs_to_rl_markup(runs) if runs else escape(text)
+
+
 class _PdfRenderer:
     def __init__(self, ast: DocumentAST, faces: dict):
         from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT, TA_RIGHT
@@ -235,7 +243,7 @@ class _PdfRenderer:
                 return [P(_runs_to_rl_markup(block.runs), self.body)]
             return [P(escape(block.text), self.body)]
         if isinstance(block, Blockquote):
-            out = [P(escape(block.text), self.quote)]
+            out = [P(_inline_markup(block.text), self.quote)]
             if block.attribution:
                 out.append(P(f"— {escape(block.attribution)}", self.right))
             return out
@@ -283,8 +291,8 @@ class _PdfRenderer:
         for r, row in enumerate(rows):
             cells = []
             for c in range(n_cols):
-                text = escape(row[c] if c < len(row) else "")
-                cells.append(P(f"<b>{text}</b>" if r < block.header_rows else text, self.cell))
+                markup = _inline_markup(row[c] if c < len(row) else "")
+                cells.append(P(f"<b>{markup}</b>" if r < block.header_rows else markup, self.cell))
             data.append(cells)
 
         table = Table(data, repeatRows=max(0, block.header_rows))
@@ -307,7 +315,7 @@ class _PdfRenderer:
         from reportlab.platypus import ListFlowable, ListItem
         from reportlab.platypus import Paragraph as P
 
-        items = [ListItem(P(escape(text), self.body)) for text in block.items]
+        items = [ListItem(P(_inline_markup(text), self.body)) for text in block.items]
         return [ListFlowable(items, bulletType="1" if block.ordered else "bullet", leftIndent=20)]
 
     def _figure(self, block: Figure) -> list:
@@ -350,16 +358,104 @@ class _PdfRenderer:
             out.append(P(escape(prefix + block.caption), self.caption))
         return out
 
+    # ---- Front matter (Option A: PDF parity with the DOCX book layout) ----
+    def _toc_title(self) -> str:
+        lang = (self.ast.metadata.language or "").strip().lower()
+        return {"vi": "Mục lục"}.get(lang, "Contents")
+
+    def title_page_flowables(self, title: Optional[str], author: Optional[str]) -> list:
+        """A centered cover page (title + author) followed by a page break."""
+        from reportlab.lib.enums import TA_CENTER
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.platypus import PageBreak as _PB
+        from reportlab.platypus import Paragraph as _P
+        from reportlab.platypus import Spacer
+
+        title_style = ParagraphStyle(
+            "cover_title", fontName=self.headings[1].fontName,
+            fontSize=26, leading=32, alignment=TA_CENTER,
+        )
+        author_style = ParagraphStyle(
+            "cover_author", fontName=self.font, fontSize=14, leading=20, alignment=TA_CENTER,
+        )
+        out: list = [Spacer(1, 120)]
+        if title:
+            out.append(_P(escape(title), title_style))
+        if author:
+            out.append(Spacer(1, 24))
+            out.append(_P(escape(author), author_style))
+        out.append(_PB())
+        return out
+
+    def toc_flowables(self) -> list:
+        """A localized heading + a real TableOfContents (page numbers resolved by
+        the multiBuild pass), followed by a page break."""
+        from reportlab.lib.styles import ParagraphStyle
+        from reportlab.platypus import PageBreak as _PB
+        from reportlab.platypus import Paragraph as _P
+        from reportlab.platypus.tableofcontents import TableOfContents
+
+        toc = TableOfContents()
+        toc.levelStyles = [
+            ParagraphStyle("toc1", fontName=self.font, fontSize=12, leading=18,
+                           leftIndent=20, firstLineIndent=-20),
+            ParagraphStyle("toc2", fontName=self.font, fontSize=11, leading=16,
+                           leftIndent=40, firstLineIndent=-20),
+            ParagraphStyle("toc3", fontName=self.font, fontSize=10, leading=14,
+                           leftIndent=60, firstLineIndent=-20),
+        ]
+        heading = _P(f"<b>{escape(self._toc_title())}</b>", self.headings[1])
+        return [heading, toc, _PB()]
+
+
+def _make_footer(page_face: str, page_width_pt: float, bottom_margin_pt: float, skip_first: bool):
+    """Build an onPage callback that draws a centered page number, skipping the
+    cover (page 1) when *skip_first* is set."""
+    def _draw(canvas, doc) -> None:
+        if skip_first and doc.page <= 1:
+            return
+        canvas.saveState()
+        canvas.setFont(page_face, 9)
+        canvas.drawCentredString(page_width_pt / 2.0, max(bottom_margin_pt / 2.0, 12.0), str(doc.page))
+        canvas.restoreState()
+
+    return _draw
+
+
+def _toc_doc_template_cls():
+    """A SimpleDocTemplate subclass that feeds heading flowables to the TOC (via
+    ``notify('TOCEntry', …)``) so page numbers resolve during ``multiBuild``.
+    Built lazily to keep reportlab off the module import path."""
+    from reportlab.platypus import Paragraph as _P
+    from reportlab.platypus import SimpleDocTemplate
+
+    class _TocDocTemplate(SimpleDocTemplate):
+        def afterFlowable(self, flowable) -> None:  # noqa: N802 (reportlab hook name)
+            style = getattr(flowable, "style", None)
+            if isinstance(flowable, _P) and style is not None and style.name in ("h1", "h2", "h3"):
+                self.notify("TOCEntry", (int(style.name[1]) - 1, flowable.getPlainText(), self.page))
+
+    return _TocDocTemplate
+
 
 def render_pdf_from_ast(
     ast: DocumentAST,
     output_path: Path,
     title: Optional[str] = None,
     template: Optional[str] = None,
+    title_page: bool = False,
+    toc: bool = False,
+    header_footer: bool = False,
 ) -> None:
-    """Render a DocumentAST to a PDF file. ``template`` (ebook/academic/business)
-    swaps the stylesheet — serif face for ebook/academic, sans for business —
-    mirroring the DOCX renderer; when None, the AST's own styles are used."""
+    """Render a DocumentAST to a PDF file.
+
+    ``template`` (ebook/academic/business) swaps the stylesheet — serif face for
+    ebook/academic, sans for business — mirroring the DOCX renderer; when None,
+    the AST's own styles are used. The front-matter flags mirror the DOCX book
+    layout (all default-off): ``title_page`` prepends a centered cover,
+    ``toc`` inserts a real table of contents with page numbers (built via
+    multiBuild), and ``header_footer`` adds a centered page-number footer (the
+    cover is left unnumbered)."""
     from reportlab.lib.units import mm
     from reportlab.platypus import SimpleDocTemplate, Spacer
 
@@ -375,7 +471,8 @@ def render_pdf_from_ast(
     renderer = _PdfRenderer(ast, faces)
     md = ast.metadata
 
-    doc = SimpleDocTemplate(
+    doc_cls = _toc_doc_template_cls() if toc else SimpleDocTemplate
+    doc = doc_cls(
         str(output_path),
         # Page size from metadata (defaults to A4) — parity with the legacy
         # engine's page presets instead of a hardcoded A4.
@@ -389,6 +486,10 @@ def render_pdf_from_ast(
     )
 
     flowables: List = []
+    if title_page:
+        flowables.extend(renderer.title_page_flowables(title or md.title, md.author))
+    if toc:
+        flowables.extend(renderer.toc_flowables())
     for block in ast.blocks:
         try:
             flowables.extend(renderer.flowables_for(block))
@@ -398,5 +499,15 @@ def render_pdf_from_ast(
     if not flowables:
         flowables.append(Spacer(1, 1))
 
-    doc.build(flowables)
+    build_kwargs = {}
+    if header_footer:
+        footer = _make_footer(
+            renderer.font, md.page_width_mm * mm, md.margin_bottom_mm * mm, skip_first=title_page
+        )
+        build_kwargs = {"onFirstPage": footer, "onLaterPages": footer}
+
+    if toc:
+        doc.multiBuild(flowables, **build_kwargs)
+    else:
+        doc.build(flowables, **build_kwargs)
     logger.info("PDF saved: %s", output_path)

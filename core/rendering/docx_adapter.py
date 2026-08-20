@@ -70,6 +70,7 @@ from core.rendering.omml_converter import (
     inject_omml_as_display,
     is_pandoc_available,
 )
+from core.rendering.inline import runs_or_plain
 
 logger = logging.getLogger(__name__)
 
@@ -390,6 +391,26 @@ def _render_heading(doc: Document, heading: Heading, ast: DocumentAST) -> None:
     logger.debug(f"Rendered heading: {heading.level.name} ({word_style}) - {heading.text}")
 
 
+def _emit_runs(p, runs, font_style=None, force_bold: bool = False) -> None:
+    """Add each ``InlineRun`` as a Word run on paragraph *p*.
+
+    When *font_style* is given it is applied as the base (body text) and each
+    span's bold/italic/code is layered on top; when None the paragraph's own
+    style font is inherited (list items / table cells that carry their own
+    style). *force_bold* bolds every run (table header cells).
+    """
+    for span in runs:
+        run = p.add_run(span.text)
+        if font_style is not None:
+            _apply_font_style(run, font_style)
+        if span.bold or force_bold:
+            run.font.bold = True
+        if span.italic:
+            run.font.italic = True
+        if span.code:
+            run.font.name = _CODE_FONT
+
+
 def _render_paragraph(doc: Document, para: Paragraph, ast: DocumentAST) -> None:
     """
     Render a paragraph block with commercial typography.
@@ -420,18 +441,7 @@ def _render_paragraph(doc: Document, para: Paragraph, ast: DocumentAST) -> None:
     # Add paragraph
     p = doc.add_paragraph()
     if para.runs:
-        # Inline-formatting overlay: one Word run per span. The base font/size/
-        # color come from the paragraph style; bold/italic/code are layered on
-        # top so a span inherits the design and only adds its own emphasis.
-        for span in para.runs:
-            run = p.add_run(span.text)
-            _apply_font_style(run, style.font)
-            if span.bold:
-                run.font.bold = True
-            if span.italic:
-                run.font.italic = True
-            if span.code:
-                run.font.name = _CODE_FONT
+        _emit_runs(p, para.runs, style.font)
     else:
         run = p.add_run(para.text)
         _apply_font_style(run, style.font)
@@ -446,12 +456,11 @@ def _render_blockquote(doc: Document, quote: Blockquote, ast: DocumentAST) -> No
     """Render a blockquote."""
     style = quote.style or ast.styles.blockquote
 
-    # Add quote text
+    # Add quote text (inline emphasis honored)
     p = doc.add_paragraph()
-    run = p.add_run(quote.text)
+    _emit_runs(p, runs_or_plain(quote.text), style.font)
 
     # Apply styling
-    _apply_font_style(run, style.font)
     _apply_paragraph_style(p, style)
 
     # Add attribution if present
@@ -650,13 +659,12 @@ def _render_table(doc: Document, table_block: TableBlock, ast: DocumentAST) -> N
         pass  # style may be absent in a stripped template
 
     for r, row in enumerate(rows):
+        is_header = r < table_block.header_rows
         for c in range(n_cols):
             cell = table.rows[r].cells[c]
-            cell.text = row[c] if c < len(row) else ""
-            if r < table_block.header_rows:
-                for paragraph in cell.paragraphs:
-                    for run in paragraph.runs:
-                        run.font.bold = True
+            text = row[c] if c < len(row) else ""
+            # Render inline emphasis into the cell's paragraph; header cells bold.
+            _emit_runs(cell.paragraphs[0], runs_or_plain(text), force_bold=is_header)
 
     if table_block.caption:
         cap = doc.add_paragraph()
@@ -724,12 +732,15 @@ def _render_list(doc: Document, list_block: ListBlock, ast: DocumentAST) -> None
     """Render an ordered/unordered list using Word's list styles."""
     style_name = "List Number" if list_block.ordered else "List Bullet"
     for item in list_block.items:
+        runs = runs_or_plain(item)
         try:
-            doc.add_paragraph(item, style=style_name)
+            paragraph = doc.add_paragraph(style=style_name)
         except Exception:
             # Template may lack the list style — fall back to a manual marker.
             paragraph = doc.add_paragraph()
-            paragraph.add_run(("• " if not list_block.ordered else "- ") + item)
+            paragraph.add_run("• " if not list_block.ordered else "- ")
+        # Inline emphasis honored; inherit the list paragraph's own font.
+        _emit_runs(paragraph, runs)
     logger.debug(f"Rendered list: {len(list_block.items)} items, ordered={list_block.ordered}")
 
 
