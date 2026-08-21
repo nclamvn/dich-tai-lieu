@@ -86,7 +86,11 @@ drop.
    Both branches are exercised by `tests/unit/test_output_pipeline_flag.py`.
 4. **Flip the default** to the AST path, keeping the engines as fallback. Gate:
    the eval baseline (needs a provider key) shows no regression, and the
-   output-equivalence tests are green.
+   output-equivalence tests are green. The **content-parity half of this gate is
+   already met** — `scripts/soak_ast_vs_engine.py` (+ `tests/eval/test_ast_engine_soak.py`,
+   no key) shows the AST path drops no source content the engine keeps and covers
+   DOCX *better*; see `docs/SOAK_AST_VS_ENGINE.md`. What still needs the key is the
+   translation-quality baseline.
 5. **Retire the legacy engines** (`core/docx_engine`, `core/pdf_engine`, and the
    legacy `core/pdf_renderer_v2` WeasyPrint path) — the large LOC drop — only once
    nothing depends on them and the AST path has carried the default with no
