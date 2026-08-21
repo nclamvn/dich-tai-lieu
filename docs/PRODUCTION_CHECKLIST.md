@@ -18,7 +18,9 @@ CSRF_SECRET_KEY=<64 hex chars>
 ```
 
 The boot guard rejects: a default/placeholder `SESSION_SECRET`, a secret shorter
-than 32 chars, auth left disabled, or empty `CORS_ORIGINS`.
+than 32 chars, auth left disabled, empty `CORS_ORIGINS`, a **wildcard**
+`CORS_ORIGINS=*` (credentials are allowed, so `*` is unsafe), and — when
+`CSRF_ENABLED=true` — a placeholder or `<32`-char `CSRF_SECRET_KEY`.
 
 ## 2. What turns on automatically in production
 
@@ -30,8 +32,20 @@ than 32 chars, auth left disabled, or empty `CORS_ORIGINS`.
   `/api/monitoring/costs`, `/api/monitoring/audit`, `/api/monitoring/errors`,
   `/api/monitoring/errors/recent`. The basic `/health` liveness probe stays
   public for load balancers.
-- **Rate limiting** (`slowapi`) is active on the translate/upload/auth routes;
-  tune limits in `api/rate_limiter.py` (`RateLimitConfig`).
+- **Control-plane / cost / upload endpoints require auth** (fail-closed via
+  `get_current_user_id`): `/api/processor/start|stop`, `/api/cache/clear|stats`,
+  `/api/queue/stats`, `/api/system/info|status`, `/api/ocr/*`, and `/api/upload`.
+  Guarded by `tests/security/test_endpoint_authz.py`.
+- **Interactive API docs are disabled** (`/docs`, `/redoc`, `/openapi.json` → 404;
+  `/` returns a plain liveness JSON) so the endpoint surface isn't self-documented
+  to anonymous callers. In development they stay on.
+- **Passwordless session login is refused** in production — the credentialed
+  login in `auth_router` (`/api/auth/login`, JWT + bcrypt) is the only login.
+- **Rate limiting** is only *partially* wired: `slowapi` is configured and a few
+  routes carry explicit `@limiter.limit(...)` (`/api/cache/clear`,
+  `/api/ocr/upload`, APS publish), but there is **no `SlowAPIMiddleware`**, so the
+  global `default_limits` are inert and login/upload are not yet throttled. Treat
+  this as a **follow-up before a wide launch** (see below), not a done item.
 
 ## 3. Secrets & data hygiene
 
@@ -60,5 +74,31 @@ SECURITY_MODE=production SESSION_AUTH_ENABLED=true python -c "from config.settin
   && echo "UNEXPECTED: booted" || echo "OK: production refused insecure config"
 
 # Enforcement + boot guard unit tests
-pytest tests/security/test_auth_enforcement.py -q
+pytest tests/security/test_auth_enforcement.py tests/security/test_endpoint_authz.py -q
 ```
+
+## 6. Known follow-ups (not yet enforced — do before a *wide* launch)
+
+These are tracked from the security audit. None blocks a small, trusted beta, but
+each should be closed before opening the doors wide:
+
+- **Rate limiting**: register `SlowAPIMiddleware` (so the global `default_limits`
+  apply) and add explicit throttles to the login routes (brute-force) and
+  `/api/upload` (the handler already fetches `request.app.state.limiter` but never
+  calls `.limit(...)`). Dead helpers in `api/rate_limiter.py` (`RateLimitMiddleware`,
+  `limit_auth`) can be wired or removed.
+- **Comprehensive per-router auth audit**: this pass gated the endpoints defined
+  in `api/main.py` + `/api/upload`. The other ~20 included routers were spot-checked
+  (jobs, monitoring, aps_v2, auth/api-keys/usage are guarded); a full sweep to
+  confirm every state-changing route on every router is fail-closed is still owed.
+  A deny-by-default auth middleware (allow-list `/`, `/health*`, `/api/auth/*`,
+  docs) would make new routes protected automatically.
+- **Two auth systems**: product endpoints authenticate via **session token**
+  (`get_current_user_id`), while the live login issues **JWTs**
+  (`get_current_active_user`). They don't interoperate — decide on one, or bridge
+  them, so a logged-in user can actually call the session-token endpoints in prod.
+- **Error-detail leakage**: several handlers `raise HTTPException(500, detail=f"…{e}")`,
+  leaking exception strings (paths, DB errors) to clients; route them through the
+  generic sanitizer used for uncaught 500s.
+- **CORS footgun**: `api/cors_config.py::setup_cors` is dead code with
+  `*` methods/headers + credentials — delete it so no one wires it by mistake.

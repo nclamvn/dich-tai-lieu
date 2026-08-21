@@ -11,8 +11,9 @@ import uuid
 import tempfile
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, UploadFile, File, Request
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 
+from api.deps import get_current_user_id
 from api.models import AnalyzeRequest, AnalyzeResponse
 from api.services.file_handler import validate_project_path
 from core.batch_processor import read_document
@@ -23,7 +24,7 @@ logger = get_logger(__name__)
 router = APIRouter(tags=["Uploads"])
 
 
-@router.post("/api/upload")
+@router.post("/api/upload", dependencies=[Depends(get_current_user_id)])
 async def upload_file(
     request: Request,
     file: UploadFile = File(...)
