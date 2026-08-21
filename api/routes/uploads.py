@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Request
 
 from api.deps import get_current_user_id
 from api.models import AnalyzeRequest, AnalyzeResponse
+from api.rate_limiter import limiter, rate_limit_config
 from api.services.file_handler import validate_project_path
 from core.batch_processor import read_document
 from config.logging_config import get_logger
@@ -25,6 +26,7 @@ router = APIRouter(tags=["Uploads"])
 
 
 @router.post("/api/upload", dependencies=[Depends(get_current_user_id)])
+@limiter.limit(rate_limit_config.get_limit("upload"))
 async def upload_file(
     request: Request,
     file: UploadFile = File(...)

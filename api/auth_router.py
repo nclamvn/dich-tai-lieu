@@ -13,7 +13,9 @@ Provides REST endpoints for user authentication:
 """
 
 from typing import Optional, List
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, Request, status, Query
+
+from api.rate_limiter import limiter, rate_limit_config
 
 from core.auth import (
     AuthService, get_auth_service,
@@ -34,7 +36,9 @@ router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 # ============================================================================
 
 @router.post("/register", response_model=dict, status_code=status.HTTP_201_CREATED)
+@limiter.limit(rate_limit_config.get_limit("auth_register"))
 async def register(
+    request: Request,
     data: UserCreate,
     auth_service: AuthService = Depends(get_auth_service)
 ):
@@ -69,7 +73,9 @@ async def register(
 
 
 @router.post("/login", response_model=dict)
+@limiter.limit(rate_limit_config.get_limit("auth_login"))
 async def login(
+    request: Request,
     data: LoginRequest,
     auth_service: AuthService = Depends(get_auth_service)
 ):

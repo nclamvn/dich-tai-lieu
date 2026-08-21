@@ -85,8 +85,10 @@ class RateLimitConfig:
         # WebSocket - connection limit
         "websocket": "10/minute",
 
-        # Fallback
-        "default": "60/minute",
+        # Fallback / global backstop applied to every route by SlowAPIMiddleware.
+        # Generous on purpose: the tight per-route limits above do the real work;
+        # this only catches egregious abuse. Tune with the RATE_LIMIT env var.
+        "default": "240/minute",
     })
 
     # Override limits from environment
@@ -164,10 +166,29 @@ def get_user_identifier(request: Request) -> str:
     return get_remote_address(request)
 
 
+def _rate_limit_enabled() -> bool:
+    """Whether rate limiting is enforced.
+
+    Default-safe: ON in production, OFF in development / tests (so the suite and
+    local runs are never throttled). A live ``RATE_LIMIT_ENABLED`` env var wins,
+    so ops can flip it without a code change.
+    """
+    val = os.getenv("RATE_LIMIT_ENABLED")
+    if val is not None:
+        return val.strip().lower() in ("1", "true", "yes", "on")
+    try:
+        from config.settings import settings
+
+        return settings.security_mode == "production"
+    except Exception:  # pragma: no cover - settings optional
+        return False
+
+
 def create_limiter(
     key_func: Callable = None,
     storage_uri: str = None,
-    default_limits: list = None
+    default_limits: list = None,
+    enabled: Optional[bool] = None,
 ) -> Limiter:
     """
     Create a configured rate limiter instance.
@@ -176,6 +197,8 @@ def create_limiter(
         key_func: Function to extract rate limit key from request
         storage_uri: Redis URI for distributed rate limiting (optional)
         default_limits: Default rate limits to apply
+        enabled: Force enforcement on/off; None resolves via ``_rate_limit_enabled``
+            (production only, env-overridable).
 
     Returns:
         Configured Limiter instance
@@ -189,6 +212,7 @@ def create_limiter(
     limiter_kwargs = {
         "key_func": key_function,
         "default_limits": default_limits or [rate_limit_config.get_limit("default")],
+        "enabled": _rate_limit_enabled() if enabled is None else enabled,
     }
 
     if redis_url:
@@ -244,64 +268,10 @@ def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded) -> Res
     return response
 
 
-# Decorators for common rate limit patterns
-def limit_translate(func):
-    """Apply translation rate limit."""
-    return limiter.limit(rate_limit_config.get_limit("translate"))(func)
-
-
-def limit_upload(func):
-    """Apply upload rate limit."""
-    return limiter.limit(rate_limit_config.get_limit("upload"))(func)
-
-
-def limit_auth(func):
-    """Apply auth rate limit."""
-    return limiter.limit(rate_limit_config.get_limit("auth_login"))(func)
-
-
-def limit_admin(func):
-    """Apply admin rate limit."""
-    return limiter.limit(rate_limit_config.get_limit("admin"))(func)
-
-
-def limit_vision(func):
-    """Apply vision API rate limit."""
-    return limiter.limit(rate_limit_config.get_limit("vision"))(func)
-
-
-# Rate limit middleware for specific paths
-class RateLimitMiddleware:
-    """
-    Middleware to apply path-based rate limiting.
-
-    Usage:
-        app.add_middleware(RateLimitMiddleware, limiter=limiter)
-    """
-
-    def __init__(self, app, limiter: Limiter):
-        self.app = app
-        self.limiter = limiter
-        self.path_limits = {
-            "/translate": "translate",
-            "/upload": "upload",
-            "/api/jobs": "job_create",
-            "/api/auth/login": "auth_login",
-            "/api/auth/register": "auth_register",
-            "/admin": "admin",
-        }
-
-    async def __call__(self, scope, receive, send):
-        if scope["type"] == "http":
-            path = scope["path"]
-
-            # Find matching rate limit category
-            for prefix, category in self.path_limits.items():
-                if path.startswith(prefix):
-                    # Apply rate limit check here if needed
-                    break
-
-        await self.app(scope, receive, send)
+# Apply limits at the route with an explicit decorator, e.g.
+#   @limiter.limit(rate_limit_config.get_limit("auth_login"))
+#   async def login(request: Request, ...): ...
+# and register SlowAPIMiddleware once (see api/main.py) for the global backstop.
 
 
 # Utility functions

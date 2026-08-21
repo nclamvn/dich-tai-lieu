@@ -9,6 +9,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 
 from api.deps import get_current_user_id
+from api.rate_limiter import limiter
 
 router = APIRouter(tags=["Health"])
 
@@ -20,8 +21,9 @@ _PROTECT = [Depends(get_current_user_id)]
 
 
 @router.get("/health")
+@limiter.exempt
 async def health_check():
-    """Basic health check endpoint"""
+    """Basic health check endpoint — exempt from rate limiting (load-balancer probe)."""
     # QA-21: Include disk space info and warn if low
     total, used, free = shutil.disk_usage("/")
     free_mb = free // (1024 * 1024)
