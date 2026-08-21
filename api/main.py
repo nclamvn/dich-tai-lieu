@@ -48,9 +48,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
-from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
 from fastapi_csrf_protect import CsrfProtect
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 from pathlib import Path
@@ -104,6 +103,7 @@ from api.editor_router import router as editor_router
 # P1: Authentication and Error Dashboard routes
 from api.auth_router import router as auth_router
 from api.deps import get_current_user_id
+from api.rate_limiter import limiter, rate_limit_exceeded_handler
 from api.error_dashboard_router import router as error_router
 
 # P4: Usage tracking, API keys, and Preview routes
@@ -348,14 +348,13 @@ app = FastAPI(
 # in development (returns "default_user"), so attaching this is default-safe.
 _AUTH_REQUIRED = [Depends(get_current_user_id)]
 
-# Rate limiting (configurable via RATE_LIMIT env var)
-# Default: 60 requests per minute per IP
-limiter = Limiter(
-    key_func=get_remote_address,
-    default_limits=[os.getenv("RATE_LIMIT", "60/minute")]
-)
+# Rate limiting — the shared limiter lives in api/rate_limiter.py. It is
+# enforced only in production (env RATE_LIMIT_ENABLED overrides), so dev/tests are
+# never throttled. Per-route limits are declared with @limiter.limit(...);
+# SlowAPIMiddleware (registered below) applies the generous global backstop.
 app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)
+app.add_middleware(SlowAPIMiddleware)
 
 # CSRF protection exception handler
 @app.exception_handler(CsrfProtectError)

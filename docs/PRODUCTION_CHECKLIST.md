@@ -15,6 +15,9 @@ CORS_ORIGINS=https://app.yourdomain.com   # explicit; no wildcard in production
 # If CSRF is enabled for browser clients:
 CSRF_ENABLED=true
 CSRF_SECRET_KEY=<64 hex chars>
+# Rate limiting is auto-on in production; override / tune if needed:
+# RATE_LIMIT_ENABLED=true    # force on/off regardless of SECURITY_MODE
+# RATE_LIMIT=240/minute      # global per-user/IP backstop
 ```
 
 The boot guard rejects: a default/placeholder `SESSION_SECRET`, a secret shorter
@@ -41,11 +44,14 @@ than 32 chars, auth left disabled, empty `CORS_ORIGINS`, a **wildcard**
   to anonymous callers. In development they stay on.
 - **Passwordless session login is refused** in production — the credentialed
   login in `auth_router` (`/api/auth/login`, JWT + bcrypt) is the only login.
-- **Rate limiting** is only *partially* wired: `slowapi` is configured and a few
-  routes carry explicit `@limiter.limit(...)` (`/api/cache/clear`,
-  `/api/ocr/upload`, APS publish), but there is **no `SlowAPIMiddleware`**, so the
-  global `default_limits` are inert and login/upload are not yet throttled. Treat
-  this as a **follow-up before a wide launch** (see below), not a done item.
+- **Rate limiting is enforced.** One shared limiter (`api/rate_limiter.py`),
+  **enabled only in production** (`RATE_LIMIT_ENABLED` env overrides, so dev/tests
+  are never throttled). `SlowAPIMiddleware` applies a generous global backstop
+  (`RATE_LIMIT`, default 240/min per user/IP; the `/health` probe is exempt), and
+  tight per-route limits guard the abuse surface: login `10/min`, register `5/min`,
+  `/api/upload` `20/min`, plus the existing `/api/cache/clear` and `/api/ocr/upload`.
+  Over the limit returns **HTTP 429** with a `Retry-After` header. Guarded by
+  `tests/security/test_rate_limiting.py`.
 
 ## 3. Secrets & data hygiene
 
@@ -80,13 +86,9 @@ pytest tests/security/test_auth_enforcement.py tests/security/test_endpoint_auth
 ## 6. Known follow-ups (not yet enforced — do before a *wide* launch)
 
 These are tracked from the security audit. None blocks a small, trusted beta, but
-each should be closed before opening the doors wide:
+each should be closed before opening the doors wide. (Rate limiting and the dead
+`cors_config` footgun — previously listed here — are now **done**; see §2.)
 
-- **Rate limiting**: register `SlowAPIMiddleware` (so the global `default_limits`
-  apply) and add explicit throttles to the login routes (brute-force) and
-  `/api/upload` (the handler already fetches `request.app.state.limiter` but never
-  calls `.limit(...)`). Dead helpers in `api/rate_limiter.py` (`RateLimitMiddleware`,
-  `limit_auth`) can be wired or removed.
 - **Comprehensive per-router auth audit**: this pass gated the endpoints defined
   in `api/main.py` + `/api/upload`. The other ~20 included routers were spot-checked
   (jobs, monitoring, aps_v2, auth/api-keys/usage are guarded); a full sweep to
@@ -100,5 +102,3 @@ each should be closed before opening the doors wide:
 - **Error-detail leakage**: several handlers `raise HTTPException(500, detail=f"…{e}")`,
   leaking exception strings (paths, DB errors) to clients; route them through the
   generic sanitizer used for uncaught 500s.
-- **CORS footgun**: `api/cors_config.py::setup_cors` is dead code with
-  `*` methods/headers + credentials — delete it so no one wires it by mistake.
