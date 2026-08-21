@@ -498,6 +498,31 @@ class UniversalPublisher:
                     source_text = await self._extract_pdf_text_legacy(content_path)
                     job.source_text = source_text
 
+            # Strip running headers/footers ("page furniture") captured during
+            # extraction — the book title and "Author ◆ page-number" repeated on
+            # every page — BEFORE DNA / chunking / TOC, so they don't litter the
+            # translated body or flood the generated table of contents. No-op
+            # when the source has no such repeats. Gated (env: STRIP_RUNNING_
+            # FURNITURE) and never allowed to fail the job.
+            if source_text and bool(_cfg("strip_running_furniture", True)):
+                try:
+                    from core_v2.text_cleanup import strip_running_furniture
+
+                    cleaned_text, furn = strip_running_furniture(source_text)
+                    if furn.detected and (furn.standalone_removed or furn.inline_stripped):
+                        logger.info(
+                            f"[{job.job_id}] stripped page furniture "
+                            f"{[t[:20] for t in furn.tokens.values()]}: "
+                            f"-{furn.standalone_removed} line(s), "
+                            f"{furn.inline_stripped} inline stamp(s)"
+                        )
+                        source_text = cleaned_text
+                        job.source_text = source_text
+                except Exception as e:  # pragma: no cover - cleanup is best-effort
+                    logger.warning(
+                        f"[{job.job_id}] running-furniture strip skipped: {e}"
+                    )
+
             # Stage 1: Extract DNA (52%)
             update_progress(0.52, "Extracting document DNA")
             job.status = JobStatus.EXTRACTING_DNA

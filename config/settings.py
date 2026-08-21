@@ -64,6 +64,13 @@ class Settings(BaseSettings):
     # leave a job with no output. Env override: OUTPUT_PIPELINE=ast.
     output_pipeline: str = "engine"
 
+    # Strip running headers/footers ("page furniture") — the book title and
+    # "Author ◆ page-number" repeated on every source page — from extracted text
+    # before DNA/chunking/TOC. Prevents the title from littering the translated
+    # body and flooding the generated table of contents. No-op when the source
+    # has no such repeats. Env override: STRIP_RUNNING_FURNITURE=false.
+    strip_running_furniture: bool = True
+
     # ---- Terminology ledger (auto-glossary + explicit glossaries) ----
     # Auto-extract key terms/proper nouns per document and inject them into the
     # cached system prompt so terminology stays consistent across every chunk.
