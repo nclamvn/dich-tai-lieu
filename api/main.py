@@ -50,6 +50,8 @@ from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
+from starlette.exceptions import HTTPException as StarletteHTTPException
+from fastapi.exception_handlers import http_exception_handler as _starlette_http_handler
 from fastapi_csrf_protect import CsrfProtect
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 from pathlib import Path
@@ -388,17 +390,41 @@ async def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
     return response
 
 
-# QA-12: Global exception handler — sanitize error messages
+# QA-12 + beta hardening: never leak raised exception strings (paths, DB errors)
+# to clients. HTTPException is routed to _http_exception_handler below (which
+# sanitizes any 500); this catches everything uncaught.
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    if isinstance(exc, HTTPException):
-        return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
+    if isinstance(exc, StarletteHTTPException):
+        return await _http_exception_handler(request, exc)
     error_id = str(uuid.uuid4())[:8]
     logger.error(f"Unhandled error [{error_id}]: {exc}", exc_info=True)
     return JSONResponse(status_code=500, content={
         "detail": "An internal error occurred. Please try again or contact support.",
         "error_id": error_id,
     })
+
+
+@app.exception_handler(StarletteHTTPException)
+async def _http_exception_handler(request: Request, exc: StarletteHTTPException):
+    """Return curated client messages for <500; sanitize 500s so a raised
+    ``HTTPException(500, detail=f"...{e}")`` can't leak internals. The real detail
+    is logged server-side with an error id. Other 5xx (503/507 with deliberately
+    friendly messages) keep their text."""
+    if exc.status_code == 500:
+        error_id = str(uuid.uuid4())[:8]
+        logger.error(
+            "Server error [%s] %s %s: %s",
+            error_id, request.method, request.url.path, exc.detail,
+        )
+        return JSONResponse(
+            status_code=500,
+            content={
+                "detail": "An internal error occurred. Please try again or contact support.",
+                "error_id": error_id,
+            },
+        )
+    return await _starlette_http_handler(request, exc)
 
 
 # QA-16: Body size limit middleware — prevent DoS via large payloads
@@ -472,8 +498,8 @@ async def audit_logging_middleware(request: Request, call_next):
 
 
 # Phase 4.1: Include Author Mode routes
-app.include_router(author.router)
-app.include_router(editor_router)
+app.include_router(author.router, dependencies=_AUTH_REQUIRED)
+app.include_router(editor_router, dependencies=_AUTH_REQUIRED)
 
 # APS V2: Include Claude-Native Universal Publishing routes
 app.include_router(aps_v2_router)
@@ -650,50 +676,50 @@ async def shutdown_ws_fanout():
 
 
 # Batch Processing: Include batch job routes
-app.include_router(batch_router)
+app.include_router(batch_router, dependencies=_AUTH_REQUIRED)
 
 # Multi-AI Provider: Include provider management routes
 # Prefixes are already declared on these routers (provider_routes.py and
 # glossary_router.py both call APIRouter(prefix=...)). Do NOT repeat the prefix
 # here or every path doubles up, e.g. /api/v2/providers/api/v2/providers.
-app.include_router(provider_router)
+app.include_router(provider_router, dependencies=_AUTH_REQUIRED)
 app.include_router(glossary_router)
 
 # P1: Authentication routes (JWT-based)
 app.include_router(auth_router)
 
 # P1: Error Dashboard routes
-app.include_router(error_router)
-app.include_router(tm_router)
+app.include_router(error_router, dependencies=_AUTH_REQUIRED)
+app.include_router(tm_router, dependencies=_AUTH_REQUIRED)
 
 # P4: Usage tracking, API keys, and Preview
 app.include_router(usage_router)
 app.include_router(api_keys_router)
-app.include_router(preview_router)
+app.include_router(preview_router, dependencies=_AUTH_REQUIRED)
 
 # Book-to-Cinema: AI Movie Maker
-app.include_router(cinema_router)
+app.include_router(cinema_router, dependencies=_AUTH_REQUIRED)
 
 # Screenplay Studio
-app.include_router(screenplay_router)
+app.include_router(screenplay_router, dependencies=_AUTH_REQUIRED)
 
 # Settings & System
-app.include_router(settings_router)
-app.include_router(system_router)
+app.include_router(settings_router, dependencies=_AUTH_REQUIRED)
+app.include_router(system_router, dependencies=_AUTH_REQUIRED)
 
 # Book Writer
-app.include_router(book_writer_router)
-app.include_router(book_writer_v2_router)
+app.include_router(book_writer_router, dependencies=_AUTH_REQUIRED)
+app.include_router(book_writer_v2_router, dependencies=_AUTH_REQUIRED)
 
 # Dashboard
-app.include_router(dashboard_router)
+app.include_router(dashboard_router, dependencies=_AUTH_REQUIRED)
 
 # Core route modules
-app.include_router(jobs_router)
-app.include_router(uploads_router)
-app.include_router(batch_legacy_router)
+app.include_router(jobs_router, dependencies=_AUTH_REQUIRED)
+app.include_router(uploads_router, dependencies=_AUTH_REQUIRED)
+app.include_router(batch_legacy_router, dependencies=_AUTH_REQUIRED)
 app.include_router(health_router)
-app.include_router(job_outputs_router)
+app.include_router(job_outputs_router, dependencies=_AUTH_REQUIRED)
 app.include_router(metrics_router)
 
 # Metrics middleware — records request count, latency, error rate

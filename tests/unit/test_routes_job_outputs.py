@@ -170,7 +170,9 @@ class TestDownloadJobOutput:
             resp = client.get("/api/jobs/abc/download/md")
 
         assert resp.status_code == 500
-        assert "converter boom" in resp.json()["detail"]
+        # 500s are sanitized: the raw exception string must not leak to the client.
+        assert "converter boom" not in resp.text
+        assert resp.json()["detail"] == "An internal error occurred. Please try again or contact support."
 
     def test_download_cancelled_message(self, client):
         mock_job = MagicMock()
@@ -287,7 +289,12 @@ class TestJobPreview:
             resp = client.get("/api/jobs/abc/preview")
 
         assert resp.status_code == 500
-        assert "Failed to generate preview" in resp.json()["detail"]
+        # 500s are sanitized (beta hardening): the raw exception ("corrupt") must
+        # not leak; a generic message + error_id is returned instead.
+        assert "corrupt" not in resp.text
+        body = resp.json()
+        assert body["detail"] == "An internal error occurred. Please try again or contact support."
+        assert body.get("error_id")
 
     def test_preview_docx_multiple_paragraphs(self, client, tmp_path):
         """Multiple paragraphs with mixed headings and body."""
@@ -396,6 +403,8 @@ class TestPdfDetect:
                 resp = client.post(f"/api/pdf/detect?file_path={pdf_file}")
 
             assert resp.status_code == 500
-            assert "Detection failed" in resp.json()["detail"]
+            # 500s are sanitized: the raw exception string must not leak.
+            assert "parse error" not in resp.text
+            assert resp.json()["detail"] == "An internal error occurred. Please try again or contact support."
         finally:
             pdf_file.unlink(missing_ok=True)
