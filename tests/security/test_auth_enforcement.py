@@ -54,6 +54,25 @@ def test_production_rejects_missing_cors():
         _prod(cors_origins="")
 
 
+def test_production_rejects_wildcard_cors():
+    # allow_credentials=True + "*" is a real misconfiguration.
+    with pytest.raises(ValueError):
+        _prod(cors_origins="*")
+    with pytest.raises(ValueError):
+        _prod(cors_origins="https://ok.example.com,*")
+
+
+def test_production_rejects_short_or_placeholder_csrf_secret():
+    with pytest.raises(ValueError):
+        _prod(csrf_enabled=True, csrf_secret_key="CHANGE_ME")
+    with pytest.raises(ValueError):
+        _prod(csrf_enabled=True, csrf_secret_key="tooshort")
+
+
+def test_production_accepts_secure_csrf_secret():
+    assert _prod(csrf_enabled=True, csrf_secret_key=SECURE).security_mode == "production"
+
+
 def test_development_allows_defaults():
     assert Settings(security_mode="development").security_mode == "development"
 

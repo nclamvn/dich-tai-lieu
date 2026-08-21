@@ -103,6 +103,7 @@ from api.editor_router import router as editor_router
 
 # P1: Authentication and Error Dashboard routes
 from api.auth_router import router as auth_router
+from api.deps import get_current_user_id
 from api.error_dashboard_router import router as error_router
 
 # P4: Usage tracking, API keys, and Preview routes
@@ -327,11 +328,25 @@ def get_csrf_config():
 # FastAPI Application
 # =============================================================================
 
+# Interactive API docs (/docs, /redoc, /openapi.json) are disabled in production
+# so the full endpoint surface isn't self-documented to anonymous callers.
+from config.settings import settings as _boot_settings  # noqa: E402
+
+_docs_enabled = _boot_settings.security_mode != "production"
+
 app = FastAPI(
     title="AI Translator Pro API",
     description="REST API for professional translation system with batch processing",
-    version="3.3.1"
+    version="3.3.1",
+    docs_url="/docs" if _docs_enabled else None,
+    redoc_url="/redoc" if _docs_enabled else None,
+    openapi_url="/openapi.json" if _docs_enabled else None,
 )
+
+# Reusable "require an authenticated user" dependency. get_current_user_id is
+# fail-closed in production (401 on missing/invalid X-Session-Token) and a no-op
+# in development (returns "default_user"), so attaching this is default-safe.
+_AUTH_REQUIRED = [Depends(get_current_user_id)]
 
 # Rate limiting (configurable via RATE_LIMIT env var)
 # Default: 60 requests per minute per IP
@@ -751,6 +766,14 @@ async def login(login_data: LoginRequest):
 
     Returns session token to use in X-Session-Token header
     """
+    # Fail-closed defense-in-depth: this passwordless session login is for local /
+    # internal use only. In production (auth enabled) it must never mint a token
+    # without credentials — the credentialed login in auth_router handles real
+    # authentication and, being registered first, shadows this route anyway.
+    from config.settings import settings as _s
+    if _s.session_auth_enabled:
+        raise HTTPException(status_code=404, detail="Not found")
+
     # Create session
     session_token = security_manager.create_session(
         user_id=login_data.username,
@@ -801,15 +824,18 @@ async def get_session_info(session: SessionInfo = Depends(get_optional_session))
 
 @app.get("/", include_in_schema=False)
 async def root():
-    """Redirect to API docs — frontend runs separately via Next.js"""
-    return RedirectResponse(url="/docs")
+    """Redirect to API docs in dev; in production (docs disabled) return a plain
+    liveness JSON so the root isn't a broken redirect."""
+    if _docs_enabled:
+        return RedirectResponse(url="/docs")
+    return JSONResponse({"status": "ok", "service": "AI Translator Pro API"})
 
 
 # =============================================================================
 # API Endpoints - Queue & System
 # =============================================================================
 
-@app.get("/api/queue/stats", response_model=QueueStats)
+@app.get("/api/queue/stats", response_model=QueueStats, dependencies=_AUTH_REQUIRED)
 async def get_queue_stats():
     """Get queue statistics"""
     stats = queue.get_queue_stats()
@@ -825,7 +851,7 @@ async def get_queue_stats():
     )
 
 
-@app.get("/api/system/info", response_model=SystemInfo)
+@app.get("/api/system/info", response_model=SystemInfo, dependencies=_AUTH_REQUIRED)
 async def get_system_info():
     """Get system information"""
     stats = queue.get_queue_stats()
@@ -847,7 +873,7 @@ async def get_system_info():
     )
 
 
-@app.get("/api/system/status")
+@app.get("/api/system/status", dependencies=_AUTH_REQUIRED)
 async def get_system_status():
     """
     Get system capabilities and feature availability (UI v1.1)
@@ -911,7 +937,7 @@ async def get_system_status():
 # Cache Management Endpoints
 # =============================================================================
 
-@app.get("/api/cache/stats")
+@app.get("/api/cache/stats", dependencies=_AUTH_REQUIRED)
 async def get_cache_stats():
     """
     Get cache statistics
@@ -929,7 +955,7 @@ async def get_cache_stats():
         raise HTTPException(status_code=500, detail=f"Failed to get cache stats: {str(e)}")
 
 
-@app.post("/api/cache/clear")
+@app.post("/api/cache/clear", dependencies=_AUTH_REQUIRED)
 @limiter.limit("5/minute")  # Rate limit to prevent abuse
 async def clear_cache(request: Request):
     """
@@ -956,7 +982,7 @@ async def clear_cache(request: Request):
         raise HTTPException(status_code=500, detail=f"Failed to clear cache: {str(e)}")
 
 
-@app.post("/api/processor/start")
+@app.post("/api/processor/start", dependencies=_AUTH_REQUIRED)
 async def start_processor(
     request: Request = None
     # csrf_protect: CsrfProtect = Depends()  # Disabled for internal deployment
@@ -987,7 +1013,7 @@ async def start_processor(
     return {"message": "Batch processor started", "aps_integration": True}
 
 
-@app.post("/api/processor/stop")
+@app.post("/api/processor/stop", dependencies=_AUTH_REQUIRED)
 async def stop_processor(
     request: Request = None
     # csrf_protect: CsrfProtect = Depends()  # Disabled for internal deployment
@@ -1009,7 +1035,7 @@ async def stop_processor(
 # API Endpoints - OCR (Deepseek)
 # =============================================================================
 
-@app.post("/api/ocr/recognize", response_model=OCRResponse)
+@app.post("/api/ocr/recognize", response_model=OCRResponse, dependencies=_AUTH_REQUIRED)
 async def ocr_recognize(request: OCRRequest):
     """
     Nhận dạng văn bản từ ảnh (OCR)
@@ -1069,7 +1095,7 @@ async def ocr_recognize(request: OCRRequest):
         raise HTTPException(status_code=500, detail=f"OCR failed: {str(e)}")
 
 
-@app.post("/api/ocr/handwriting", response_model=OCRResponse)
+@app.post("/api/ocr/handwriting", response_model=OCRResponse, dependencies=_AUTH_REQUIRED)
 async def ocr_handwriting(request: OCRRequest):
     """
     Nhận dạng chữ viết tay (Handwriting Recognition)
@@ -1086,7 +1112,7 @@ async def ocr_handwriting(request: OCRRequest):
     return await ocr_recognize(request)
 
 
-@app.post("/api/ocr/translate", response_model=OCRTranslateResponse)
+@app.post("/api/ocr/translate", response_model=OCRTranslateResponse, dependencies=_AUTH_REQUIRED)
 async def ocr_translate(request: OCRTranslateRequest):
     """
     Nhận dạng ảnh và dịch văn bản (OCR + Translation)
@@ -1154,7 +1180,7 @@ async def ocr_translate(request: OCRTranslateRequest):
         raise HTTPException(status_code=500, detail=f"OCR/Translation failed: {str(e)}")
 
 
-@app.post("/api/ocr/upload")
+@app.post("/api/ocr/upload", dependencies=_AUTH_REQUIRED)
 @limiter.limit("30/minute")
 async def ocr_upload(request: Request, file: UploadFile = File(...)):
     """

@@ -295,6 +295,8 @@ class Settings(BaseSettings):
             "INSECURE-DEV-CSRF-CHANGE-IN-PRODUCTION",
             "change-this-in-production",
             "change-this-secret-key-in-production-asap",
+            "CHANGE_ME",
+            "changeme",
         ]
 
         if self.security_mode == "production":
@@ -313,11 +315,15 @@ class Settings(BaseSettings):
                     "SESSION_SECRET must be at least 32 characters in production!"
                 )
 
-            # Check CSRF secret if enabled
+            # Check CSRF secret if enabled (placeholder value AND minimum length)
             if self.csrf_enabled and self.csrf_secret_key in insecure_secrets:
                 errors.append(
                     "CSRF_SECRET_KEY must be set to a secure value when CSRF is enabled! "
                     "Generate with: python -c \"import secrets; print(secrets.token_hex(32))\""
+                )
+            if self.csrf_enabled and len(self.csrf_secret_key) < 32:
+                errors.append(
+                    "CSRF_SECRET_KEY must be at least 32 characters when CSRF is enabled in production!"
                 )
 
             # Check auth is enabled
@@ -327,11 +333,17 @@ class Settings(BaseSettings):
                     "Enable SESSION_AUTH_ENABLED=true or API_KEY_AUTH_ENABLED=true"
                 )
 
-            # Check CORS origins are explicitly set
+            # Check CORS origins are explicitly set — and not a wildcard, since the
+            # app sends allow_credentials=True (credentialed "*" is a real hole).
             if not self.cors_origins:
                 errors.append(
                     "CORS_ORIGINS must be explicitly set in production! "
                     "Example: CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com"
+                )
+            elif any(o.strip() == "*" for o in self.cors_origins.split(",")):
+                errors.append(
+                    "CORS_ORIGINS must not be '*' in production — credentials are allowed, "
+                    "so a wildcard origin is insecure. List explicit origins instead."
                 )
 
             if errors:
