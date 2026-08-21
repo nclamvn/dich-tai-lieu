@@ -39,6 +39,18 @@ than 32 chars, auth left disabled, empty `CORS_ORIGINS`, a **wildcard**
   `get_current_user_id`): `/api/processor/start|stop`, `/api/cache/clear|stats`,
   `/api/queue/stats`, `/api/system/info|status`, `/api/ocr/*`, and `/api/upload`.
   Guarded by `tests/security/test_endpoint_authz.py`.
+- **Router-level auth sweep.** Every all-private session-token router is gated at
+  the `include_router` site with `dependencies=[Depends(get_current_user_id)]`:
+  author, editor, tm, cinema, screenplay, settings, dashboard, provider, system,
+  book-writer (v1/v2), jobs, batch (+legacy), preview, job-outputs, error-dashboard.
+  Fail-closed in production, no-op in dev. Guarded by
+  `tests/security/test_router_authz.py`. Deliberately NOT session-gated (each for a
+  reason): `auth`/`usage`/`api_keys` (JWT-bearer, self-enforcing); `glossary` and
+  `aps_v2` (public reference GETs); `health` (public `/health`); `metrics`.
+- **Server error messages are sanitized.** Any `HTTPException(500, …)` returns a
+  generic message + `error_id` (the real detail is logged), so raised exception
+  strings (paths, DB errors) never reach clients; `<500` and other `5xx` keep their
+  curated text. Guarded by `tests/security/test_error_sanitize.py`.
 - **Interactive API docs are disabled** (`/docs`, `/redoc`, `/openapi.json` → 404;
   `/` returns a plain liveness JSON) so the endpoint surface isn't self-documented
   to anonymous callers. In development they stay on.
@@ -80,25 +92,34 @@ SECURITY_MODE=production SESSION_AUTH_ENABLED=true python -c "from config.settin
   && echo "UNEXPECTED: booted" || echo "OK: production refused insecure config"
 
 # Enforcement + boot guard unit tests
-pytest tests/security/test_auth_enforcement.py tests/security/test_endpoint_authz.py -q
+pytest tests/security/test_auth_enforcement.py tests/security/test_endpoint_authz.py \
+       tests/security/test_router_authz.py tests/security/test_error_sanitize.py -q
 ```
+
+> **Validate the auth sweep in staging before a wide launch.** The router-level
+> sweep (§2) is session-token deny-by-default in production; confirm the frontend's
+> real flow doesn't rely on any of the newly-gated routes being anonymous, and that
+> the public exemptions (glossary/aps_v2 reference GETs, `/health`, `/metrics`) are
+> the intended set.
 
 ## 6. Known follow-ups (not yet enforced — do before a *wide* launch)
 
 These are tracked from the security audit. None blocks a small, trusted beta, but
-each should be closed before opening the doors wide. (Rate limiting and the dead
-`cors_config` footgun — previously listed here — are now **done**; see §2.)
+each should be closed before opening the doors wide. (Rate limiting, the dead
+`cors_config` footgun, the per-router auth sweep, and 500 error-detail sanitizing
+— previously listed here — are now **done**; see §2.)
 
-- **Comprehensive per-router auth audit**: this pass gated the endpoints defined
-  in `api/main.py` + `/api/upload`. The other ~20 included routers were spot-checked
-  (jobs, monitoring, aps_v2, auth/api-keys/usage are guarded); a full sweep to
-  confirm every state-changing route on every router is fail-closed is still owed.
-  A deny-by-default auth middleware (allow-list `/`, `/health*`, `/api/auth/*`,
-  docs) would make new routes protected automatically.
+- **WebSocket auth**: the deny-by-default sweep is HTTP-only. `WS /ws` self-guards,
+  but `WS /api/preview/stream/{job_id}`, `WS /api/cinema/ws/jobs/{job_id}` and the
+  book-writer WS endpoints stream by id with **no token check** — add a `?token=`
+  check like `/ws` has.
+- **Sensitive sub-routes on the exempt routers**: `glossary` and `aps_v2` are left
+  ungated for their public reference GETs, but their *write*/*state* routes (glossary
+  create/delete, aps_v2 non-reference) should be protected per-route. `/metrics`
+  (Prometheus) leaks the internal path list — protect via network policy or scraper
+  auth.
 - **Two auth systems**: product endpoints authenticate via **session token**
   (`get_current_user_id`), while the live login issues **JWTs**
   (`get_current_active_user`). They don't interoperate — decide on one, or bridge
-  them, so a logged-in user can actually call the session-token endpoints in prod.
-- **Error-detail leakage**: several handlers `raise HTTPException(500, detail=f"…{e}")`,
-  leaking exception strings (paths, DB errors) to clients; route them through the
-  generic sanitizer used for uncaught 500s.
+  them, so a logged-in user can actually obtain a session token in prod. (This is
+  the interop question the staging validation above will surface.)
