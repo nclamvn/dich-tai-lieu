@@ -876,16 +876,47 @@ async def get_queue_stats():
     )
 
 
+_COVER_PREVIEW_VERSION: Optional[str] = None
+
+
+def _cover_preview_version() -> str:
+    """Fingerprint of everything that changes how cover previews look (bundled
+    fonts + template registry). The front-end appends it to preview URLs, so any
+    font/template fix busts the browser's 24h preview cache automatically."""
+    global _COVER_PREVIEW_VERSION
+    if _COVER_PREVIEW_VERSION is None:
+        import hashlib
+
+        h = hashlib.sha1()
+        try:
+            from core.rendering.pdf_adapter import _BUNDLED_FONTS
+
+            for p in sorted(_BUNDLED_FONTS.glob("*.ttf")):
+                st = p.stat()
+                h.update(f"{p.name}:{st.st_size}:{int(st.st_mtime)}".encode())
+        except Exception:
+            pass
+        try:
+            from core.rendering.cover_templates import COVER_TEMPLATES
+
+            h.update(",".join(sorted(COVER_TEMPLATES)).encode())
+        except Exception:
+            pass
+        _COVER_PREVIEW_VERSION = h.hexdigest()[:10]
+    return _COVER_PREVIEW_VERSION
+
+
 @app.get("/api/cover-templates")
 async def get_cover_templates():
     """Public catalog of pre-built cover templates for the front-end picker.
 
     Static, non-sensitive metadata (id/name/category/description) — the same
     templates ``render_pdf_from_ast(cover_template=…)`` renders onto page 1.
+    ``preview_version`` is a cache-busting fingerprint for preview URLs.
     """
     from core.rendering.cover_templates import list_templates
 
-    return {"templates": list_templates()}
+    return {"templates": list_templates(), "preview_version": _cover_preview_version()}
 
 
 @app.get("/api/cover-templates/{template_id}/preview")
