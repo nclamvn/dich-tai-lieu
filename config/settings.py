@@ -71,6 +71,11 @@ class Settings(BaseSettings):
     # has no such repeats. Env override: STRIP_RUNNING_FURNITURE=false.
     strip_running_furniture: bool = True
 
+    # Default pre-built cover template applied on export when the caller does not
+    # pass one explicitly (empty = keep the plain cover). Env: COVER_TEMPLATE=noir.
+    # Valid ids come from core/rendering/cover_templates.list_templates().
+    cover_template: str = ""
+
     # ---- Terminology ledger (auto-glossary + explicit glossaries) ----
     # Auto-extract key terms/proper nouns per document and inject them into the
     # cached system prompt so terminology stays consistent across every chunk.

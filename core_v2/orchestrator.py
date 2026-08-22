@@ -440,6 +440,7 @@ class UniversalPublisher:
         docx_template: str = "auto",  # NEW: DOCX template (ebook/academic/business/auto)
         pdf_template: str = "auto",  # NEW: PDF template (ebook/academic/business/auto)
         title_fallback: str = "",  # Fallback title (e.g. source filename without extension)
+        cover_template: Optional[str] = None,  # NEW: pre-built cover template id (see cover_templates)
     ) -> PublishingJob:
         """
         Main publishing pipeline.
@@ -621,6 +622,8 @@ class UniversalPublisher:
                 pdf_template=pdf_template,  # Professional PDF template
                 profile_id=profile_id,  # For profile-based template selection
                 target_lang=target_lang,  # For i18n in renderers
+                # Pre-built cover: explicit arg wins, else the configured default
+                cover_template=cover_template or (str(_cfg("cover_template", "")).strip() or None),
             )
 
             # Stage 6: Verify (98%)
@@ -1203,6 +1206,7 @@ class UniversalPublisher:
         pdf_template: str = "auto",
         profile_id: str = "essay",
         target_lang: str = "vi",
+        cover_template: Optional[str] = None,
     ) -> Path:
         """Convert to final output format."""
         format_enum = OutputFormat(output_format.lower())
@@ -1257,6 +1261,7 @@ class UniversalPublisher:
                     title=title,
                     author=author or "Unknown",
                     language=language,
+                    cover_template=cover_template,
                 )
                 logger.info(f"Professional DOCX created: {result_path}")
                 return result_path
@@ -1277,6 +1282,7 @@ class UniversalPublisher:
                     title=title,
                     author=author or "Unknown",
                     language=language,
+                    cover_template=cover_template,
                 )
                 logger.info(f"Professional PDF created: {result_path}")
                 return result_path

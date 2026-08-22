@@ -1013,6 +1013,21 @@ class OutputConverter:
         logger.info(f"Professional PDF via AST pipeline: {result}")
         return result
 
+    def _apply_cover(self, path, fmt: str, cover_template, title: str, author: str, language: str) -> None:
+        """Engine-agnostic post-process: stamp a chosen template cover onto the
+        finished file. No-op when no template is chosen; never raises."""
+        if not cover_template:
+            return
+        try:
+            if fmt == "pdf":
+                from core.rendering.cover_apply import apply_cover_to_pdf
+                apply_cover_to_pdf(path, cover_template, title=title, author=author, language=language)
+            elif fmt == "docx":
+                from core.rendering.cover_apply import apply_cover_to_docx
+                apply_cover_to_docx(path, cover_template, title=title, author=author, language=language)
+        except Exception as e:  # pragma: no cover - cover is best-effort
+            logger.warning("cover apply (%s) failed: %s", fmt, e)
+
     async def convert_markdown_to_docx_professional(
         self,
         markdown_content: str,
@@ -1021,6 +1036,7 @@ class OutputConverter:
         title: str = "Untitled",
         author: str = "Unknown",
         language: str = "vi",
+        cover_template: Optional[str] = None,
     ) -> Path:
         """
         Convert markdown content directly to professional DOCX.
@@ -1040,9 +1056,11 @@ class OutputConverter:
 
         if _ast_pipeline_enabled():
             try:
-                return await self._markdown_to_docx_via_ast(
+                produced = await self._markdown_to_docx_via_ast(
                     markdown_content, output_path, template, title, author, language
                 )
+                self._apply_cover(produced, "docx", cover_template, title, author, language)
+                return produced
             except Exception as e:
                 logger.warning(
                     "AST DOCX pipeline failed (%s); falling back to legacy engine", e
@@ -1073,6 +1091,7 @@ class OutputConverter:
 
         result_path = await run_blocking(_render)
 
+        self._apply_cover(result_path, "docx", cover_template, title, author, language)
         logger.info(f"Professional DOCX from markdown: {result_path}")
         return result_path
 
@@ -1136,6 +1155,7 @@ class OutputConverter:
         title: str = "Untitled",
         author: str = "Unknown",
         language: str = "vi",
+        cover_template: Optional[str] = None,
     ) -> Path:
         """
         Convert markdown content directly to professional PDF.
@@ -1155,9 +1175,11 @@ class OutputConverter:
 
         if _ast_pipeline_enabled():
             try:
-                return await self._markdown_to_pdf_via_ast(
+                produced = await self._markdown_to_pdf_via_ast(
                     markdown_content, output_path, template, title, author, language
                 )
+                self._apply_cover(produced, "pdf", cover_template, title, author, language)
+                return produced
             except Exception as e:
                 logger.warning(
                     "AST PDF pipeline failed (%s); falling back to legacy engine", e
@@ -1187,6 +1209,7 @@ class OutputConverter:
 
         result_path = await run_blocking(_render)
 
+        self._apply_cover(result_path, "pdf", cover_template, title, author, language)
         logger.info(f"Professional PDF from markdown: {result_path}")
         return result_path
 

@@ -461,3 +461,36 @@ def render_cover_pdf(
     c.save()
     logger.info("cover rendered: template=%s -> %s", template_id, output_path)
     return output_path
+
+
+def render_cover_image(
+    template_id: str,
+    metadata,
+    output_path,
+    *,
+    scale: float = 2.0,
+    title: Optional[str] = None,
+    kicker: Optional[str] = None,
+) -> Path:
+    """Render ``template_id`` to a raster PNG (for DOCX/EPUB covers and previews).
+
+    Draws the vector cover, then rasterizes page 1 with PyMuPDF at ``scale``×
+    (2.0 ≈ 144 dpi). Same page aspect as the document, so it fills a page cleanly.
+    """
+    import tempfile
+
+    import fitz  # PyMuPDF (already a dependency)
+
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    with tempfile.TemporaryDirectory() as td:
+        pdf = Path(td) / "cover.pdf"
+        render_cover_pdf(template_id, metadata, pdf, title=title, kicker=kicker)
+        doc = fitz.open(str(pdf))
+        try:
+            pix = doc[0].get_pixmap(matrix=fitz.Matrix(scale, scale), alpha=False)
+            pix.save(str(output_path))
+        finally:
+            doc.close()
+    logger.info("cover image rendered: template=%s -> %s", template_id, output_path)
+    return output_path
