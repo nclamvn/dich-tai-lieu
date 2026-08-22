@@ -39,8 +39,18 @@ from core.rendering.inline import parse_inline
 
 logger = logging.getLogger(__name__)
 
+# Bundled fonts (shipped in the repo) — full Vietnamese coverage, so covers and
+# PDFs render diacritics correctly on every machine regardless of system fonts.
+_BUNDLED_FONTS = Path(__file__).resolve().parents[2] / "assets" / "fonts"
+
 # Font families to try, in order: (regular, bold, italic). First existing wins.
+# Bundled Noto Sans is tried FIRST; system fonts remain as fallbacks.
 _FONT_FAMILIES = [
+    (
+        str(_BUNDLED_FONTS / "NotoSans-Regular.ttf"),
+        str(_BUNDLED_FONTS / "NotoSans-Bold.ttf"),
+        str(_BUNDLED_FONTS / "NotoSans-Italic.ttf"),
+    ),
     (
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
@@ -64,7 +74,13 @@ _FONT_FAMILIES = [
 ]
 
 # Serif faces (drive the ebook/academic templates); sans reuses the list above.
+# Bundled Noto Serif (full Vietnamese) is tried FIRST; system fonts fall back.
 _SERIF_FAMILIES = [
+    (
+        str(_BUNDLED_FONTS / "NotoSerif-Regular.ttf"),
+        str(_BUNDLED_FONTS / "NotoSerif-Bold.ttf"),
+        str(_BUNDLED_FONTS / "NotoSerif-Italic.ttf"),
+    ),
     (
         "/usr/share/fonts/truetype/dejavu/DejaVuSerif.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSerif-Bold.ttf",
