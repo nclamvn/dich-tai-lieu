@@ -29,6 +29,15 @@ def test_catalog_lists_twelve(client):
     assert len(r.json()["templates"]) == 12
 
 
+def test_catalog_includes_preview_version(client):
+    # Cache-busting fingerprint for preview URLs: stable within a process,
+    # changes when the bundled fonts / template registry change.
+    r = client.get("/api/cover-templates")
+    v = r.json().get("preview_version")
+    assert isinstance(v, str) and len(v) >= 6
+    assert client.get("/api/cover-templates").json()["preview_version"] == v
+
+
 def test_preview_returns_png(client):
     r = client.get("/api/cover-templates/noir/preview")
     assert r.status_code == 200

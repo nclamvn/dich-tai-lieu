@@ -277,13 +277,21 @@ export const jobs = {
 
 // ─── Book Writer ───
 
+let coverPreviewVersion = "";
+
 export const coverTemplates = {
   async list(): Promise<CoverTemplate[]> {
-    const data = await apiFetch<{ templates: CoverTemplate[] }>("/api/cover-templates");
+    const data = await apiFetch<{ templates: CoverTemplate[]; preview_version?: string }>(
+      "/api/cover-templates",
+    );
+    coverPreviewVersion = data.preview_version || "";
     return data.templates || [];
   },
   previewUrl(id: string): string {
-    return `${API_BASE}/api/cover-templates/${encodeURIComponent(id)}/preview`;
+    const v = coverPreviewVersion
+      ? `?v=${encodeURIComponent(coverPreviewVersion)}`
+      : "";
+    return `${API_BASE}/api/cover-templates/${encodeURIComponent(id)}/preview${v}`;
   },
   async upload(file: File): Promise<string> {
     const fd = new FormData();
