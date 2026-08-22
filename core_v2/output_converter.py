@@ -603,6 +603,7 @@ class OutputConverter:
         output_path: Path,
         title: Optional[str],
         author: Optional[str],
+        cover_image: Optional[Path] = None,
     ) -> bool:
         """Convert Markdown to EPUB via the AST renderer (ebooklib) — no pandoc
         required. Falls back to pandoc (MathML) only if the ebooklib path fails
@@ -625,7 +626,10 @@ class OutputConverter:
             if author:
                 ast.metadata.author = author
 
-            await run_blocking(render_epub_from_ast, ast, output_path, title)
+            from functools import partial
+            await run_blocking(
+                partial(render_epub_from_ast, ast, output_path, title, cover_image=cover_image)
+            )
             logger.info(f"EPUB created via ebooklib (no pandoc): {output_path}")
             return output_path.exists()
         except Exception as e:
@@ -1013,18 +1017,16 @@ class OutputConverter:
         logger.info(f"Professional PDF via AST pipeline: {result}")
         return result
 
-    def _apply_cover(self, path, fmt: str, cover_template, title: str, author: str, language: str) -> None:
-        """Engine-agnostic post-process: stamp a chosen template cover onto the
-        finished file. No-op when no template is chosen; never raises."""
-        if not cover_template:
+    def _apply_cover(self, path, fmt, cover_template, title, author, language, cover_image=None) -> None:
+        """Engine-agnostic post-process: stamp a template cover — or a user's own
+        cover image — onto a finished PDF/DOCX. No-op when neither is set; never
+        raises. (EPUB covers are baked at build time, not here.)"""
+        if not cover_template and not cover_image:
             return
         try:
-            if fmt == "pdf":
-                from core.rendering.cover_apply import apply_cover_to_pdf
-                apply_cover_to_pdf(path, cover_template, title=title, author=author, language=language)
-            elif fmt == "docx":
-                from core.rendering.cover_apply import apply_cover_to_docx
-                apply_cover_to_docx(path, cover_template, title=title, author=author, language=language)
+            from core.rendering.cover_apply import apply_cover
+            apply_cover(path, fmt, cover_template=cover_template, cover_image=cover_image,
+                        title=title, author=author, language=language)
         except Exception as e:  # pragma: no cover - cover is best-effort
             logger.warning("cover apply (%s) failed: %s", fmt, e)
 
@@ -1037,6 +1039,7 @@ class OutputConverter:
         author: str = "Unknown",
         language: str = "vi",
         cover_template: Optional[str] = None,
+        cover_image: Optional[str] = None,
     ) -> Path:
         """
         Convert markdown content directly to professional DOCX.
@@ -1059,7 +1062,7 @@ class OutputConverter:
                 produced = await self._markdown_to_docx_via_ast(
                     markdown_content, output_path, template, title, author, language
                 )
-                self._apply_cover(produced, "docx", cover_template, title, author, language)
+                self._apply_cover(produced, "docx", cover_template, title, author, language, cover_image=cover_image)
                 return produced
             except Exception as e:
                 logger.warning(
@@ -1091,7 +1094,7 @@ class OutputConverter:
 
         result_path = await run_blocking(_render)
 
-        self._apply_cover(result_path, "docx", cover_template, title, author, language)
+        self._apply_cover(result_path, "docx", cover_template, title, author, language, cover_image=cover_image)
         logger.info(f"Professional DOCX from markdown: {result_path}")
         return result_path
 
@@ -1156,6 +1159,7 @@ class OutputConverter:
         author: str = "Unknown",
         language: str = "vi",
         cover_template: Optional[str] = None,
+        cover_image: Optional[str] = None,
     ) -> Path:
         """
         Convert markdown content directly to professional PDF.
@@ -1178,7 +1182,7 @@ class OutputConverter:
                 produced = await self._markdown_to_pdf_via_ast(
                     markdown_content, output_path, template, title, author, language
                 )
-                self._apply_cover(produced, "pdf", cover_template, title, author, language)
+                self._apply_cover(produced, "pdf", cover_template, title, author, language, cover_image=cover_image)
                 return produced
             except Exception as e:
                 logger.warning(
@@ -1209,9 +1213,50 @@ class OutputConverter:
 
         result_path = await run_blocking(_render)
 
-        self._apply_cover(result_path, "pdf", cover_template, title, author, language)
+        self._apply_cover(result_path, "pdf", cover_template, title, author, language, cover_image=cover_image)
         logger.info(f"Professional PDF from markdown: {result_path}")
         return result_path
+
+    async def convert_markdown_to_epub_professional(
+        self,
+        markdown_content: str,
+        output_path: Path,
+        template: str = "ebook",
+        title: str = "Untitled",
+        author: str = "Unknown",
+        language: str = "vi",
+        cover_template: Optional[str] = None,
+        cover_image: Optional[str] = None,
+    ) -> Path:
+        """EPUB with a baked-in cover. A user ``cover_image`` wins over a
+        ``cover_template`` (rendered to an image); EPUB covers must be set at
+        build time (ebooklib's read→write round-trip is unreliable)."""
+        output_path = Path(output_path)
+        resolved_cover: Optional[Path] = None
+        if cover_image and Path(cover_image).is_file():
+            resolved_cover = Path(cover_image)
+        elif cover_template:
+            try:
+                from types import SimpleNamespace
+
+                from core.rendering.cover_templates import has_template, render_cover_image
+
+                if has_template(cover_template):
+                    meta = SimpleNamespace(
+                        title=title, author=author, language=language,
+                        page_width_mm=210.0, page_height_mm=297.0,
+                    )
+                    png = self.temp_dir / "epub_cover.png"
+                    await run_blocking(render_cover_image, cover_template, meta, png)
+                    resolved_cover = png
+            except Exception as e:  # pragma: no cover - cover is best-effort
+                logger.warning("EPUB cover render failed (%s); building coverless", e)
+
+        await self._markdown_math_to_epub(
+            markdown_content, output_path, title, author, cover_image=resolved_cover
+        )
+        logger.info(f"Professional EPUB from markdown: {output_path}")
+        return output_path
 
     def cleanup(self):
         """Clean up temp files."""
