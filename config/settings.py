@@ -76,6 +76,10 @@ class Settings(BaseSettings):
     # Valid ids come from core/rendering/cover_templates.list_templates().
     cover_template: str = ""
 
+    # Optional path to a user-supplied cover image used as a full-bleed cover on
+    # export; wins over cover_template. Env: COVER_IMAGE=/path/to/cover.png.
+    cover_image: str = ""
+
     # ---- Terminology ledger (auto-glossary + explicit glossaries) ----
     # Auto-extract key terms/proper nouns per document and inject them into the
     # cached system prompt so terminology stays consistent across every chunk.

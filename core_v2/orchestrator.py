@@ -441,6 +441,7 @@ class UniversalPublisher:
         pdf_template: str = "auto",  # NEW: PDF template (ebook/academic/business/auto)
         title_fallback: str = "",  # Fallback title (e.g. source filename without extension)
         cover_template: Optional[str] = None,  # NEW: pre-built cover template id (see cover_templates)
+        cover_image: Optional[str] = None,  # NEW: path to a user-supplied cover image (wins over template)
     ) -> PublishingJob:
         """
         Main publishing pipeline.
@@ -624,6 +625,7 @@ class UniversalPublisher:
                 target_lang=target_lang,  # For i18n in renderers
                 # Pre-built cover: explicit arg wins, else the configured default
                 cover_template=cover_template or (str(_cfg("cover_template", "")).strip() or None),
+                cover_image=cover_image or (str(_cfg("cover_image", "")).strip() or None),
             )
 
             # Stage 6: Verify (98%)
@@ -1207,6 +1209,7 @@ class UniversalPublisher:
         profile_id: str = "essay",
         target_lang: str = "vi",
         cover_template: Optional[str] = None,
+        cover_image: Optional[str] = None,
     ) -> Path:
         """Convert to final output format."""
         format_enum = OutputFormat(output_format.lower())
@@ -1262,6 +1265,7 @@ class UniversalPublisher:
                     author=author or "Unknown",
                     language=language,
                     cover_template=cover_template,
+                    cover_image=cover_image,
                 )
                 logger.info(f"Professional DOCX created: {result_path}")
                 return result_path
@@ -1283,12 +1287,32 @@ class UniversalPublisher:
                     author=author or "Unknown",
                     language=language,
                     cover_template=cover_template,
+                    cover_image=cover_image,
                 )
                 logger.info(f"Professional PDF created: {result_path}")
                 return result_path
             except Exception as e:
                 logger.warning(f"Professional PDF failed, falling back to pandoc: {e}")
                 # Fall through to standard conversion
+
+        # Professional EPUB (cover baked at build time) when a cover is requested;
+        # otherwise fall through to the standard conversion below.
+        if format_enum == OutputFormat.EPUB and (cover_template or cover_image):
+            try:
+                result_path = await self.converter.convert_markdown_to_epub_professional(
+                    markdown_content=content,
+                    output_path=output_path,
+                    template=_resolve_template("auto"),
+                    title=title,
+                    author=author or "Unknown",
+                    language=language,
+                    cover_template=cover_template,
+                    cover_image=cover_image,
+                )
+                logger.info(f"Professional EPUB created: {result_path}")
+                return result_path
+            except Exception as e:
+                logger.warning(f"Professional EPUB failed, falling back: {e}")
 
         success = await self.converter.convert(
             content=content,

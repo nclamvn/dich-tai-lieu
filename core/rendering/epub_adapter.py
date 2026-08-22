@@ -200,8 +200,19 @@ def _split_chapters(blocks: List[Block]) -> List[Tuple[str, List[Block]]]:
     return chapters
 
 
-def render_epub_from_ast(ast: DocumentAST, output_path: Path, title: Optional[str] = None) -> None:
-    """Render a DocumentAST to an EPUB 3 file."""
+def render_epub_from_ast(
+    ast: DocumentAST,
+    output_path: Path,
+    title: Optional[str] = None,
+    *,
+    cover_image: Optional[Path] = None,
+) -> None:
+    """Render a DocumentAST to an EPUB 3 file.
+
+    ``cover_image`` (an image file path) is set as the EPUB cover at build time —
+    ebooklib's read→write round-trip is unreliable, so covers are baked in here
+    rather than post-processed onto a finished EPUB.
+    """
     from ebooklib import epub
 
     md = ast.metadata
@@ -252,10 +263,19 @@ def render_epub_from_ast(ast: DocumentAST, output_path: Path, title: Optional[st
         book.add_item(item)
         chapters.append(item)
 
+    cover_added = False
+    if cover_image:
+        try:
+            data = Path(cover_image).read_bytes()
+            book.set_cover("cover.png", data)
+            cover_added = True
+        except Exception as e:  # pragma: no cover - cover is best-effort
+            logger.warning("EPUB cover skipped (%s)", e)
+
     book.toc = tuple(chapters)
     book.add_item(epub.EpubNcx())
     book.add_item(epub.EpubNav())
-    book.spine = ["nav"] + chapters
+    book.spine = (["cover", "nav"] if cover_added else ["nav"]) + chapters
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
