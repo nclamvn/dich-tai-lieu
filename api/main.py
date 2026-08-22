@@ -876,6 +876,18 @@ async def get_queue_stats():
     )
 
 
+@app.get("/api/cover-templates")
+async def get_cover_templates():
+    """Public catalog of pre-built cover templates for the front-end picker.
+
+    Static, non-sensitive metadata (id/name/category/description) — the same
+    templates ``render_pdf_from_ast(cover_template=…)`` renders onto page 1.
+    """
+    from core.rendering.cover_templates import list_templates
+
+    return {"templates": list_templates()}
+
+
 @app.get("/api/system/info", response_model=SystemInfo, dependencies=_AUTH_REQUIRED)
 async def get_system_info():
     """Get system information"""

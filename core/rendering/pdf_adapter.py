@@ -446,6 +446,7 @@ def render_pdf_from_ast(
     title_page: bool = False,
     toc: bool = False,
     header_footer: bool = False,
+    cover_template: Optional[str] = None,
 ) -> None:
     """Render a DocumentAST to a PDF file.
 
@@ -458,6 +459,39 @@ def render_pdf_from_ast(
     cover is left unnumbered)."""
     from reportlab.lib.units import mm
     from reportlab.platypus import SimpleDocTemplate, Spacer
+
+    output_path = Path(output_path)
+
+    # Pre-built cover template: render the body WITHOUT the plain Platypus cover,
+    # render the chosen template to its own page, and merge it in as page 1.
+    # Default-safe: unknown template falls through to the normal cover path.
+    if cover_template:
+        from core.rendering import cover_templates as _covers
+
+        if _covers.has_template(cover_template):
+            import tempfile
+
+            import pypdf
+
+            with tempfile.TemporaryDirectory() as _td:
+                body = Path(_td) / "body.pdf"
+                cover = Path(_td) / "cover.pdf"
+                render_pdf_from_ast(
+                    ast, body, title=title, template=template,
+                    title_page=False, toc=toc, header_footer=header_footer,
+                )
+                _covers.render_cover_pdf(cover_template, ast.metadata, cover, title=title)
+                writer = pypdf.PdfWriter()
+                for pg in pypdf.PdfReader(str(cover)).pages:
+                    writer.add_page(pg)
+                for pg in pypdf.PdfReader(str(body)).pages:
+                    writer.add_page(pg)
+                output_path.parent.mkdir(parents=True, exist_ok=True)
+                with open(output_path, "wb") as fh:
+                    writer.write(fh)
+            logger.info("PDF saved with '%s' cover: %s", cover_template, output_path)
+            return
+        logger.warning("unknown cover_template %r; using default cover path", cover_template)
 
     if template:
         import dataclasses
