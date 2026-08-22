@@ -75,6 +75,14 @@ class PublishTextRequest(BaseModel):
         default="auto",
         description="PDF template: 'ebook', 'academic', 'business', or 'auto'"
     )
+    cover_template: Optional[str] = Field(
+        default=None,
+        description="Pre-built cover template id (see /api/cover-templates); null for none"
+    )
+    cover_image: Optional[str] = Field(
+        default=None,
+        description="Server path to an uploaded cover image; wins over cover_template"
+    )
 
 
 # ==================== RESPONSE MODELS ====================

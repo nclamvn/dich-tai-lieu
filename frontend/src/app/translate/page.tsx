@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateJob, useProfiles, useGlossaries, useTranslationEngines, useSettingsSection } from "@/lib/api/hooks";
 import { detectLanguage } from "@/lib/api/client";
+import { CoverPicker, type CoverSelection } from "@/components/translate/cover-picker";
 import {
   SUPPORTED_LANGUAGES,
   OUTPUT_FORMATS,
@@ -30,6 +31,7 @@ export default function TranslatePage() {
   const [profileId, setProfileId] = useState("");
   const [selectedGlossaries, setSelectedGlossaries] = useState<string[]>([]);
   const [engineId, setEngineId] = useState("auto");
+  const [cover, setCover] = useState<CoverSelection>({});
   const [detecting, setDetecting] = useState(false);
 
   const { data: generalSettings } = useSettingsSection<GeneralSettings>("general");
@@ -138,6 +140,8 @@ export default function TranslatePage() {
       profile_id: profileId || undefined,
       glossary_ids:
         selectedGlossaries.length > 0 ? selectedGlossaries : undefined,
+      cover_template: cover.coverTemplate,
+      cover_image: cover.coverImage,
     };
 
     try {
@@ -403,6 +407,19 @@ export default function TranslatePage() {
               </div>
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Cover template */}
+      <Card>
+        <CardHeader>
+          <h3 className="text-[15px] font-semibold flex items-center gap-2">
+            <Sparkles className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
+            Trang bìa
+          </h3>
+        </CardHeader>
+        <CardContent>
+          <CoverPicker value={cover} onChange={setCover} />
         </CardContent>
       </Card>
 

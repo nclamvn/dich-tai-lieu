@@ -888,6 +888,64 @@ async def get_cover_templates():
     return {"templates": list_templates()}
 
 
+@app.get("/api/cover-templates/{template_id}/preview")
+async def get_cover_template_preview(template_id: str):
+    """Public PNG preview of a cover template (placeholder title/author) for the
+    front-end picker. Previews are rendered by the same engine as real covers."""
+    import asyncio
+    import tempfile
+    from pathlib import Path as _Path
+    from types import SimpleNamespace
+
+    from fastapi import Response
+
+    from core.rendering.cover_templates import has_template, render_cover_image
+
+    if not has_template(template_id):
+        raise HTTPException(status_code=404, detail="Unknown cover template")
+
+    meta = SimpleNamespace(
+        title="Tựa sách của bạn", author="Tên tác giả",
+        language="vi", page_width_mm=210.0, page_height_mm=297.0,
+    )
+    with tempfile.TemporaryDirectory() as td:
+        png = _Path(td) / "preview.png"
+        await asyncio.to_thread(render_cover_image, template_id, meta, png, scale=1.0)
+        data = png.read_bytes()
+    return Response(
+        content=data, media_type="image/png",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
+
+
+@app.post("/api/cover-upload", dependencies=_AUTH_REQUIRED)
+async def upload_cover_image(file: UploadFile = File(...)):
+    """Upload a custom cover image; returns a server path to pass as cover_image."""
+    import os as _os
+    import uuid as _uuid
+    from pathlib import Path as _Path
+
+    allowed = {".png", ".jpg", ".jpeg", ".webp"}
+    ext = _os.path.splitext(file.filename or "")[1].lower()
+    if ext not in allowed:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid image type. Allowed: {', '.join(sorted(allowed))}",
+        )
+    data = await file.read()
+    if not data:
+        raise HTTPException(status_code=400, detail="Empty image")
+    max_mb = int(_os.getenv("MAX_COVER_UPLOAD_MB", "10"))
+    if len(data) > max_mb * 1024 * 1024:
+        raise HTTPException(status_code=400, detail=f"Image too large (max {max_mb}MB)")
+
+    cover_dir = _Path(__file__).resolve().parent.parent / "uploads" / "covers"
+    cover_dir.mkdir(parents=True, exist_ok=True)
+    out = cover_dir / f"{_uuid.uuid4().hex}{ext}"
+    out.write_bytes(data)
+    return {"path": str(out)}
+
+
 @app.get("/api/system/info", response_model=SystemInfo, dependencies=_AUTH_REQUIRED)
 async def get_system_info():
     """Get system information"""
