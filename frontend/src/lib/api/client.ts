@@ -7,6 +7,7 @@
 import type {
   TranslationJob,
   TranslateRequest,
+  CoverTemplate,
   TranslationEngine,
   ReaderContent,
   Glossary,
@@ -171,6 +172,9 @@ export const jobs = {
     if (request.profile_id) formData.append("profile_id", request.profile_id);
     if (request.engine_id && request.engine_id !== "auto")
       formData.append("engine", request.engine_id);
+    if (request.cover_template)
+      formData.append("cover_template", request.cover_template);
+    if (request.cover_image) formData.append("cover_image", request.cover_image);
 
     const res = await fetch(`${API_BASE}/api/v2/publish`, {
       method: "POST",
@@ -272,6 +276,27 @@ export const jobs = {
 };
 
 // ─── Book Writer ───
+
+export const coverTemplates = {
+  async list(): Promise<CoverTemplate[]> {
+    const data = await apiFetch<{ templates: CoverTemplate[] }>("/api/cover-templates");
+    return data.templates || [];
+  },
+  previewUrl(id: string): string {
+    return `${API_BASE}/api/cover-templates/${encodeURIComponent(id)}/preview`;
+  },
+  async upload(file: File): Promise<string> {
+    const fd = new FormData();
+    fd.append("file", file);
+    const res = await fetch(`${API_BASE}/api/cover-upload`, { method: "POST", body: fd });
+    if (!res.ok) {
+      const data = await res.json().catch(() => null);
+      throw new ApiError(res.status, data?.detail || "Cover upload failed", data);
+    }
+    const data = await res.json();
+    return data.path as string;
+  },
+};
 
 export const bookWriter = {
   async create(request: CreateBookRequest): Promise<BookProject> {

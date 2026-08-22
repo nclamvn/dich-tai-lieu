@@ -55,6 +55,8 @@ async def publish_file(
     api_key: str = Form(default="", description="User API key (optional, overrides server config)"),
     docx_template: str = Form(default="auto", description="DOCX template: 'ebook', 'academic', 'business', or 'auto'"),
     pdf_template: str = Form(default="auto", description="PDF template: 'ebook', 'academic', 'business', or 'auto'"),
+    cover_template: str = Form(default="", description="Pre-built cover template id (see /api/cover-templates); empty for none"),
+    cover_image: str = Form(default="", description="Server path to an uploaded cover image (from /api/cover-upload); wins over cover_template"),
     provider: str = Form(default="auto", description="AI provider: 'auto', 'openai', 'anthropic'"),
     model: str = Form(default="", description="Model name (e.g., 'gpt-4o', 'claude-sonnet-4-20250514')"),
     user_id: str = Depends(get_current_user_id),
@@ -166,6 +168,8 @@ async def publish_file(
             api_key=api_key if api_key else None,
             docx_template=docx_template,
             pdf_template=pdf_template,
+            cover_template=cover_template or None,
+            cover_image=cover_image or None,
             provider=provider if provider != "auto" else None,
             model=model if model else None,
             user_id=user_id,
@@ -227,6 +231,8 @@ async def publish_text(request: PublishTextRequest, user_id: str = Depends(get_c
             output_formats=request.output_formats,
             docx_template=request.docx_template,
             pdf_template=request.pdf_template,
+            cover_template=request.cover_template,
+            cover_image=request.cover_image,
             user_id=user_id,
         )
 

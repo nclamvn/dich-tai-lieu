@@ -71,6 +71,17 @@ export interface TranslateRequest {
   engine_id?: string;
   profile_id?: string;
   glossary_ids?: string[];
+  cover_template?: string;
+  cover_image?: string;
+}
+
+// ─── Cover Templates ───
+
+export interface CoverTemplate {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
 }
 
 // ─── Translation Engines ───

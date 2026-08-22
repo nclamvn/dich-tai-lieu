@@ -256,8 +256,22 @@ class APSV2Service:
         provider: Optional[str] = None,  # AI provider: 'openai', 'anthropic'
         model: Optional[str] = None,  # Model name (e.g., 'gpt-4o', 'claude-sonnet-4-20250514')
         user_id: str = "default_user",  # Multi-tenancy: owner user
+        cover_template: Optional[str] = None,  # Pre-built cover template id (see cover_templates)
+        cover_image: Optional[str] = None,  # Path to a user-supplied cover image (wins over template)
     ) -> Dict:
         """Create and start a new publishing job."""
+
+        # Security: only accept a cover_image that lives under our uploads dir,
+        # so a caller can't point it at an arbitrary server file.
+        if cover_image:
+            try:
+                uploads_root = (Path(__file__).resolve().parents[1] / "uploads").resolve()
+                cp = Path(cover_image).resolve()
+                if cp != uploads_root and uploads_root not in cp.parents:
+                    logger.warning(f"Rejecting cover_image outside uploads dir: {cover_image}")
+                    cover_image = None
+            except Exception:
+                cover_image = None
 
         # QA-15: Queue overflow protection
         max_queued = int(os.getenv("MAX_QUEUED_JOBS", "100"))
@@ -288,6 +302,8 @@ class APSV2Service:
             "use_vision": use_vision,
             "docx_template": docx_template,  # DOCX template (ebook/academic/business/auto)
             "pdf_template": pdf_template,  # PDF template (ebook/academic/business/auto)
+            "cover_template": cover_template,  # Pre-built cover template id
+            "cover_image": cover_image,  # User-supplied cover image path
             "provider": provider,  # AI provider selection
             "model": model,  # Model name
             "status": JobStatusV2.PENDING,
@@ -326,6 +342,7 @@ class APSV2Service:
         task = asyncio.create_task(self._process_job_with_limit(
             job_id, content, use_vision=use_vision, api_key=api_key,
             docx_template=docx_template, pdf_template=pdf_template,
+            cover_template=cover_template, cover_image=cover_image,
             provider=provider, model=model
         ))
         self._job_tasks[job_id] = task
@@ -339,7 +356,7 @@ class APSV2Service:
         async with self._coordinator.acquire_slot(job_id):
             await self._process_job(job_id, content, **kwargs)
 
-    async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None, docx_template: str = "auto", pdf_template: str = "auto", provider: Optional[str] = None, model: Optional[str] = None):
+    async def _process_job(self, job_id: str, content: str, use_vision: bool = True, api_key: Optional[str] = None, docx_template: str = "auto", pdf_template: str = "auto", provider: Optional[str] = None, model: Optional[str] = None, cover_template: Optional[str] = None, cover_image: Optional[str] = None):
         """Process job in background."""
         job = self._jobs.get(job_id)
         if not job:
@@ -440,6 +457,8 @@ class APSV2Service:
                 use_vision=use_vision,  # NEW: Pass Vision mode flag
                 docx_template=docx_template,  # Professional DOCX template
                 pdf_template=pdf_template,  # Professional PDF template
+                cover_template=cover_template,  # Pre-built cover template id
+                cover_image=cover_image,  # User-supplied cover image path
                 title_fallback=title_fallback,
             )
 
