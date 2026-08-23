@@ -14,7 +14,7 @@ import sqlite3
 import json
 import logging
 from pathlib import Path
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, List, Set
 from contextlib import contextmanager
 
@@ -118,10 +118,10 @@ class APIKeyService:
         # Calculate expiration
         expires_at = None
         if request.expires_in_days:
-            expires_at = datetime.utcnow() + timedelta(days=request.expires_in_days)
+            expires_at = datetime.now(timezone.utc) + timedelta(days=request.expires_in_days)
 
         key_id = str(uuid.uuid4())
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         with self._get_connection() as conn:
             try:
@@ -192,7 +192,7 @@ class APIKeyService:
                         UPDATE api_keys
                         SET last_used = ?, use_count = use_count + 1
                         WHERE id = ?
-                    """, (datetime.utcnow().timestamp(), api_key.id))
+                    """, (datetime.now(timezone.utc).timestamp(), api_key.id))
 
                     return api_key
 
@@ -230,10 +230,10 @@ class APIKeyService:
                     scopes=scopes,
                     is_active=bool(row["is_active"]),
                     rate_limit=row["rate_limit"],
-                    last_used=datetime.fromtimestamp(row["last_used"]) if row["last_used"] else None,
+                    last_used=datetime.fromtimestamp(row["last_used"], tz=timezone.utc) if row["last_used"] else None,
                     use_count=row["use_count"],
-                    created_at=datetime.fromtimestamp(row["created_at"]),
-                    expires_at=datetime.fromtimestamp(row["expires_at"]) if row["expires_at"] else None,
+                    created_at=datetime.fromtimestamp(row["created_at"], tz=timezone.utc),
+                    expires_at=datetime.fromtimestamp(row["expires_at"], tz=timezone.utc) if row["expires_at"] else None,
                     description=row["description"] or "",
                 ))
 
@@ -313,10 +313,10 @@ class APIKeyService:
             scopes=scopes,
             rate_limit=row["rate_limit"],
             is_active=bool(row["is_active"]),
-            last_used=datetime.fromtimestamp(row["last_used"]) if row["last_used"] else None,
+            last_used=datetime.fromtimestamp(row["last_used"], tz=timezone.utc) if row["last_used"] else None,
             use_count=row["use_count"],
-            created_at=datetime.fromtimestamp(row["created_at"]),
-            expires_at=datetime.fromtimestamp(row["expires_at"]) if row["expires_at"] else None,
+            created_at=datetime.fromtimestamp(row["created_at"], tz=timezone.utc),
+            expires_at=datetime.fromtimestamp(row["expires_at"], tz=timezone.utc) if row["expires_at"] else None,
             description=row["description"] or "",
             allowed_ips=allowed_ips,
         )

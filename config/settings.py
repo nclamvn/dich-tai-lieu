@@ -265,7 +265,11 @@ class Settings(BaseSettings):
 
     # ========== Directories ==========
     input_dir: Path = BASE_DIR / "data" / "input"
-    output_dir: Path = BASE_DIR / "data" / "output"
+    # The tree exports actually land in (outputs/, outputs/v2/…). Pointed at
+    # data/output for years — a ghost dir nothing wrote to, so the retention
+    # cleaner (core/services/file_cleanup.py) swept an empty tree while real
+    # outputs accumulated forever. Fixed in the P3 debt paydown.
+    output_dir: Path = BASE_DIR / "outputs"
     temp_dir: Path = BASE_DIR / "data" / "temp"
     cache_dir: Path = BASE_DIR / "data" / "cache"
     checkpoint_dir: Path = BASE_DIR / "data" / "checkpoints"  # Phase 5.2

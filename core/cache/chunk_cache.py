@@ -19,7 +19,7 @@ import hashlib
 import json
 from pathlib import Path
 from typing import Optional, Dict, Any
-from datetime import datetime
+from datetime import datetime, timezone
 import threading
 
 
@@ -207,7 +207,7 @@ class ChunkCache:
 
         if row:
             # Update access stats
-            now = datetime.utcnow().isoformat()
+            now = datetime.now(timezone.utc).isoformat()
             cursor.execute('''
                 UPDATE chunk_cache
                 SET last_accessed = ?, access_count = access_count + 1
@@ -248,7 +248,7 @@ class ChunkCache:
         conn = self._get_connection()
         cursor = conn.cursor()
 
-        now = datetime.utcnow().isoformat()
+        now = datetime.now(timezone.utc).isoformat()
 
         cursor.execute('''
             INSERT OR REPLACE INTO chunk_cache

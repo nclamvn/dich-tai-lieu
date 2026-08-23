@@ -169,6 +169,11 @@ class FileCleanupService:
         for path in directory.rglob("*"):
             if not path.is_file():
                 continue
+            if path.name == ".gitkeep":
+                # Tracked tree markers (outputs/.gitkeep, tests/output/.gitkeep)
+                # age past any retention window by definition — deleting them
+                # would dirty git on every cleanup run.
+                continue
             try:
                 mtime = path.stat().st_mtime
                 if mtime < cutoff_ts:

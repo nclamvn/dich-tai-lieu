@@ -10,7 +10,7 @@ import logging
 import uuid
 import os
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, List, Optional, Any
 from dataclasses import dataclass, field
 import threading
@@ -85,8 +85,8 @@ class APSJob:
     agent3_metrics: Dict = field(default_factory=dict)
 
     # Timestamps
-    created_at: datetime = field(default_factory=datetime.utcnow)
-    updated_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     completed_at: Optional[datetime] = None
 
     # Control
@@ -181,7 +181,7 @@ class APSService:
         if job and job.status not in ["complete", "error", "cancelled"]:
             job.cancelled = True
             job.status = "cancelled"
-            job.updated_at = datetime.utcnow()
+            job.updated_at = datetime.now(timezone.utc)
 
             # Also cancel translation job if running
             if job.translation_job_id and self.job_queue:
@@ -206,7 +206,7 @@ class APSService:
 
         try:
             job.status = "processing"
-            job.updated_at = datetime.utcnow()
+            job.updated_at = datetime.now(timezone.utc)
 
             # ========== AGENT #1: MANUSCRIPT CORE (Real BatchProcessor) ==========
             job.stage = 1
@@ -252,8 +252,8 @@ class APSService:
             job.progress = 100
             job.stage_progress = 100
             job.current_task = "Done"
-            job.completed_at = datetime.utcnow()
-            job.updated_at = datetime.utcnow()
+            job.completed_at = datetime.now(timezone.utc)
+            job.updated_at = datetime.now(timezone.utc)
 
             logger.info(f"[{job_id}] APS Processing complete!")
 
@@ -265,7 +265,7 @@ class APSService:
             logger.error(traceback.format_exc())
             job.status = "error"
             job.error = str(e)
-            job.updated_at = datetime.utcnow()
+            job.updated_at = datetime.now(timezone.utc)
 
             await self._broadcast_progress(job, "job_failed")
 

@@ -12,7 +12,7 @@ Version: 1.0.0
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, TypeVar
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 import hashlib
 
@@ -36,7 +36,7 @@ class ContractValidationError(ContractError):
 class ContractMetadata:
     """Metadata for all contracts"""
     version: str = "1.0"
-    created_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
+    created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
     source_agent: str = ""
     target_agent: str = ""
     checksum: str = ""

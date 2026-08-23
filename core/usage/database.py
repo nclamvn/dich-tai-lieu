@@ -10,7 +10,7 @@ SQLite storage for usage tracking data.
 import json
 import logging
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Dict, Any
 from contextlib import contextmanager
 
@@ -188,7 +188,7 @@ class UsageDatabase:
     def get_user_stats(self, user_id: str, period: Optional[str] = None) -> UsageStats:
         """Get usage statistics for a user."""
         if period is None:
-            period = datetime.utcnow().strftime("%Y-%m")
+            period = datetime.now(timezone.utc).strftime("%Y-%m")
 
         with self._get_connection() as conn:
             # Get monthly aggregate
@@ -211,8 +211,8 @@ class UsageDatabase:
                 total_characters=row["total_characters"],
                 total_words=row["total_words"],
                 total_cost_usd=row["total_cost_usd"],
-                first_usage=datetime.fromtimestamp(row["first_usage"]) if row["first_usage"] else None,
-                last_usage=datetime.fromtimestamp(row["last_usage"]) if row["last_usage"] else None,
+                first_usage=datetime.fromtimestamp(row["first_usage"], tz=timezone.utc) if row["first_usage"] else None,
+                last_usage=datetime.fromtimestamp(row["last_usage"], tz=timezone.utc) if row["last_usage"] else None,
             )
 
             # Get breakdown by operation

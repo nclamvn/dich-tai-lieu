@@ -8,7 +8,7 @@ Data models for tracking API usage per user.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Dict, Any
 from enum import Enum
 
@@ -119,7 +119,7 @@ class UsageRecord:
     user_id: str = ""
 
     # Timestamp
-    timestamp: datetime = field(default_factory=datetime.utcnow)
+    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     period: str = ""  # YYYY-MM format
 
     # Usage metrics
@@ -233,7 +233,7 @@ class UsageReport:
     """Comprehensive usage report."""
     user_id: str
     period: str
-    generated_at: datetime = field(default_factory=datetime.utcnow)
+    generated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     # Current period stats
     current_stats: Optional[UsageStats] = None

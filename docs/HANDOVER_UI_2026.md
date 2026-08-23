@@ -1,3 +1,8 @@
+> **📜 TÀI LIỆU LỊCH SỬ — không phản ánh hiện trạng.** Snapshot tại thời điểm
+> viết; kiến trúc, cổng, cờ cấu hình và đường dẫn trong này có thể đã đổi.
+> Hiện trạng đúng: `PROJECT_XRAY.md` (bản đồ hệ thống) + `CLAUDE.md` (quy ước
+> làm việc) + `docs/PRODUCTION_CHECKLIST.md` (điều kiện production).
+
 # AI Publisher Pro - Handover Document
 ## UI Redesign 2026 Session
 

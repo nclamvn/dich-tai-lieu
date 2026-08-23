@@ -1,0 +1,44 @@
+# Nightly deep suites — stress / regression / cache (~95 tests, ~1-2 min).
+#
+# These trees are correctness-relevant but too slow-or-noisy for every PR, so
+# they run on a schedule instead of in ci.yml (P3 debt paydown, ledger #9).
+# tests/load/ is EXCLUDED on purpose: those are k6 JavaScript scenarios that
+# need a k6 binary and a live server — run them manually per tests/load/README.
+#
+# A red nightly means a real regression that PR CI can't see — treat it like a
+# failing PR, not like flaky noise.
+
+name: nightly
+
+on:
+  schedule:
+    - cron: "30 19 * * *"   # 02:30 Asia/Ho_Chi_Minh
+  workflow_dispatch: {}
+
+jobs:
+  deep-suites:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # Bookend interpreters: oldest supported + the production image's.
+        python-version: ["3.11", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Stress / regression / cache suites
+        run: pytest tests/stress/ tests/regression/ tests/cache/ -q --tb=short --no-cov
+        env:
+          DATABASE_BACKEND: sqlite
+          OPENAI_API_KEY: test-key
+          ANTHROPIC_API_KEY: test-key

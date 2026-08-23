@@ -1,3 +1,8 @@
+> **📜 TÀI LIỆU LỊCH SỬ — không phản ánh hiện trạng.** Snapshot tại thời điểm
+> viết; kiến trúc, cổng, cờ cấu hình và đường dẫn trong này có thể đã đổi.
+> Hiện trạng đúng: `PROJECT_XRAY.md` (bản đồ hệ thống) + `CLAUDE.md` (quy ước
+> làm việc) + `docs/PRODUCTION_CHECKLIST.md` (điều kiện production).
+
 # 🎨 AI Translator Pro - Premium Dashboard
 
 > Dashboard siêu hiện đại với Glass Morphism, Framer Motion, và Gradient Animations

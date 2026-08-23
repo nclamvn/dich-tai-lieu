@@ -2,7 +2,7 @@
 Glossary Database Models
 SQLAlchemy models for glossary and terms.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, TYPE_CHECKING
 from sqlalchemy import (
     Column, String, Text, Integer, Boolean, DateTime,
@@ -20,6 +20,17 @@ Base = declarative_base()
 def generate_uuid() -> str:
     """Generate a new UUID string."""
     return str(uuid.uuid4())
+
+
+def utcnow_naive() -> datetime:
+    """Naive UTC now for this schema's naive ``DateTime`` columns.
+
+    SQLAlchemy's SQLite dialect can't round-trip timezone-aware values through
+    naive DATETIME columns, so these stay naive on purpose; this helper swaps
+    out the deprecated naive-utcnow call with identical semantics.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 
 
 class Glossary(Base):
@@ -69,10 +80,10 @@ class Glossary(Base):
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime, default=utcnow_naive
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=utcnow_naive, onupdate=utcnow_naive
     )
 
     # Relationships
@@ -149,10 +160,10 @@ class GlossaryTerm(Base):
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime, default=utcnow_naive
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=utcnow_naive, onupdate=utcnow_naive
     )
 
     # Relationships
