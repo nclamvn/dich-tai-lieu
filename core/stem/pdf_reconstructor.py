@@ -8,7 +8,7 @@ Two-mode PDF/DOCX rebuilding from translated layout:
 Supports block-type aware formatting (titles, headings, captions, etc.)
 """
 
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 from pathlib import Path
 from typing import List, Dict, Optional, Tuple
 from .layout_extractor import DocumentLayout, PageLayout, TextBlock, BlockType

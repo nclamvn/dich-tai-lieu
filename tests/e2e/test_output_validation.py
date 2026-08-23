@@ -108,7 +108,7 @@ def test_docx_image_captions(output_docx_with_images):
 def test_pdf_has_cover_page(output_pdf_with_cover):
     """PDF should have cover image on first page"""
     try:
-        import fitz  # PyMuPDF
+        import pymupdf as fitz  # PyMuPDF
     except ImportError:
         pytest.skip("PyMuPDF not available")
 
@@ -129,7 +129,7 @@ def test_pdf_has_cover_page(output_pdf_with_cover):
 def test_pdf_page_count(output_pdf_with_cover):
     """PDF should have at least 3 pages (cover, title, content)"""
     try:
-        import fitz  # PyMuPDF
+        import pymupdf as fitz  # PyMuPDF
     except ImportError:
         pytest.skip("PyMuPDF not available")
 

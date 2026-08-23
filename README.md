@@ -92,16 +92,13 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env — add your API keys
 
-# Start backend
-uvicorn api.main:app --host 0.0.0.0 --port 3000 --reload
-
-# Frontend (separate terminal)
-cd frontend
-npm install
-npm run dev
+# Start both servers with one command (backend :8000 + frontend :3000)
+bash dev.sh
 ```
 
-Open http://localhost:3000
+Open http://localhost:3000 — the frontend talks to the backend on :8000.
+(First run: `cd frontend && npm install` once. Docker/production uses ports
+3000/3001 instead — see DEPLOYMENT.md.)
 
 ### Environment Variables
 
@@ -111,6 +108,12 @@ OPENAI_API_KEY=sk-...
 ANTHROPIC_API_KEY=sk-ant-...
 DEEPSEEK_API_KEY=sk-...
 GOOGLE_API_KEY=...
+
+# Production must also set (see docs/PRODUCTION_CHECKLIST.md):
+# SECURITY_MODE=production  SESSION_SECRET=...  CSRF_SECRET_KEY=...  JWT_SECRET_KEY=...
+
+# Optional: default book cover (12 built-in templates, or upload your own in the UI)
+# COVER_TEMPLATE=noir
 ```
 
 ---
@@ -159,7 +162,7 @@ ai-publisher-pro/
 ├── frontend/               # Next.js 16 app
 │   └── src/app/            # 25 page routes
 ├── config/                 # Settings (Pydantic)
-├── tests/                  # 2,377 test functions
+├── tests/                  # ~3,200 test functions (all green)
 └── data/                   # 12 SQLite databases
 ```
 
@@ -172,23 +175,23 @@ import requests
 
 # Upload and translate
 response = requests.post(
-    "http://localhost:3000/api/v2/publish",
+    "http://localhost:8000/api/v2/publish",
     files={"file": open("document.pdf", "rb")},
     data={"target_language": "vi", "provider": "openai"}
 )
 job_id = response.json()["job_id"]
 
 # Check status
-status = requests.get(f"http://localhost:3000/api/v2/jobs/{job_id}")
+status = requests.get(f"http://localhost:8000/api/v2/jobs/{job_id}")
 print(status.json()["status"])
 
 # Download result
-result = requests.get(f"http://localhost:3000/api/v2/jobs/{job_id}/download/pdf")
+result = requests.get(f"http://localhost:8000/api/v2/jobs/{job_id}/download/pdf")
 with open("translated.pdf", "wb") as f:
     f.write(result.content)
 ```
 
-Full API docs: http://localhost:3000/docs
+Full API docs: http://localhost:8000/docs
 
 ---
 
@@ -208,7 +211,7 @@ pytest tests/unit/test_smart_extraction.py -v
 pytest tests/ --cov=core --cov-report=html
 ```
 
-**Current:** 2,377 test functions, 1,352+ passing, 15% coverage (improving).
+**Current:** ~3,200 test functions, full suite green on Python 3.11 & 3.12 (CI: ruff + pytest matrix + vitest + `tsc --noEmit`).
 
 ---
 
@@ -239,8 +242,8 @@ pytest tests/ --cov=core --cov-report=html
 - [x] Security hardening (RRI audit — 67 fixes)
 - [x] Vietnamese-optimized typography
 - [ ] PostgreSQL migration option
-- [ ] CI/CD pipeline (GitHub Actions)
-- [ ] Docker deployment
+- [x] CI/CD pipeline (GitHub Actions — ruff, pytest 3.11/3.12, vitest, tsc)
+- [x] Docker deployment (Dockerfile + docker-compose, see DEPLOYMENT.md)
 - [ ] Real-time collaboration
 - [ ] Mobile app
 

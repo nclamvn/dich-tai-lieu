@@ -4,7 +4,7 @@ Pydantic models for the API.
 Extracted from api/main.py — request/response models shared across route modules.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 from typing import Optional, List, Dict, Any
 
 from core.job_queue import JobPriority
@@ -85,10 +85,7 @@ class JobResponse(BaseModel):
     error_message: Optional[str]
     metadata: Optional[Dict[str, Any]] = None
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = ConfigDict(from_attributes=True)
 class QueueStats(BaseModel):
     """Queue statistics"""
     total: int

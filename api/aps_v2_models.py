@@ -4,7 +4,7 @@ APS V2 API Models
 Pydantic models for the Claude-Native Universal Publishing API.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 from typing import List, Dict, Optional, Any
 from datetime import datetime
 from enum import Enum
@@ -48,17 +48,16 @@ class PublishRequest(BaseModel):
         description="Output formats to generate"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "source_language": "en",
                 "target_language": "vi",
                 "profile_id": "novel",
                 "output_formats": ["docx", "pdf", "epub"]
             }
-        }
-
-
+        },
+    )
 class PublishTextRequest(BaseModel):
     """Request to publish text directly (no file upload)"""
     content: str = Field(..., max_length=5_000_000, description="Document content to publish")
@@ -163,8 +162,8 @@ class JobResponseV2(BaseModel):
     created_at: datetime
     completed_at: Optional[datetime] = None
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "job_id": "abc12345",
                 "status": "translating",
@@ -178,9 +177,8 @@ class JobResponseV2(BaseModel):
                 "chunks_count": 5,
                 "created_at": "2024-01-15T10:30:00Z"
             }
-        }
-
-
+        },
+    )
 class PublishingProfileResponse(BaseModel):
     """Publishing profile information"""
     id: str

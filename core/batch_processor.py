@@ -597,7 +597,7 @@ class BatchProcessor:
         """
         from .table_reconstructor import get_table_reconstructor
         from .smart_extraction.document_analyzer import DocumentAnalyzer
-        import fitz
+        import pymupdf as fitz
 
         logger.info("🕵️‍♂️ Starting Smart Table Analysis...")
         reconstructor = get_table_reconstructor()
@@ -1077,7 +1077,9 @@ class BatchProcessor:
                 logger.info(f"📷 Vision Layout enabled - using Smart Extraction for PDF")
                 try:
                     import asyncio
-                    result = asyncio.get_event_loop().run_until_complete(
+                    # Fresh loop per call; get_event_loop() from sync context is
+                    # deprecated (3.12) and a RuntimeError on 3.14.
+                    result = asyncio.run(
                         smart_extract(str(input_path), source_lang=job.source_lang, use_vision=True)
                     )
                     input_text = result.combined_text

@@ -54,8 +54,6 @@ COPY core/ ./core/
 COPY core_v2/ ./core_v2/
 COPY ai_providers/ ./ai_providers/
 COPY config/ ./config/
-COPY integration_bridge/ ./integration_bridge/
-COPY services/ ./services/
 COPY beautification/ ./beautification/
 COPY glossary/ ./glossary/
 # No `COPY ui/` — the web UI is a separate Next.js app under `frontend/`,

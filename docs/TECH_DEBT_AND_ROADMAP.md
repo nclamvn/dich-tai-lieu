@@ -159,7 +159,7 @@ Mục tiêu: đạt đồng thời thật, giảm rủi ro bảo trì.
 - ✅ Ngữ cảnh chunk chỉ 100 ký tự đầu → **rolling context** từ đuôi chunk trước (Phase 5).
 - ✅ Không tầng soi ngữ nghĩa → **semantic verifier** opt-in feeding repair loop (Phase 7).
 
-Phần engine-quickwins **cố ý hoãn** (đã ghi trong `PR_feat-engine-quickwins.md`) trùng khớp với NEXT/LATER ở trên: dọn code chết/hai-stack, glossary name→ID, TM write-back cấp câu, snap boundary về ranh giới từ.
+Phần engine-quickwins **cố ý hoãn** (ghi lại trong CHANGELOG `[Unreleased]`; file `PR_feat-engine-quickwins.md` đã xóa 2026-08-23) trùng khớp với NEXT/LATER ở trên — riêng mục "dọn code chết/hai-stack" ĐÃ XONG (Option A stage 5, v3.3.1): glossary name→ID, TM write-back cấp câu, snap boundary còn lại.
 
 ---
 

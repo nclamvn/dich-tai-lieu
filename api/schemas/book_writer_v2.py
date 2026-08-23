@@ -4,7 +4,7 @@ Book Writer v2.0 API Schemas
 Pydantic models for request/response validation.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 from typing import Optional, List, Dict, Any
 from enum import Enum
 from datetime import datetime
@@ -53,8 +53,8 @@ class BookCreateRequest(BaseModel):
     continue_from_draft: bool = Field(False, description="Continue writing from an uploaded draft")
     draft_file_id: Optional[str] = Field(None, description="File ID from upload-draft endpoint")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "title": "AI in Healthcare",
                 "description": "A comprehensive guide to artificial intelligence applications in modern healthcare.",
@@ -62,9 +62,8 @@ class BookCreateRequest(BaseModel):
                 "genre": "technical",
                 "audience": "Healthcare professionals and technology enthusiasts",
             }
-        }
-
-
+        },
+    )
 # === RESPONSE SCHEMAS ===
 
 class WordCountInfo(BaseModel):

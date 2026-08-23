@@ -19,7 +19,7 @@ import re
 from pathlib import Path
 from dataclasses import dataclass, field
 from typing import List, Optional, Callable, Dict, Any
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 
 logger = logging.getLogger(__name__)
 
@@ -226,9 +226,9 @@ class FastTextExtractor:
             - metadata: Document metadata
         """
         import asyncio
-        doc = asyncio.get_event_loop().run_until_complete(
-            self.extract(pdf_path, progress_callback)
-        )
+        # asyncio.run creates a fresh loop — get_event_loop() from sync context
+        # is deprecated (3.12) and a RuntimeError on 3.14.
+        doc = asyncio.run(self.extract(pdf_path, progress_callback))
 
         # Detect chapters
         chapters = self._detect_chapters(doc.full_content)

@@ -8,7 +8,7 @@ Settings - Centralized configuration management
 import os
 from pathlib import Path
 from typing import Optional
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 # Base directory
@@ -274,12 +274,7 @@ class Settings(BaseSettings):
     # deepseek_ocr_api_url: str = ""
     # deepseek_ocr_api_key: str = ""
 
-    class Config:
-        env_file = str(BASE_DIR / ".env")
-        env_file_encoding = "utf-8"
-        case_sensitive = False
-        extra = "ignore"  # Allow extra fields from .env that aren't defined in model
-
+    model_config = SettingsConfigDict(env_file=str(BASE_DIR / ".env"), env_file_encoding="utf-8", case_sensitive=False, extra="ignore")
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         # Create directories

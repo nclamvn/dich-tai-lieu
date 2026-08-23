@@ -46,7 +46,7 @@ Configuration:
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 from typing import Optional, List, Dict, Any
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -213,10 +213,7 @@ class JobResponse(BaseModel):
     error_message: Optional[str]
     metadata: Optional[Dict[str, Any]] = None  # Phase 2.0.4: Include job metadata
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = ConfigDict(from_attributes=True)
 class QueueStats(BaseModel):
     """Queue statistics"""
     total: int

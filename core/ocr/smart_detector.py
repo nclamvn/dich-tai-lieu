@@ -77,7 +77,7 @@ class SmartDetector:
 
         # Import PyMuPDF
         try:
-            import fitz
+            import pymupdf as fitz
             self.fitz = fitz
         except ImportError:
             raise ImportError(

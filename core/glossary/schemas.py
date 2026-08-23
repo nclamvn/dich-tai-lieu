@@ -4,7 +4,7 @@ API validation schemas for glossary operations.
 """
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field, field_validator
+from pydantic import ConfigDict, BaseModel, Field, field_validator
 
 
 # ==================== CONSTANTS ====================
@@ -90,10 +90,7 @@ class GlossaryResponse(GlossaryBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = ConfigDict(from_attributes=True)
 class GlossaryListResponse(BaseModel):
     """Schema for list of glossaries response."""
     glossaries: List[GlossaryResponse]
@@ -149,10 +146,7 @@ class TermResponse(TermBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = ConfigDict(from_attributes=True)
 class TermListResponse(BaseModel):
     """Schema for paginated term list response."""
     terms: List[TermResponse]

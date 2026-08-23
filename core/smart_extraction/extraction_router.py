@@ -206,7 +206,7 @@ class SmartExtractionRouter:
         logger.info(f"     Text pages: {analysis.total_pages - len(analysis.complex_page_numbers)}")
         logger.info(f"     Vision pages: {len(analysis.complex_page_numbers)}")
 
-        import fitz
+        import pymupdf as fitz
 
         # Extract all pages with PyMuPDF first
         doc = await self.text_extractor.extract(pdf_path)
@@ -323,7 +323,7 @@ class SmartExtractionRouter:
         Returns:
             ExtractionResult with OCR-extracted content
         """
-        import fitz
+        import pymupdf as fitz
         from io import BytesIO
         from core.ocr.paddle_client import get_ocr_client_for_language
 
