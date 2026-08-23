@@ -14,8 +14,29 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 import httpx
+import pytest
 
 BASE_URL = "http://localhost:3001"
+
+
+def _server_up(url: str = BASE_URL, timeout: float = 0.5) -> bool:
+    """True when a live APS v2 server is reachable (this is a live-stack E2E)."""
+    import socket
+    from urllib.parse import urlparse
+
+    p = urlparse(url)
+    try:
+        with socket.create_connection((p.hostname, p.port or 80), timeout=timeout):
+            return True
+    except OSError:
+        return False
+
+
+if not _server_up():
+    pytest.skip(
+        f"live-server E2E: no server at {BASE_URL} (start the stack to run these)",
+        allow_module_level=True,
+    )
 TEST_DOCS_DIR = Path(__file__).parent / "test_documents"
 
 

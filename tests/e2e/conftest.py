@@ -44,9 +44,13 @@ def create_simple_pdf(path: Path, with_images: bool = False) -> Path:
         c.drawString(1 * inch, 8.2 * inch, "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.")
 
         if with_images:
-            # Create a simple colored rectangle as "image"
-            c.setFillColorRGB(0.2, 0.4, 0.8)
-            c.rect(1 * inch, 5 * inch, 3 * inch, 2 * inch, fill=1)
+            # Embed a REAL raster image (a drawn rect is vector-only and image
+            # extractors rightly find nothing in it).
+            from reportlab.lib.utils import ImageReader
+
+            raster = Image.new("RGB", (400, 260), (51, 102, 204))
+            c.drawImage(ImageReader(raster), 1 * inch, 5 * inch,
+                        width=3 * inch, height=2 * inch)
             c.setFillColorRGB(0, 0, 0)
             c.drawString(1 * inch, 4.7 * inch, "Figure 1: Sample Image")
 
@@ -219,23 +223,26 @@ def output_docx_with_images(sample_with_images_pdf, temp_output_dir) -> Path:
     doc.add_heading('Document with Images', level=1)
     doc.add_paragraph('This document contains embedded images.')
 
-    # Try to extract images from PDF
+    # Try to extract images from PDF; fall back to a synthetic image when the
+    # extractor finds none OR raises — the validation tests need an image either way.
+    images = []
     try:
         extractor = ImageExtractor()
         images = extractor.extract_from_pdf(str(sample_with_images_pdf))
-
-        if images:
-            embedder = DocxImageEmbedder()
-            embedder.embed_images(doc, images, with_captions=True)
     except Exception:
-        # Create a simple image if extraction fails
+        images = []
+
+    if images:
+        embedder = DocxImageEmbedder()
+        embedder.embed_images(doc, images, with_captions=True)
+    else:
         img_data = create_test_image(400, 300)
         from core.image_embedding import ImageBlock, ImageFormat
         img_block = ImageBlock(
             image_data=img_data,
             format=ImageFormat.PNG,
             width_px=400,
-            height_px=300
+            height_px=300,
         )
         embedder = DocxImageEmbedder()
         embedder.embed_image(doc, img_block)
