@@ -2,6 +2,30 @@
 
 All notable changes to AI Publisher Pro will be documented in this file.
 
+## [Unreleased] — P2 debt paydown
+
+### Changed
+- **One port map everywhere**: backend **:8000**, frontend **:3000** — in dev.sh,
+  Dockerfile, Dockerfile.dev, docker-compose and nginx alike (was 3000/3001 in
+  Docker). `BACKEND_PORT`/`FRONTEND_PORT` env still override the published ports.
+- **Lifespan startup**: the nine deprecated `@app.on_event` handlers now run from
+  a single `_lifespan` (identical order); dead `integrate_with_app()` removed.
+- `api/main.py` sheds its 7 unreachable inline `/api/system|queue|cache|processor`
+  duplicates — `api/routes/system.py` is the only definition, and the
+  `/api/cache/clear` 5/minute rate limit now sits on the route that actually
+  serves (the decorator previously lived on the dead copy).
+
+### Fixed
+- docker-compose gave the browser bundle `NEXT_PUBLIC_API_URL=http://backend:3000`
+  — a Docker-internal hostname no real browser can resolve; defaults to
+  `http://localhost:8000` now (override via env for real domains).
+- nginx profile proxied everything to `app:3001`, a service that doesn't exist in
+  compose — split into `backend_server` (API/WS/health) + `frontend_server` (pages).
+- `Dockerfile.dev` ran python:3.11 while production runs 3.13 — aligned to 3.13.
+- `JobRepository` logged `data/jobs.db` while actually writing `data/aps_jobs.db`
+  (source of the "orphan aps_jobs.db" ledger scare — both DBs are live: v1 queue
+  vs v2 job store). The log now tells the truth.
+
 ## [3.3.1] - 2026-08-23
 
 ### BREAKING: AST is the only renderer (Option A complete)

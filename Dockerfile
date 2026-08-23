@@ -29,7 +29,7 @@ LABEL version="3.3.1"
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PYTHONPATH=/app \
-    PORT=3000
+    PORT=8000
 
 # Runtime deps only
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -69,8 +69,8 @@ RUN mkdir -p data/uploads data/outputs data/cache data/checkpoints \
 USER appuser
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
-    CMD curl -sf http://localhost:3000/health || exit 1
+    CMD curl -sf http://localhost:8000/health || exit 1
 
-EXPOSE 3000
+EXPOSE 8000
 
-CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "3000", "--workers", "1"]
+CMD ["uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "1"]

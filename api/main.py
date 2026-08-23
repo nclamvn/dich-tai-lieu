@@ -55,6 +55,7 @@ from fastapi.exception_handlers import http_exception_handler as _starlette_http
 from fastapi_csrf_protect import CsrfProtect
 from fastapi_csrf_protect.exceptions import CsrfProtectError
 from pathlib import Path
+from contextlib import asynccontextmanager
 import asyncio
 import json
 import time
@@ -72,7 +73,6 @@ load_dotenv(dotenv_path=env_path)
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from core.job_queue import JobQueue, TranslationJob, JobStatus, JobPriority
-from core.batch_processor import BatchProcessor, read_document
 # Deprecated: DeepSeek OCR has been replaced by hybrid OCR system
 # from core.ocr_deepseek import DeepseekOCR, OCRResult
 from core.post_formatting.heading_detector import HeadingDetector
@@ -214,24 +214,11 @@ class JobResponse(BaseModel):
     metadata: Optional[Dict[str, Any]] = None  # Phase 2.0.4: Include job metadata
 
     model_config = ConfigDict(from_attributes=True)
-class QueueStats(BaseModel):
-    """Queue statistics"""
-    total: int
-    pending: int
-    queued: int
-    running: int
-    completed: int
-    failed: int
-    cancelled: int
 
 
-class SystemInfo(BaseModel):
-    """System information"""
-    version: str
-    uptime_seconds: float
-    processor_running: bool
-    current_jobs: int
-    queue_stats: QueueStats
+# QueueStats / SystemInfo response models live in api/models.py (used by
+# api/routes/system.py). The duplicates that shadowed them here served only
+# the removed inline endpoints.
 
 
 class OCRRequest(BaseModel):
@@ -333,6 +320,28 @@ from config.settings import settings as _boot_settings  # noqa: E402
 
 _docs_enabled = _boot_settings.security_mode != "production"
 
+
+@asynccontextmanager
+async def _lifespan(app: "FastAPI"):
+    """Startup/shutdown for the app (replaces the deprecated @app.on_event).
+
+    The handler functions are defined later in this module (Python resolves the
+    globals at call time, i.e. at server start — long after import). Order is
+    the exact registration order the @app.on_event decorators had; shutdown runs
+    in the old shutdown-registration order (coordinator, then WS fan-out).
+    """
+    await startup_db_integrity_check()
+    await startup_security_check()
+    await startup_sync_api_keys()
+    await startup_resume_jobs()
+    await startup_recover_stuck_v1_jobs()
+    await startup_ws_fanout()
+    await startup_job_coordinator()
+    yield
+    await shutdown_job_coordinator()
+    await shutdown_ws_fanout()
+
+
 app = FastAPI(
     title="AI Translator Pro API",
     description="REST API for professional translation system with batch processing",
@@ -340,6 +349,7 @@ app = FastAPI(
     docs_url="/docs" if _docs_enabled else None,
     redoc_url="/redoc" if _docs_enabled else None,
     openapi_url="/openapi.json" if _docs_enabled else None,
+    lifespan=_lifespan,
 )
 
 # Reusable "require an authenticated user" dependency. get_current_user_id is
@@ -502,8 +512,7 @@ app.include_router(editor_router, dependencies=_AUTH_REQUIRED)
 app.include_router(aps_v2_router)
 
 
-# Startup event to resume pending jobs
-@app.on_event("startup")
+# ── Lifespan handlers (called from _lifespan above, in this order) ──
 async def startup_db_integrity_check():
     """Run PRAGMA integrity_check on all SQLite databases at startup."""
     import sqlite3
@@ -535,7 +544,6 @@ async def startup_db_integrity_check():
         logger.info(f"Database integrity check passed ({checked} databases)")
 
 
-@app.on_event("startup")
 async def startup_security_check():
     """Log security warnings and deployment summary."""
     from config.settings import Settings
@@ -578,7 +586,6 @@ async def startup_security_check():
     logger.info(f"{border}")
 
 
-@app.on_event("startup")
 async def startup_sync_api_keys():
     """Sync API keys from settings.json to environment variables."""
     try:
@@ -604,7 +611,6 @@ async def startup_sync_api_keys():
         logger.warning(f"Startup: Could not sync API keys: {e}")
 
 
-@app.on_event("startup")
 async def startup_resume_jobs():
     """Resume any pending jobs after server restart."""
     try:
@@ -617,7 +623,6 @@ async def startup_resume_jobs():
         logger.error(f"Startup: Failed to resume jobs: {e}")
 
 
-@app.on_event("startup")
 async def startup_recover_stuck_v1_jobs():
     """QA-24: Mark V1 jobs stuck as 'running' back to 'pending' on restart."""
     # QA-17/QA-27: Start job timeout watchdog
@@ -642,7 +647,6 @@ async def startup_recover_stuck_v1_jobs():
         logger.debug(f"V1 stuck job recovery skipped: {e}")
 
 
-@app.on_event("startup")
 async def startup_ws_fanout():
     """Enable Redis WS fan-out across workers (no-op if ws_redis_url is empty)."""
     from api.deps import manager
@@ -650,7 +654,6 @@ async def startup_ws_fanout():
     await manager.start_redis(settings.ws_redis_url, settings.ws_pubsub_channel)
 
 
-@app.on_event("startup")
 async def startup_job_coordinator():
     """Enable cross-worker concurrency limit + cancel (#6 Pha 2/3).
     No-op / local-only when ws_redis_url is empty."""
@@ -660,13 +663,11 @@ async def startup_job_coordinator():
     await svc._coordinator.start_redis(settings.ws_redis_url, settings.max_concurrent_jobs)
 
 
-@app.on_event("shutdown")
 async def shutdown_job_coordinator():
     from api.aps_v2_service import get_v2_service
     await get_v2_service()._coordinator.stop_redis()
 
 
-@app.on_event("shutdown")
 async def shutdown_ws_fanout():
     from api.deps import manager
     await manager.stop_redis()
@@ -736,7 +737,6 @@ app.add_middleware(RequestContextMiddleware)
 
 # Global state
 queue = JobQueue()
-processor = None
 start_time = time.time()
 websocket_connections: List[WebSocket] = []
 
@@ -856,24 +856,12 @@ async def root():
 
 
 # =============================================================================
-# API Endpoints - Queue & System
+# Queue & system endpoints live in api/routes/system.py (system_router).
+# The inline duplicates that used to sit here were UNREACHABLE — system_router
+# is included earlier, and first-registered wins Starlette routing — and their
+# processor handlers mutated a main.py-local global instead of api.deps state.
+# Removed in the P2 debt paydown; api/routes/system.py is the single source.
 # =============================================================================
-
-@app.get("/api/queue/stats", response_model=QueueStats, dependencies=_AUTH_REQUIRED)
-async def get_queue_stats():
-    """Get queue statistics"""
-    stats = queue.get_queue_stats()
-
-    return QueueStats(
-        total=stats.get('total', 0),
-        pending=stats.get(JobStatus.PENDING, 0),
-        queued=stats.get(JobStatus.QUEUED, 0),
-        running=stats.get(JobStatus.RUNNING, 0),
-        completed=stats.get(JobStatus.COMPLETED, 0),
-        failed=stats.get(JobStatus.FAILED, 0),
-        cancelled=stats.get(JobStatus.CANCELLED, 0)
-    )
-
 
 _COVER_PREVIEW_VERSION: Optional[str] = None
 
@@ -974,186 +962,6 @@ async def upload_cover_image(file: UploadFile = File(...)):
     out = cover_dir / f"{_uuid.uuid4().hex}{ext}"
     out.write_bytes(data)
     return {"path": str(out)}
-
-
-@app.get("/api/system/info", response_model=SystemInfo, dependencies=_AUTH_REQUIRED)
-async def get_system_info():
-    """Get system information"""
-    stats = queue.get_queue_stats()
-
-    return SystemInfo(
-        version="3.3.1",
-        uptime_seconds=time.time() - start_time,
-        processor_running=processor is not None and processor.is_running,
-        current_jobs=len(processor.current_jobs) if processor else 0,
-        queue_stats=QueueStats(
-            total=stats.get('total', 0),
-            pending=stats.get(JobStatus.PENDING, 0),
-            queued=stats.get(JobStatus.QUEUED, 0),
-            running=stats.get(JobStatus.RUNNING, 0),
-            completed=stats.get(JobStatus.COMPLETED, 0),
-            failed=stats.get(JobStatus.FAILED, 0),
-            cancelled=stats.get(JobStatus.CANCELLED, 0)
-        )
-    )
-
-
-@app.get("/api/system/status", dependencies=_AUTH_REQUIRED)
-async def get_system_status():
-    """
-    Get system capabilities and feature availability (UI v1.1)
-
-    Returns:
-        System status including:
-        - pandoc_available: Whether pandoc is installed (for OMML equation rendering)
-        - libreoffice_available: Whether LibreOffice is installed (for PDF export)
-        - advanced_book_layout_enabled: Whether advanced book layout is enabled
-        - supported_formats: List of supported output formats
-        - features: Dictionary of available features
-    """
-    import shutil
-    import os
-    from config.settings import settings
-
-    # Check if pandoc is available
-    import os
-    pandoc_available = (
-        shutil.which("pandoc") is not None or
-        os.path.exists("/opt/homebrew/bin/pandoc") or
-        os.path.exists("/usr/local/bin/pandoc")
-    )
-    logger.info(f"Pandoc available: {pandoc_available}")
-
-    # Check if LibreOffice is available
-    libreoffice_available = False
-    try:
-        from core.export.pdf_adapter import is_libreoffice_available
-        libreoffice_available = is_libreoffice_available()
-    except ImportError:
-        pass
-
-    # Check advanced book layout setting
-    try:
-        advanced_book_layout_enabled = settings.enable_advanced_book_layout
-    except AttributeError:
-        advanced_book_layout_enabled = False
-
-    # Build supported formats list
-    supported_formats = ["docx"]
-    if libreoffice_available:
-        supported_formats.append("pdf")
-
-    return {
-        "pandoc_available": pandoc_available,
-        "libreoffice_available": libreoffice_available,
-        "advanced_book_layout_enabled": advanced_book_layout_enabled,
-        "supported_formats": supported_formats,
-        "features": {
-            "omml_equations": pandoc_available,
-            "pdf_export": libreoffice_available,
-            "book_layout": advanced_book_layout_enabled,
-            "ast_pipeline": True,  # Always available
-            "professional_typography": True  # Phase 2.0.7
-        }
-    }
-
-
-# =============================================================================
-# Cache Management Endpoints
-# =============================================================================
-
-@app.get("/api/cache/stats", dependencies=_AUTH_REQUIRED)
-async def get_cache_stats():
-    """
-    Get cache statistics
-
-    Returns:
-        Cache statistics including total entries, hit rate, and database size
-    """
-    try:
-        stats = chunk_cache.stats()
-        return {
-            "success": True,
-            "stats": stats
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get cache stats: {str(e)}")
-
-
-@app.post("/api/cache/clear", dependencies=_AUTH_REQUIRED)
-@limiter.limit("5/minute")  # Rate limit to prevent abuse
-async def clear_cache(request: Request):
-    """
-    Clear all translation cache entries
-
-    This will remove all cached translations, forcing fresh translations
-    on the next request. Use this when:
-    - Translation quality is poor and needs to be redone
-    - Translation failed but cache still contains the error
-    - You want to force a complete re-translation
-
-    Rate limited to 5 requests per minute to prevent abuse.
-    """
-    try:
-        chunk_cache.clear()
-        stats = chunk_cache.stats()
-
-        return {
-            "success": True,
-            "message": "Cache cleared successfully",
-            "stats": stats
-        }
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to clear cache: {str(e)}")
-
-
-@app.post("/api/processor/start", dependencies=_AUTH_REQUIRED)
-async def start_processor(
-    request: Request = None
-    # csrf_protect: CsrfProtect = Depends()  # Disabled for internal deployment
-):
-    """Start the batch processor"""
-    # CSRF validation - Disabled for internal deployment
-    # await csrf_protect.validate_csrf(request)
-
-    global processor
-
-    if processor and processor.is_running:
-        raise HTTPException(status_code=400, detail="Processor is already running")
-
-    processor = BatchProcessor(queue=queue, max_concurrent_jobs=1, websocket_manager=manager)
-
-    # Initialize APS service with shared components
-    aps_service = get_aps_service(
-        job_queue=queue,
-        batch_processor=processor,
-        websocket_manager=manager,
-        force_reinit=True,
-    )
-    logger.info("APS Service initialized with shared BatchProcessor")
-
-    # Start processor in background without blocking the response
-    asyncio.create_task(processor.start(continuous=True))
-
-    return {"message": "Batch processor started", "aps_integration": True}
-
-
-@app.post("/api/processor/stop", dependencies=_AUTH_REQUIRED)
-async def stop_processor(
-    request: Request = None
-    # csrf_protect: CsrfProtect = Depends()  # Disabled for internal deployment
-):
-    """Stop the batch processor"""
-    # CSRF validation - Disabled for internal deployment
-    # await csrf_protect.validate_csrf(request)
-
-    global processor
-
-    if not processor or not processor.is_running:
-        raise HTTPException(status_code=400, detail="Processor is not running")
-
-    processor.stop()
-    return {"message": "Batch processor stopped"}
 
 
 # =============================================================================

@@ -328,23 +328,6 @@ async def test_provider(
 # Integration Helper
 # =========================================
 
-def integrate_with_app(app):
-    """
-    Integrate provider routes with existing FastAPI app.
-    
-    Usage:
-        from fastapi import FastAPI
-        from provider_routes import integrate_with_app
-        
-        app = FastAPI()
-        integrate_with_app(app)
-    """
-    app.include_router(router)
-    
-    # Add startup event to validate providers
-    @app.on_event("startup")
-    async def check_providers_on_startup():
-        manager = get_provider_manager()
-        available = manager.get_available_providers()
-        logger.info("AI Providers available: %s", [p.name for p in available])
-        logger.info("Default provider: %s", manager.current_provider.value)
+# (integrate_with_app() — a never-called alternative wiring helper carrying the
+# repo's last @app.on_event usage — was removed in the P2 debt paydown. The
+# router is included by api/main.py; startup logic lives in main._lifespan.)

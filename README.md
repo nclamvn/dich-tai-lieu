@@ -97,8 +97,8 @@ bash dev.sh
 ```
 
 Open http://localhost:3000 — the frontend talks to the backend on :8000.
-(First run: `cd frontend && npm install` once. Docker/production uses ports
-3000/3001 instead — see DEPLOYMENT.md.)
+(First run: `cd frontend && npm install` once. Docker/production uses the
+same map — backend :8000, frontend :3000 — one port truth everywhere.)
 
 ### Environment Variables
 
@@ -243,7 +243,7 @@ pytest tests/ --cov=core --cov-report=html
 - [x] Vietnamese-optimized typography
 - [ ] PostgreSQL migration option
 - [x] CI/CD pipeline (GitHub Actions — ruff, pytest 3.11/3.12, vitest, tsc)
-- [x] Docker deployment (Dockerfile + docker-compose, see DEPLOYMENT.md)
+- [x] Docker deployment (Dockerfile + docker-compose.yml; nginx profile in docker/nginx/)
 - [ ] Real-time collaboration
 - [ ] Mobile app
 

@@ -12,19 +12,28 @@ round trip) so they don't depend on optional routers loading in every env.
 
 from api.deps import get_current_user_id
 
-# main.py @app endpoints that must be gated
+# main.py @app endpoints that must be gated (still defined inline at app level).
 SENSITIVE_APP_PATHS = {
-    "/api/cache/clear",
-    "/api/cache/stats",
-    "/api/processor/start",
-    "/api/processor/stop",
-    "/api/queue/stats",
-    "/api/system/info",
-    "/api/system/status",
     "/api/ocr/recognize",
     "/api/ocr/handwriting",
     "/api/ocr/translate",
     "/api/ocr/upload",
+}
+
+# Control-plane paths that moved to api/routes/system.py (P2 dedup — the inline
+# main.py duplicates were unreachable and are gone). They are session-gated at
+# the include site (dependencies=_AUTH_REQUIRED, locked by test_router_authz.py).
+# Under FastAPI's lazy include (_IncludedRouter) they don't appear as top-level
+# app.routes entries, so presence is asserted on the router module and
+# enforcement is asserted over HTTP with auth enabled.
+SENSITIVE_SYSTEM_ROUTER_PATHS = {
+    "/api/cache/clear": "post",
+    "/api/cache/stats": "get",
+    "/api/processor/start": "post",
+    "/api/processor/stop": "post",
+    "/api/queue/stats": "get",
+    "/api/system/info": "get",
+    "/api/system/status": "get",
 }
 
 
@@ -65,6 +74,32 @@ def test_file_upload_requires_auth():
     upload = [r for r in router.routes if getattr(r, "path", None) == "/api/upload"]
     assert upload, "/api/upload route not found on uploads router"
     assert _requires_auth(upload[0]), "/api/upload must require authentication"
+
+
+def test_system_router_covers_moved_control_plane_paths():
+    # The paths deleted from main.py must all exist on the canonical router —
+    # otherwise the dedup silently dropped an endpoint.
+    from api.routes.system import router
+
+    present = {getattr(r, "path", None) for r in router.routes}
+    missing = set(SENSITIVE_SYSTEM_ROUTER_PATHS) - present
+    assert not missing, f"control-plane paths lost in dedup: {sorted(missing)}"
+
+
+def test_system_router_paths_fail_closed_when_auth_enabled(client, monkeypatch):
+    # End-to-end proof the include-level dependency actually bites through
+    # FastAPI's lazy-include machinery: with session auth ON, every moved path
+    # must 401 for an anonymous caller (not 404 — that would mean the route
+    # vanished; not 2xx/5xx — that would mean the gate is dead).
+    from config.settings import settings
+
+    monkeypatch.setattr(settings, "session_auth_enabled", True)
+    for path, method in sorted(SENSITIVE_SYSTEM_ROUTER_PATHS.items()):
+        resp = getattr(client, method)(path)
+        assert resp.status_code == 401, (
+            f"{method.upper()} {path} expected 401 with auth enabled, "
+            f"got {resp.status_code}"
+        )
 
 
 def test_jwt_routers_have_no_open_endpoints():

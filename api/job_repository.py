@@ -25,11 +25,19 @@ class JobRepository:
     """
 
     def __init__(self, db_path: str = "data/jobs.db"):
+        # NOTE: only the PARENT DIRECTORY of db_path is used — the backend names
+        # its own file: <dir>/aps_jobs.db. (data/jobs.db is the SEPARATE v1
+        # queue DB owned by core/job_queue.py; this class never touches it.
+        # The old log line here claimed data/jobs.db and fueled the
+        # "aps_jobs.db orphan?" confusion in the debt ledger — X-ray §12.6.)
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._backend = get_db_backend("aps_jobs", db_dir=self.db_path.parent)
         self._init_db()
-        logger.info(f"JobRepository initialized: {self.db_path}")
+        logger.info(
+            "JobRepository initialized: %s (v2 job store)",
+            self.db_path.parent / "aps_jobs.db",
+        )
 
     @contextmanager
     def _get_connection(self):

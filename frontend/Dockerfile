@@ -15,7 +15,7 @@ RUN npm ci
 COPY . .
 
 # Set API URL at build time (can be overridden at runtime)
-ARG NEXT_PUBLIC_API_URL=http://localhost:3000
+ARG NEXT_PUBLIC_API_URL=http://localhost:8000
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 
 RUN npm run build
@@ -35,9 +35,9 @@ COPY --from=builder /app/public ./public 2>/dev/null || true
 
 USER nextjs
 
-EXPOSE 3001
+EXPOSE 3000
 
-ENV PORT=3001 \
+ENV PORT=3000 \
     HOSTNAME="0.0.0.0" \
     NODE_ENV=production
 
