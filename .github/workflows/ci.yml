@@ -109,6 +109,17 @@ jobs:
           OPENAI_API_KEY: test-key
           ANTHROPIC_API_KEY: test-key
 
+      - name: Run remaining suites (batch, rri_t, e2e, streaming, v2, root)
+        # Everything the per-directory steps above miss — previously these trees
+        # were never exercised in CI, which let a Python-3.11 syntax error and a
+        # batch of stale expectations sit unnoticed. Live-server E2E (tests/v2)
+        # and manual driver scripts self-skip.
+        run: pytest tests/batch/ tests/rri_t/ tests/e2e/ tests/streaming/ tests/v2/ tests/*.py -q --tb=short --no-cov
+        env:
+          DATABASE_BACKEND: sqlite
+          OPENAI_API_KEY: test-key
+          ANTHROPIC_API_KEY: test-key
+
       - name: Coverage report
         if: matrix.python-version == '3.11'
         run: |
@@ -150,6 +161,7 @@ jobs:
         run: npx vitest run
 
       - name: Type check
+        # Hard gate (was continue-on-error): tsc passes today, so type errors
+        # from now on fail the build instead of scrolling by unnoticed.
         working-directory: frontend
         run: npx tsc --noEmit
-        continue-on-error: true

@@ -194,7 +194,19 @@ def test_pdf_image_embedding(sample_with_images_pdf, temp_output_dir):
     create_pdf_with_images(images, str(output_path), title="Test PDF")
 
     assert output_path.exists()
-    assert output_path.stat().st_size > 5000
+    # Assert the PDF actually EMBEDS an image (an /XObject of /Subtype /Image)
+    # rather than guessing from file size — a flat-color PNG compresses so well
+    # that a valid PDF can be only ~2KB.
+    import pypdf
+
+    reader = pypdf.PdfReader(str(output_path))
+    has_image = False
+    for page in reader.pages:
+        xobjects = (page.get("/Resources") or {}).get("/XObject") or {}
+        for obj in xobjects.values():
+            if obj.get_object().get("/Subtype") == "/Image":
+                has_image = True
+    assert has_image, "PDF should contain at least one embedded image"
 
 
 # ============================================================

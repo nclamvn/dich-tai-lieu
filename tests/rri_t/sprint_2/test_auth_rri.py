@@ -193,7 +193,7 @@ class TestRegistrationLogin:
         data = UserCreate(
             email="test@example.com",  # same as registered_user
             username="different",
-            password="Pass123!",
+            password="StrongPass123!@",
             full_name="Another User",
         )
         with pytest.raises(ValueError, match="[Ee]mail already"):
@@ -205,7 +205,7 @@ class TestRegistrationLogin:
         data = UserCreate(
             email="different@example.com",
             username="testuser",  # same as registered_user
-            password="Pass123!",
+            password="StrongPass123!@",
             full_name="Another User",
         )
         with pytest.raises(ValueError, match="[Uu]sername already"):
@@ -330,7 +330,7 @@ class TestInactiveUser:
         admin_data = UserCreate(
             email="admin@example.com",
             username="admin_test",
-            password="AdminPass1!",
+            password="AdminPass123!@",
             full_name="Admin User",
         )
         admin, _ = auth_service.register_user(admin_data)

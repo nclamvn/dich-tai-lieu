@@ -276,8 +276,13 @@ class TestMemoryBenchmarks:
         # Calculate growth rate
         # 100 chunks -> 500 chunks (5x data)
         # 500 chunks -> 1000 chunks (2x data)
-        growth_5x = mem_measurements[1][1] / mem_measurements[0][1]
-        growth_2x = mem_measurements[2][1] / mem_measurements[1][1]
+        # In a long test session the allocator reuses freed pages, so a step's
+        # RSS delta can legitimately be 0.0 MB — guard the (print-only) ratios.
+        def _ratio(a: float, b: float) -> float:
+            return a / b if b > 0.01 else float("nan")
+
+        growth_5x = _ratio(mem_measurements[1][1], mem_measurements[0][1])
+        growth_2x = _ratio(mem_measurements[2][1], mem_measurements[1][1])
 
         print(f"   5x data increase: {growth_5x:.2f}x memory")
         print(f"   2x data increase: {growth_2x:.2f}x memory")

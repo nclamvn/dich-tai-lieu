@@ -122,7 +122,8 @@ def test_formula_at_boundary():
     test_text = text_part1 + "\n\n" + formula + "\n\n" + text_part2
 
     print(f"Part 1: {len(text_part1)} chars")
-    print(f"Formula position: ~{len(text_part1 + '\\n\\n')} chars")
+    formula_pos = len(text_part1) + 2  # after the "\n\n" separator
+    print(f"Formula position: ~{formula_pos} chars")
     print(f"Formula: {len(formula)} chars")
     print(f"Total: {len(test_text)} chars")
 

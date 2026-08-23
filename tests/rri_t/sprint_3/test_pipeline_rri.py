@@ -334,7 +334,7 @@ class TestChunkBoundary:
         chunker = SemanticChunker()
         text = "Short document." * 10  # ~150 chars, well under SMALL_DOC
         import asyncio
-        chunks = asyncio.get_event_loop().run_until_complete(chunker.chunk(text))
+        chunks = asyncio.run(chunker.chunk(text))
         assert len(chunks) == 1
         assert chunks[0].content == text.strip()
 
@@ -346,7 +346,7 @@ class TestChunkBoundary:
         # Medium document with clear paragraph breaks
         text = "\n\n".join([f"Paragraph {i}. " * 50 for i in range(10)])
         import asyncio
-        chunks = asyncio.get_event_loop().run_until_complete(chunker.chunk(text))
+        chunks = asyncio.run(chunker.chunk(text))
         # Concatenated chunks should contain all original paragraphs
         combined = " ".join(c.content for c in chunks)
         for i in range(10):
@@ -359,7 +359,7 @@ class TestChunkBoundary:
         chunker = SemanticChunker()
         text = "\n\n".join([f"Section {i}. " * 80 for i in range(8)])
         import asyncio
-        chunks = asyncio.get_event_loop().run_until_complete(chunker.chunk(text))
+        chunks = asyncio.run(chunker.chunk(text))
         if len(chunks) > 1:
             for i, chunk in enumerate(chunks):
                 assert chunk.index == i
@@ -371,7 +371,7 @@ class TestChunkBoundary:
         chunker = SemanticChunker()
         text = "\n\n".join([f"Block {i}. " * 80 for i in range(8)])
         import asyncio
-        chunks = asyncio.get_event_loop().run_until_complete(chunker.chunk(text))
+        chunks = asyncio.run(chunker.chunk(text))
         if len(chunks) > 1:
             totals = set(c.total_chunks for c in chunks)
             assert len(totals) == 1

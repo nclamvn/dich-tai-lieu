@@ -43,23 +43,36 @@ def _render(tmp_path, template) -> str:
     return _base_fonts(out)
 
 
+# The registered faces are whatever Vietnamese-capable family the adapter found
+# (bundled Noto first, DejaVu/Liberation as fallbacks) — assert on the serif/sans
+# *classification*, not on one vendor's file name.
+def _is_serif(name: str) -> bool:
+    return "Serif" in name
+
+
+def _is_sans(name: str) -> bool:
+    return ("Sans" in name) and "Serif" not in name
+
+
 def test_ebook_is_serif_not_sans(tmp_path):
     fonts = _render(tmp_path, "ebook")
-    assert "DejaVuSerif" in fonts and "DejaVuSans" not in fonts
+    assert any(_is_serif(n) for n in fonts.split())
+    assert not any(_is_sans(n) for n in fonts.split())
 
 
 def test_business_is_sans_not_serif(tmp_path):
     fonts = _render(tmp_path, "business")
-    assert "DejaVuSans" in fonts and "DejaVuSerif" not in fonts
+    assert any(_is_sans(n) for n in fonts.split())
+    assert not any(_is_serif(n) for n in fonts.split())
 
 
 def test_academic_is_serif(tmp_path):
-    assert "DejaVuSerif" in _render(tmp_path, "academic")
+    assert any(_is_serif(n) for n in _render(tmp_path, "academic").split())
 
 
 def test_default_no_template_uses_serif(tmp_path):
     # default StyleSheet body font is Georgia -> serif
-    assert "DejaVuSerif" in _render(tmp_path, None)
+    assert any(_is_serif(n) for n in _render(tmp_path, None).split())
 
 
 def test_ebook_and_business_differ(tmp_path):

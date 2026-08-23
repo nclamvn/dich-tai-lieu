@@ -27,13 +27,13 @@ class TestVisionProviderOrder:
     def test_vision_provider_order_claude_first(self):
         """Vision requests should prioritize Claude over OpenAI."""
         client = UnifiedLLMClient()
-        assert client.VISION_PROVIDER_ORDER == ["anthropic", "openai"]
+        assert client.VISION_PROVIDER_ORDER == ["anthropic", "openai", "gemini"]
         assert client.VISION_PROVIDER_ORDER[0] == "anthropic"
 
     def test_text_provider_order_openai_first(self):
         """Text requests should use standard order (OpenAI first)."""
         client = UnifiedLLMClient()
-        assert client.PROVIDER_ORDER == ["openai", "anthropic", "deepseek"]
+        assert client.PROVIDER_ORDER == ["openai", "anthropic", "deepseek", "gemini"]
         assert client.PROVIDER_ORDER[0] == "openai"
 
     def test_deepseek_not_in_vision_order(self):
@@ -226,9 +226,10 @@ class TestVisionFallbackLogic:
         """DeepSeek should never be selected for vision requests."""
         client = client_with_both_keys
 
-        # Mark both vision providers as failed
+        # Mark ALL vision-capable providers as failed
         client._failed_providers.add("anthropic")
         client._failed_providers.add("openai")
+        client._failed_providers.add("gemini")
 
         # Try to find vision provider
         next_provider = None
@@ -326,7 +327,7 @@ class TestStatusSummary:
                 status = await client.get_status_summary()
 
                 assert "vision_providers" in status
-                assert status["vision_providers"]["priority_order"] == ["anthropic", "openai"]
+                assert status["vision_providers"]["priority_order"] == ["anthropic", "openai", "gemini"]
                 assert "anthropic" in status["vision_providers"]["available"]
                 assert "openai" in status["vision_providers"]["available"]
 
