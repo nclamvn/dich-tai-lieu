@@ -235,54 +235,6 @@ class TestSourceFormatDetection:
 # ==================== _auto_select_template ====================
 
 
-class TestAutoSelectTemplate:
-    """Template auto-selection from manifest."""
-
-    def test_academic_genre(self, tmp_path):
-        import json
-        manifest = {"metadata": {}, "document_dna": {"genre": "academic_paper"}}
-        (tmp_path / "manifest.json").write_text(json.dumps(manifest))
-
-        converter = OutputConverter()
-        result = converter._auto_select_template(tmp_path)
-        assert result == "academic"
-
-    def test_business_genre(self, tmp_path):
-        import json
-        manifest = {"metadata": {}, "document_dna": {"genre": "business_report"}}
-        (tmp_path / "manifest.json").write_text(json.dumps(manifest))
-
-        converter = OutputConverter()
-        result = converter._auto_select_template(tmp_path)
-        assert result == "business"
-
-    def test_fiction_genre(self, tmp_path):
-        import json
-        manifest = {"metadata": {}, "document_dna": {"genre": "novel"}}
-        (tmp_path / "manifest.json").write_text(json.dumps(manifest))
-
-        converter = OutputConverter()
-        result = converter._auto_select_template(tmp_path)
-        assert result == "ebook"
-
-    def test_missing_manifest_defaults_ebook(self, tmp_path):
-        converter = OutputConverter()
-        result = converter._auto_select_template(tmp_path)
-        assert result == "ebook"
-
-    def test_unknown_genre_defaults_ebook(self, tmp_path):
-        import json
-        manifest = {"metadata": {}, "document_dna": {"genre": "unknown_genre"}}
-        (tmp_path / "manifest.json").write_text(json.dumps(manifest))
-
-        converter = OutputConverter()
-        result = converter._auto_select_template(tmp_path)
-        assert result == "ebook"
-
-
-# ==================== Cleanup ====================
-
-
 class TestCleanup:
     """cleanup() method."""
 

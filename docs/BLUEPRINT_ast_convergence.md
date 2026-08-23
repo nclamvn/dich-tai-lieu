@@ -125,4 +125,10 @@ sample/format — the renderer swap happens after translation, so it cannot chan
 translation quality; the translation eval baseline (`docs/EVAL_HARNESS.md`)
 remains recommended as a pre-wide-beta reference point and needs a provider key.
 
-Remaining: stage 5 (retire the legacy engines).
+**Stage 5 — shipped. Option A is complete.** `core/docx_engine` and
+`core/pdf_engine` (~5.3K lines) are deleted; the professional converters route
+straight through the AST adapters (an AST failure raises, and the orchestrator's
+pandoc fallback still guarantees an output). The `OUTPUT_PIPELINE` flag and the
+`output_pipeline` setting are gone with the engines. The engine-vs-AST soak is
+succeeded by the absolute content guard `scripts/soak_render_coverage.py`
+(`docs/SOAK_RENDER_COVERAGE.md`, in CI as `tests/eval/test_render_coverage.py`).
