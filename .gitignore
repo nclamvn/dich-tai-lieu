@@ -29,8 +29,10 @@ uploads/*
 !uploads/.gitkeep
 output/*
 !output/.gitkeep
-outputs/v2/*
-!outputs/v2/.gitkeep
+# Generated exports/artifacts — NEVER track (test runs and jobs write here);
+# only the .gitkeep placeholder is versioned.
+outputs/*
+!outputs/.gitkeep
 data/cache/*
 data/checkpoints/*
 data/temp/*
