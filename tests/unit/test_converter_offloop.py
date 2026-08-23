@@ -3,8 +3,9 @@
 Verifies the (blocking) professional DOCX render runs in a worker thread, so a
 concurrent coroutine (ticker) keeps making progress while the render sleeps.
 
-The real DocxRenderer is monkeypatched with a fake so we don't need python-docx
-templates or i18n assets to fail/succeed — only the off-loop behaviour matters.
+The heavy AST renderer (``render_docx_from_ast`` — the only DOCX stack since
+Option A stage 5) is monkeypatched with a slow blocking fake, so only the
+off-loop behaviour is under test.
 """
 import asyncio
 import time
@@ -12,41 +13,20 @@ from pathlib import Path
 
 import pytest
 
-from core_v2 import output_converter
+import core.rendering.docx_adapter as docx_adapter
 from core_v2.output_converter import OutputConverter
 
 
-class _FakeToc:
-    """TOC stub whose .title is settable by the converter."""
-    title = None
-
-
-class _FakeDoc:
-    def __init__(self):
-        self.toc = _FakeToc()
-        self.glossary = None
-        self.bibliography = None
-
-
-class _FakeNormalizer:
-    def from_markdown(self, markdown_content, meta):
-        return _FakeDoc()
-
-
-class _FakeDocxRenderer:
-    def __init__(self, template=None):
-        self.normalizer = _FakeNormalizer()
-
-    def render_document(self, doc, path):
-        time.sleep(0.2)  # simulates a slow blocking render
-        Path(path).write_text("x")
-        return path
+def _slow_fake_render(ast, output_path, **kwargs):
+    time.sleep(0.2)  # simulates a slow blocking render
+    Path(output_path).write_text("x")
 
 
 @pytest.mark.asyncio
 async def test_convert_docx_professional_runs_off_loop(tmp_path, monkeypatch):
-    # DocxRenderer is imported at module top of output_converter.py.
-    monkeypatch.setattr(output_converter, "DocxRenderer", _FakeDocxRenderer)
+    # _markdown_to_docx_via_ast does `from core.rendering.docx_adapter import
+    # render_docx_from_ast` at call time, so patching the adapter module works.
+    monkeypatch.setattr(docx_adapter, "render_docx_from_ast", _slow_fake_render)
 
     ticks = []
 
@@ -55,7 +35,7 @@ async def test_convert_docx_professional_runs_off_loop(tmp_path, monkeypatch):
             ticks.append(time.monotonic())
             await asyncio.sleep(0.02)
 
-    conv = OutputConverter()
+    conv = OutputConverter(temp_dir=tmp_path / "t")
     out = tmp_path / "o.docx"
 
     result, _ = await asyncio.gather(

@@ -17,42 +17,16 @@ from pathlib import Path
 from typing import Optional, List, Dict, Union
 from enum import Enum
 
-# Professional DOCX rendering
-from core.docx_engine import DocxRenderer, create_template
-
-# Professional PDF rendering
-from core.pdf_engine import PdfRenderer, create_pdf_template
-
 from core_v2.aio_utils import run_blocking
 
 logger = logging.getLogger(__name__)
 
 
 # --------------------------------------------------------------------------- #
-# Output pipeline selection (Option A, stage 3) — flag-gated, default-safe.
+# Renderer stack (Option A complete): the DocumentAST + core/rendering adapters
+# are the ONLY DOCX/PDF renderer — the legacy docx_engine/pdf_engine were
+# retired in stage 5 (the OUTPUT_PIPELINE flag went with them).
 # --------------------------------------------------------------------------- #
-def _output_pipeline() -> str:
-    """Resolve the active output pipeline, lowercased.
-
-    A live ``OUTPUT_PIPELINE`` env var wins (ops-flippable without a restart and
-    test-friendly), else the ``output_pipeline`` setting, else ``"engine"``.
-    """
-    value = os.getenv("OUTPUT_PIPELINE")
-    if value is None:
-        try:
-            from config.settings import settings
-
-            value = getattr(settings, "output_pipeline", None)
-        except Exception:  # pragma: no cover - settings optional
-            value = None
-    return (value or "engine").strip().lower()
-
-
-def _ast_pipeline_enabled() -> bool:
-    """True when the live DOCX/PDF export should route through the AST stack."""
-    return _output_pipeline() == "ast"
-
-
 def _ast_template(template: str) -> str:
     """Map a professional-template name to an AST adapter template, defaulting
     unknown / ``auto`` to ``ebook``."""
@@ -828,106 +802,9 @@ class OutputConverter:
         return formats
 
     # =========================================================================
-    # Professional DOCX Rendering - Using DOCX Template Engine
-    # =========================================================================
-
-    async def convert_to_docx_professional(
-        self,
-        source_folder: Path,
-        output_path: Path,
-        template: str = "auto",
-        include_toc: bool = True,
-        include_glossary: bool = True,
-    ) -> Path:
-        """
-        Convert Agent 2 output folder to professional DOCX using Template Engine.
-
-        Args:
-            source_folder: Path to Agent 2 output (contains manifest.json, chapters/)
-            output_path: Target .docx file path
-            template: Template name ('ebook', 'academic', 'business') or 'auto'
-            include_toc: Whether to include table of contents
-            include_glossary: Whether to include glossary section
-
-        Returns:
-            Path to created DOCX file
-        """
-        source_folder = Path(source_folder)
-        output_path = Path(output_path)
-
-        # Auto-select template if needed
-        if template == "auto":
-            template = self._auto_select_template(source_folder)
-            logger.info(f"Auto-selected template: {template}")
-
-        # Create renderer with selected template
-        renderer = DocxRenderer(template=template)
-
-        # Render document
-        result_path = renderer.render(
-            source_folder=str(source_folder),
-            output_path=str(output_path),
-            include_toc=include_toc,
-            include_glossary=include_glossary,
-        )
-
-        logger.info(f"Professional DOCX created: {result_path}")
-        return result_path
-
-    def _auto_select_template(self, source_folder: Path) -> str:
-        """
-        Auto-select template based on document DNA from manifest.json.
-
-        Logic:
-        - novel/fiction → ebook
-        - academic/research/technical → academic
-        - business/report/memo → business
-        - default → ebook
-        """
-        import json
-
-        manifest_path = source_folder / "manifest.json"
-        if not manifest_path.exists():
-            return "ebook"  # Default
-
-        try:
-            manifest = json.loads(manifest_path.read_text(encoding='utf-8'))
-            meta = manifest.get("meta", {})
-            dna = manifest.get("document_dna", {})
-
-            # Check genre
-            genre = dna.get("genre", "").lower()
-            tone = dna.get("tone", "").lower()
-
-            # Academic indicators
-            academic_keywords = ["academic", "research", "paper", "thesis", "dissertation",
-                               "journal", "scientific", "study", "analysis", "technical"]
-            if any(kw in genre for kw in academic_keywords) or any(kw in tone for kw in academic_keywords):
-                return "academic"
-
-            # Business indicators
-            business_keywords = ["business", "report", "memo", "proposal", "corporate",
-                               "executive", "presentation", "brief", "white paper"]
-            if any(kw in genre for kw in business_keywords) or any(kw in tone for kw in business_keywords):
-                return "business"
-
-            # Fiction/narrative indicators → ebook
-            fiction_keywords = ["novel", "fiction", "story", "narrative", "memoir",
-                              "biography", "autobiography", "essay", "literary"]
-            if any(kw in genre for kw in fiction_keywords) or any(kw in tone for kw in fiction_keywords):
-                return "ebook"
-
-            # Default to ebook (most versatile)
-            return "ebook"
-
-        except Exception as e:
-            logger.warning(f"Error reading manifest for template selection: {e}")
-            return "ebook"
-
-    # =========================================================================
-    # AST pipeline (Option A, stage 3) — flag-gated alternative renderers.
-    # Selected by OUTPUT_PIPELINE=ast; the public converters below wrap these in
-    # a fallback to the legacy engine so a failure here never loses the output.
+    # AST renderers (Option A complete) — the live DOCX/PDF stack. A failure
+    # here raises; the orchestrator's pandoc fallback still guarantees an
+    # output, so no silent losses and no shadow renderer.
     # =========================================================================
 
     async def _markdown_to_docx_via_ast(
@@ -1057,98 +934,12 @@ class OutputConverter:
         """
         output_path = Path(output_path)
 
-        if _ast_pipeline_enabled():
-            try:
-                produced = await self._markdown_to_docx_via_ast(
-                    markdown_content, output_path, template, title, author, language
-                )
-                self._apply_cover(produced, "docx", cover_template, title, author, language, cover_image=cover_image)
-                return produced
-            except Exception as e:
-                logger.warning(
-                    "AST DOCX pipeline failed (%s); falling back to legacy engine", e
-                )
-
-        from core.docx_engine.models import DocumentMeta
-        from core.i18n import get_string
-
-        def _render():
-            # Create renderer with selected template
-            renderer = DocxRenderer(template=template)
-
-            # Build meta with language so renderers use correct i18n strings
-            meta = DocumentMeta(title=title, author=author, language=language)
-
-            # Render from markdown with language-aware meta
-            normalizer = renderer.normalizer
-            doc = normalizer.from_markdown(markdown_content, meta)
-
-            # Update TOC/glossary/bibliography titles based on language
-            doc.toc.title = get_string("table_of_contents", language)
-            if doc.glossary:
-                doc.glossary.title = get_string("glossary", language)
-            if doc.bibliography:
-                doc.bibliography.title = get_string("references", language)
-
-            return renderer.render_document(doc, str(output_path))
-
-        result_path = await run_blocking(_render)
-
-        self._apply_cover(result_path, "docx", cover_template, title, author, language, cover_image=cover_image)
-        logger.info(f"Professional DOCX from markdown: {result_path}")
-        return result_path
-
-    # =========================================================================
-    # Professional PDF Rendering - Using PDF Template Engine
-    # =========================================================================
-
-    async def convert_to_pdf_professional(
-        self,
-        source_folder: Path,
-        output_path: Path,
-        template: str = "auto",
-        include_toc: bool = True,
-        include_glossary: bool = True,
-        progress_callback: Optional[callable] = None,
-    ) -> Path:
-        """
-        Convert Agent 2 output folder to professional PDF using Template Engine.
-
-        Uses ReportLab for portable PDF generation with Vietnamese support.
-
-        Args:
-            source_folder: Path to Agent 2 output (contains manifest.json, chapters/)
-            output_path: Target .pdf file path
-            template: Template name ('ebook', 'academic', 'business') or 'auto'
-            include_toc: Whether to include table of contents
-            include_glossary: Whether to include glossary section
-            progress_callback: Optional callback(current, total, message)
-
-        Returns:
-            Path to created PDF file
-        """
-        source_folder = Path(source_folder)
-        output_path = Path(output_path)
-
-        # Auto-select template if needed
-        if template == "auto":
-            template = self._auto_select_template(source_folder)
-            logger.info(f"Auto-selected PDF template: {template}")
-
-        # Create renderer with selected template
-        renderer = PdfRenderer(template=template)
-
-        # Render document
-        result_path = renderer.render_from_folder(
-            source_folder=str(source_folder),
-            output_path=str(output_path),
-            include_toc=include_toc,
-            include_glossary=include_glossary,
-            progress_callback=progress_callback,
+        produced = await self._markdown_to_docx_via_ast(
+            markdown_content, output_path, template, title, author, language
         )
-
-        logger.info(f"Professional PDF created: {result_path}")
-        return result_path
+        self._apply_cover(produced, "docx", cover_template, title, author, language, cover_image=cover_image)
+        logger.info(f"Professional DOCX from markdown: {produced}")
+        return produced
 
     async def convert_markdown_to_pdf_professional(
         self,
@@ -1177,45 +968,12 @@ class OutputConverter:
         """
         output_path = Path(output_path)
 
-        if _ast_pipeline_enabled():
-            try:
-                produced = await self._markdown_to_pdf_via_ast(
-                    markdown_content, output_path, template, title, author, language
-                )
-                self._apply_cover(produced, "pdf", cover_template, title, author, language, cover_image=cover_image)
-                return produced
-            except Exception as e:
-                logger.warning(
-                    "AST PDF pipeline failed (%s); falling back to legacy engine", e
-                )
-
-        from core.docx_engine.models import DocumentMeta
-        from core.docx_engine.normalizer import DocumentNormalizer
-        from core.i18n import get_string
-
-        def _render():
-            # Create renderer with selected template
-            renderer = PdfRenderer(template=template)
-
-            # Build document with language-aware meta
-            normalizer = DocumentNormalizer()
-            meta = DocumentMeta(title=title, author=author, language=language)
-            document = normalizer.from_markdown(markdown_content, meta)
-
-            # Update section titles based on language
-            document.toc.title = get_string("table_of_contents", language)
-            if document.glossary:
-                document.glossary.title = get_string("glossary", language)
-            if document.bibliography:
-                document.bibliography.title = get_string("references", language)
-
-            return renderer.render(document, str(output_path), include_toc=True, include_glossary=False)
-
-        result_path = await run_blocking(_render)
-
-        self._apply_cover(result_path, "pdf", cover_template, title, author, language, cover_image=cover_image)
-        logger.info(f"Professional PDF from markdown: {result_path}")
-        return result_path
+        produced = await self._markdown_to_pdf_via_ast(
+            markdown_content, output_path, template, title, author, language
+        )
+        self._apply_cover(produced, "pdf", cover_template, title, author, language, cover_image=cover_image)
+        logger.info(f"Professional PDF from markdown: {produced}")
+        return produced
 
     async def convert_markdown_to_epub_professional(
         self,

@@ -118,16 +118,5 @@ def test_new_docx_loses_nothing_vs_legacy(tmp_path):
     assert "Title" in new_text and "A paragraph." in new_text
     assert "one" in new_text and "two" in new_text
     assert "A" in new_cells and "1" in new_cells and "2" in new_cells
-
-    try:
-        from core.docx_engine import DocxRenderer
-
-        leg_out = tmp_path / "legacy.docx"
-        DocxRenderer(template="ebook").render_markdown(md, str(leg_out), title="T", author="A")
-    except Exception as e:  # legacy engine not runnable here — the assertions above still hold
-        pytest.skip(f"legacy DocxRenderer unavailable: {e}")
-
-    legacy_text = "\n".join(p.text for p in Document(str(leg_out)).paragraphs)
-    for token in ("Title", "A paragraph.", "one", "two"):
-        if token in legacy_text:  # only require parity for what legacy actually emitted
-            assert token in new_text, f"new DOCX dropped '{token}' that legacy kept"
+    # (The legacy DocxRenderer comparison leg retired with the engines in
+    # stage 5 — the absolute content assertions above are the guard.)

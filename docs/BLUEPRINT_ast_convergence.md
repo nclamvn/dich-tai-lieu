@@ -115,6 +115,20 @@ fixes), **all of stage 2b** — **DOCX document assembly** (template + title pag
 TOC + running header/footer), **PDF templates**, and **inline runs**
 (bold/italic/code, default-safe `Paragraph.runs` overlay) — and **stage 3**
 (flag-wire `OUTPUT_PIPELINE=ast` on the live DOCX/PDF converters, with automatic
-fallback to the legacy engine) — shipped. Remaining: stage 4 (flip the default —
-needs the eval baseline from `docs/EVAL_HARNESS.md` as the quality gate), stage 5
-(retire the legacy engines after a soak).
+fallback to the legacy engine) — shipped.
+
+**Stage 4 — shipped.** The live default is now `ast` (`settings.output_pipeline`);
+`OUTPUT_PIPELINE=engine` remains the ops escape hatch until stage 5. Gate met via
+the structural axis: the content-parity soak (`docs/SOAK_AST_VS_ENGINE.md`, in CI
+as `tests/eval/test_ast_engine_soak.py`) shows AST ≥ engine coverage on every
+sample/format — the renderer swap happens after translation, so it cannot change
+translation quality; the translation eval baseline (`docs/EVAL_HARNESS.md`)
+remains recommended as a pre-wide-beta reference point and needs a provider key.
+
+**Stage 5 — shipped. Option A is complete.** `core/docx_engine` and
+`core/pdf_engine` (~5.3K lines) are deleted; the professional converters route
+straight through the AST adapters (an AST failure raises, and the orchestrator's
+pandoc fallback still guarantees an output). The `OUTPUT_PIPELINE` flag and the
+`output_pipeline` setting are gone with the engines. The engine-vs-AST soak is
+succeeded by the absolute content guard `scripts/soak_render_coverage.py`
+(`docs/SOAK_RENDER_COVERAGE.md`, in CI as `tests/eval/test_render_coverage.py`).
