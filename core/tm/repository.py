@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.exc import IntegrityError
 from pathlib import Path
 
-from .models import Base, TranslationMemory, TMSegment, generate_uuid, compute_hash
+from .models import utcnow_naive, Base, TranslationMemory, TMSegment, generate_uuid, compute_hash
 
 logger = logging.getLogger(__name__)
 
@@ -263,7 +263,7 @@ class TMRepository:
                         else:
                             # Update existing
                             existing.target_text = target
-                            existing.updated_at = datetime.utcnow()
+                            existing.updated_at = utcnow_naive()
                             added += 1
                             continue
 
@@ -416,7 +416,7 @@ class TMRepository:
             ).update(
                 {
                     TMSegment.usage_count: TMSegment.usage_count + 1,
-                    TMSegment.last_used_at: datetime.utcnow()
+                    TMSegment.last_used_at: utcnow_naive()
                 },
                 synchronize_session=False
             )

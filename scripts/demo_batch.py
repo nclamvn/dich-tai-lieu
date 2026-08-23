@@ -266,7 +266,7 @@ The Job Management CLI provides powerful commands for batch processing:
 1️⃣  CREATE A JOB:
    python scripts/job_cli.py create \\
        --input data/input/document.txt \\
-       --output data/output/translated.txt \\
+       --output outputs/translated.txt \\
        --priority urgent \\
        --domain technology
 

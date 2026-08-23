@@ -1,3 +1,8 @@
+> **📜 TÀI LIỆU LỊCH SỬ — không phản ánh hiện trạng.** Snapshot tại thời điểm
+> viết; kiến trúc, cổng, cờ cấu hình và đường dẫn trong này có thể đã đổi.
+> Hiện trạng đúng: `PROJECT_XRAY.md` (bản đồ hệ thống) + `CLAUDE.md` (quy ước
+> làm việc) + `docs/PRODUCTION_CHECKLIST.md` (điều kiện production).
+
 # HANDOVER DOCUMENT - AI PUBLISHER PRO v2.7
 ## Complete Context for New Chat Window
 

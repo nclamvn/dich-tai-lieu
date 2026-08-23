@@ -11,7 +11,7 @@ import csv
 import io
 import json
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional
 from dataclasses import dataclass
@@ -98,7 +98,7 @@ class GlossaryExporter:
             "source_language": source_lang,
             "target_language": target_lang,
             "domain": domain,
-            "exported_at": datetime.utcnow().isoformat(),
+            "exported_at": datetime.now(timezone.utc).isoformat(),
             "term_count": len(terms),
             "terms": [
                 {
@@ -152,7 +152,7 @@ class GlossaryExporter:
 
         source_desc = ET.SubElement(file_desc, "sourceDesc")
         p = ET.SubElement(source_desc, "p")
-        p.text = f"Exported from AI Publisher Pro on {datetime.utcnow().isoformat()}"
+        p.text = f"Exported from AI Publisher Pro on {datetime.now(timezone.utc).isoformat()}"
 
         # Body
         text = ET.SubElement(root, "text")

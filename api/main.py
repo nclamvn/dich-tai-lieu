@@ -387,13 +387,14 @@ async def get_csrf_token(csrf_protect: CsrfProtect = Depends()):
     Frontend must call this before making any POST/PATCH/DELETE requests
     when CSRF protection is enabled.
     """
-    response = JSONResponse(content={"message": "CSRF cookie set"})
-    try:
-        csrf_protect.set_csrf_cookie(response)
-    except TypeError:
-        # Older versions of fastapi-csrf-protect use generate_csrf()
-        token = csrf_protect.generate_csrf()
-        response = JSONResponse(content={"csrf_token": token})
+    # fastapi-csrf-protect >= 0.3.4: generate_csrf_tokens() returns
+    # (csrf_token, signed_token) — the signed one goes in the cookie, the plain
+    # one back to the caller for the X-CSRF-Token header. (The old
+    # set_csrf_cookie(response) single-arg call raised TypeError here and the
+    # fallback used the deprecated generate_csrf(), warning on every request.)
+    csrf_token, signed_token = csrf_protect.generate_csrf_tokens()
+    response = JSONResponse(content={"csrf_token": csrf_token})
+    csrf_protect.set_csrf_cookie(signed_token, response)
     return response
 
 

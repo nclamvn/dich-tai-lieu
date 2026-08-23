@@ -9,7 +9,7 @@ Supports:
 import csv
 import io
 import xml.etree.ElementTree as ET
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Dict, Optional, BinaryIO, TextIO
 from dataclasses import dataclass
@@ -67,7 +67,7 @@ class TMExporter:
         header.set("adminlang", "en")
         header.set("srclang", source_lang)
         header.set("o-tmf", "AI Publisher Pro TM")
-        header.set("creationdate", datetime.utcnow().strftime("%Y%m%dT%H%M%SZ"))
+        header.set("creationdate", datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ"))
         header.set("creationid", created_by)
 
         # Add note with TM name

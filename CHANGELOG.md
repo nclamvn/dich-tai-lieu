@@ -2,6 +2,30 @@
 
 All notable changes to AI Publisher Pro will be documented in this file.
 
+## [Unreleased] — P3 debt paydown (the §12 ledger is now CLOSED: 11/11 paid)
+
+### Fixed
+- **Real epoch bug** in `api_keys` + `usage`: naive `datetime.utcnow().timestamp()`
+  interprets UTC wall-time as LOCAL time — on a UTC+7 machine every stored
+  epoch (key expiry, usage timestamps) was ~7h off. Timezone-aware UTC now
+  end-to-end; reads use `fromtimestamp(..., tz=timezone.utc)`.
+- The retention cleaner swept `data/output` — a ghost dir nothing writes to —
+  while real exports in `outputs/` accumulated forever. `settings.output_dir`
+  now points at `outputs/`; the cleaner skips tracked `.gitkeep` markers.
+- Last in-repo deprecation: `/api/csrf-token` used removed-API fallback
+  `generate_csrf()` (warned on every call) → `generate_csrf_tokens()`.
+
+### Changed
+- `datetime.utcnow()` eliminated repo-wide (36 sites / 17 files): aware UTC for
+  strings/epochs/JWT; `utcnow_naive()` helpers for the two SQLAlchemy schemas
+  (tm, glossary) whose naive DATETIME columns can't round-trip aware values.
+- `pytest.ini`: `--disable-warnings` removed — and ratcheted: a
+  DeprecationWarning raised from our own modules now FAILS the suite.
+- New `nightly.yml` workflow: stress/regression/cache suites (95 tests) every
+  night at 02:30 VN on 3.11+3.13 (`tests/load/` = manual k6 scenarios, excluded).
+- 23 historical docs (HANDOVER_*, docs/ui/*, investor/audit/phase reports) now
+  carry a per-file "📜 TÀI LIỆU LỊCH SỬ" banner pointing at the living docs.
+
 ## [Unreleased] — P2 debt paydown
 
 ### Changed

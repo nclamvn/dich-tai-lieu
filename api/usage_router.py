@@ -10,7 +10,7 @@ Provides REST endpoints for usage tracking and quota management.
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from pydantic import BaseModel, Field
-from datetime import datetime
+from datetime import datetime, timezone
 
 from core.auth import get_current_user, get_current_active_user, require_role, User, UserRole
 from core.usage import (
@@ -269,7 +269,7 @@ async def get_usage_summary(
     # This would aggregate across all users
     # For now, return placeholder
     return {
-        "period": period or datetime.utcnow().strftime("%Y-%m"),
+        "period": period or datetime.now(timezone.utc).strftime("%Y-%m"),
         "total_users_active": 0,
         "total_jobs": 0,
         "total_tokens": 0,

@@ -8,7 +8,7 @@ Data models for API key management.
 """
 
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List, Set
 from enum import Enum
 
@@ -58,7 +58,7 @@ class APIKey:
     use_count: int = 0
 
     # Timestamps
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: Optional[datetime] = None
 
     # Metadata
@@ -69,7 +69,7 @@ class APIKey:
         """Check if key is expired."""
         if self.expires_at is None:
             return False
-        return datetime.utcnow() > self.expires_at
+        return datetime.now(timezone.utc) > self.expires_at
 
     def is_valid(self) -> bool:
         """Check if key is valid (active and not expired)."""

@@ -14,7 +14,7 @@ import os
 import secrets
 import hashlib
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional, Tuple
 
 import jwt
@@ -203,7 +203,7 @@ class AuthService:
 
     def create_tokens(self, user: User) -> TokenPair:
         """Create access and refresh tokens for user."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # Access token (short-lived)
         access_expires = now + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)

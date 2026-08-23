@@ -10,7 +10,7 @@ import json
 import logging
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Any
 
 from .book_writer_models import (
@@ -84,7 +84,7 @@ class BookWriterService:
     async def create_project(self, request: CreateBookRequest) -> BookProjectResponse:
         """Create a new book project and start pipeline."""
         book_id = str(uuid.uuid4())[:12]
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         # Determine input text
         input_text = ""
@@ -201,7 +201,7 @@ class BookWriterService:
                 project.blueprint = result.get("blueprint")
                 project.outlines = result.get("outlines", [])
                 project.status = BookStatus.OUTLINE_READY
-                project.updated_at = datetime.utcnow()
+                project.updated_at = datetime.now(timezone.utc)
                 project.progress.total_tokens_in = result.get("tokens_in", 0)
                 project.progress.total_tokens_out = result.get("tokens_out", 0)
                 if project.blueprint:
@@ -249,7 +249,7 @@ class BookWriterService:
             with open(notes_path, "w", encoding="utf-8") as f:
                 f.write(request.custom_notes)
 
-        project.updated_at = datetime.utcnow()
+        project.updated_at = datetime.now(timezone.utc)
         self.repo.save_project(project)
 
         # Start writing pipeline in background
@@ -309,7 +309,7 @@ class BookWriterService:
                 project.chapters = result.get("chapters", [])
                 project.output_files = result.get("output_files", [])
                 project.status = BookStatus.COMPLETE
-                project.updated_at = datetime.utcnow()
+                project.updated_at = datetime.now(timezone.utc)
                 project.progress.total_words = result.get("total_words", 0)
                 self.repo.save_project(project)
 
@@ -364,7 +364,7 @@ class BookWriterService:
         if not updated:
             raise ValueError(f"Chapter {request.chapter_number} not found")
 
-        project.updated_at = datetime.utcnow()
+        project.updated_at = datetime.now(timezone.utc)
         self.repo.save_project(project)
         return self._to_dict(project.chapters[i])
 
@@ -434,7 +434,7 @@ class BookWriterService:
                 project.chapters[i] = ch_data
                 break
 
-        project.updated_at = datetime.utcnow()
+        project.updated_at = datetime.now(timezone.utc)
         self.repo.save_project(project)
         return result
 
@@ -500,7 +500,7 @@ class BookWriterService:
         project = self.repo.get_project(book_id)
         if project:
             project.status = status
-            project.updated_at = datetime.utcnow()
+            project.updated_at = datetime.now(timezone.utc)
             project.progress.status = status
             if error:
                 project.error = error
@@ -535,7 +535,7 @@ class BookWriterService:
         if "error" in data:
             project.error = data["error"]
 
-        project.updated_at = datetime.utcnow()
+        project.updated_at = datetime.now(timezone.utc)
         self.repo.save_project(project)
 
     def _handle_write_progress(self, book_id: str, kw: dict):

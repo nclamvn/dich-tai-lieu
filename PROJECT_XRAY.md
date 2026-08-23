@@ -184,8 +184,12 @@ python3 scripts/backup_db.py                      # backup SQLite an toàn WAL
    cũ cho cả startup lẫn shutdown); `integrate_with_app` chết trong
    `provider_routes.py` (mang `on_event` cuối cùng) đã xóa. Smoke: TestClient
    context-manager chạy đủ chuỗi startup/shutdown, 0 deprecation warning.
-2. **`datetime.utcnow()` ×~30** ngoài bridge — mechanical sweep sang
-   `datetime.now(timezone.utc)`.
+2. ~~**`datetime.utcnow()` ×~30**~~ — **ĐÃ TRẢ (P3 paydown)**: 36 site / 17
+   file. Aware UTC cho chuỗi/epoch/JWT; hai schema SQLAlchemy (tm, glossary)
+   dùng `utcnow_naive()` giữ nguyên ngữ nghĩa cột DATETIME naive. Sửa kèm BUG
+   epoch thật: `naive.timestamp()` trong api_keys + usage diễn giải giờ UTC như
+   giờ ĐỊA PHƯƠNG (lệch 7h trên máy VN) — giờ aware nên epoch đúng; đọc lại
+   bằng `fromtimestamp(..., tz=timezone.utc)`.
 3. ~~**Cổng sprawl**~~ — **ĐÃ TRẢ (P2 paydown)**: MỘT bản đồ cổng mọi ngữ cảnh —
    backend :8000, frontend :3000 (dev.sh, Dockerfile, Dockerfile.dev, compose,
    nginx). Sửa kèm 3 bug tiềm ẩn: nginx upstream `app:3001` trỏ service không
@@ -213,7 +217,10 @@ python3 scripts/backup_db.py                      # backup SQLite an toàn WAL
    `data/translation_memory/tm.db` = TM runtime (hints + write-back qua
    `core_v2/tm_gateway`). Không hợp nhất mù được — việc thật là BRIDGE cho
    gateway đọc thêm TM thư viện UI → ghi vào §13 roadmap.
-7. **`settings.output_dir` (`data/output`) lệch cây thực dùng (`outputs/…`)**.
+7. ~~**`settings.output_dir` lệch cây thực dùng**~~ — **ĐÃ TRẢ (P3 paydown)**:
+   trỏ về `outputs/` — trước đó cleaner retention quét thư mục ma `data/output`
+   (rỗng vĩnh viễn) trong khi outputs thật tích mãi. Cleaner bỏ qua `.gitkeep`
+   để khỏi làm bẩn git mỗi lần chạy.
 8. ~~**Router chưa gate khi production**: glossary (21 ep), usage (8), api_keys
    (7), metrics~~ — **ĐÃ TRẢ (P1 paydown)**: glossary session-gate cấp router;
    `/api/usage/plans` + `/api/api-keys/scopes/available` (2 lỗ cuối của cặp
@@ -222,13 +229,24 @@ python3 scripts/backup_db.py                      # backup SQLite an toàn WAL
    `JWT_SECRET_KEY`; frontend `GLOSSARY_BASE` sửa prefix đôi. Test:
    `test_router_authz` + `test_jwt_routers_have_no_open_endpoints` +
    `test_metrics_gate` + `test_auth_enforcement` (JWT guard).
-9. **CI chưa chạy** `tests/{stress,regression,cache,load}` (≈92 test) — cân
-   nhắc đưa vào job nightly.
-10. **`pytest.ini --disable-warnings`** — gỡ sau khi xử lý (1)+(2) để warning
-    mới không bị nuốt.
-11. Docs lịch sử (`docs/HANDOVER_*`, `docs/ui/*`, `docs/api/server.md`…) chưa
-    gắn banner "historical" từng file — đã có tuyên bố chung ở đầu file này và
-    CLAUDE.md.
+9. ~~**CI chưa chạy stress/regression/cache/load**~~ — **ĐÃ TRẢ (P3 paydown)**:
+   `.github/workflows/nightly.yml` chạy stress+regression+cache (95 test, xanh
+   sẵn) mỗi đêm 02:30 VN trên 3.11+3.13 + nút bấm tay. `tests/load/` là kịch
+   bản k6 JavaScript (cần k6 + server sống) — ngoài pytest, chạy tay theo
+   `tests/load/README.md`.
+10. ~~**`pytest.ini --disable-warnings`**~~ — **ĐÃ TRẢ (P3 paydown)**: gỡ cờ,
+    và RATCHET luôn: DeprecationWarning phát từ code MÌNH (api/core/core_v2/
+    config) giờ là LỖI suite — deprecation mới chết ngay tại PR sinh ra nó.
+    Diệt kèm deprecation cuối trong code mình: `generate_csrf()` →
+    `generate_csrf_tokens()` (fastapi-csrf-protect 0.3.4).
+11. ~~Docs lịch sử chưa gắn banner từng file~~ — **ĐÃ TRẢ (P3 paydown)**: 23
+    file (HANDOVER_*, docs/ui/*, docs/api/server.md, INVESTOR_XRAY_*, RRI_AUDIT,
+    PHASE3_*, VIBECODE_*, XRAY-UI-001, DEAD_CODE_CLEANUP) mang banner
+    "📜 TÀI LIỆU LỊCH SỬ" trỏ về PROJECT_XRAY/CLAUDE.md/PRODUCTION_CHECKLIST.
+
+**SỔ NỢ §12: TRẢ HẾT** — 11/11 mục đã đóng hoặc kiểm chứng (P1: #4 #8; P2: #1
+#3 #5 #6; P3: #2 #7 #9 #10 #11). Nợ mới ghi vào đây kèm ưu tiên; việc dạng
+tính-năng (TM-bridge, WebSocket auth…) sống ở §13 + PRODUCTION_CHECKLIST §6.
 
 ## 13. Future Improvements (từ roadmap)
 

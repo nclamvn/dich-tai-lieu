@@ -7,7 +7,7 @@ Abstract interface for all cache implementations.
 from abc import ABC, abstractmethod
 from typing import Any, Optional, Dict
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 
 
 @dataclass
@@ -17,7 +17,7 @@ class CacheStats:
     misses: int = 0
     size: int = 0
     max_size: int = 0
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
 
     @property
     def hit_rate(self) -> float:

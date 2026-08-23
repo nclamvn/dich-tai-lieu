@@ -2,7 +2,7 @@
 Translation Memory Database Models
 SQLAlchemy models for TM and segments.
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy import (
     String, Text, Integer, Float, Boolean, DateTime,
@@ -18,6 +18,17 @@ Base = declarative_base()
 def generate_uuid() -> str:
     """Generate a new UUID string."""
     return str(uuid.uuid4())
+
+
+def utcnow_naive() -> datetime:
+    """Naive UTC now for this schema's naive ``DateTime`` columns.
+
+    SQLAlchemy's SQLite dialect can't round-trip timezone-aware values through
+    naive DATETIME columns, so these stay naive on purpose; this helper swaps
+    out the deprecated naive-utcnow call with identical semantics.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 
 
 def compute_hash(text: str, source_lang: str = "en", target_lang: str = "vi") -> str:
@@ -75,10 +86,10 @@ class TranslationMemory(Base):
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime, default=utcnow_naive
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=utcnow_naive, onupdate=utcnow_naive
     )
 
     # Relationships
@@ -160,10 +171,10 @@ class TMSegment(Base):
 
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow
+        DateTime, default=utcnow_naive
     )
     updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=datetime.utcnow, onupdate=datetime.utcnow
+        DateTime, default=utcnow_naive, onupdate=utcnow_naive
     )
 
     # Relationships
