@@ -1,9 +1,9 @@
-"""Output pipeline flag — wire the AST stack behind OUTPUT_PIPELINE (Option A, 3).
+"""Output pipeline flag (Option A — stage 4: AST is the default).
 
-Default-safe: with the flag unset/``engine`` the live DOCX/PDF export keeps using
-the legacy engines untouched; with ``OUTPUT_PIPELINE=ast`` it routes through the
-DocumentAST + core/rendering adapters, and *always* falls back to the legacy
-engine if the AST path errors — so flipping the flag can never lose an output.
+The live DOCX/PDF export routes through the DocumentAST + core/rendering
+adapters by default; ``OUTPUT_PIPELINE=engine`` remains an ops escape hatch to
+the legacy engines (scheduled for removal in stage 5). The AST path still falls
+back to the engine on error, so no job is ever left without an output.
 """
 
 import asyncio
@@ -25,10 +25,11 @@ MD = "# Chương 1\n\nĐoạn có **đậm**, *nghiêng* và `code` tiếng Vi�
 # --------------------------------------------------------------------------- #
 # Flag resolution
 # --------------------------------------------------------------------------- #
-def test_flag_default_is_engine(monkeypatch):
+def test_flag_default_is_ast(monkeypatch):
+    # Stage 4: with no env override, the AST stack is the live default.
     monkeypatch.delenv("OUTPUT_PIPELINE", raising=False)
-    assert _output_pipeline() == "engine"
-    assert _ast_pipeline_enabled() is False
+    assert _output_pipeline() == "ast"
+    assert _ast_pipeline_enabled() is True
 
 
 def test_flag_env_ast_enables_case_insensitive(monkeypatch):

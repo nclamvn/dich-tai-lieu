@@ -35,7 +35,8 @@ def _output_pipeline() -> str:
     """Resolve the active output pipeline, lowercased.
 
     A live ``OUTPUT_PIPELINE`` env var wins (ops-flippable without a restart and
-    test-friendly), else the ``output_pipeline`` setting, else ``"engine"``.
+    test-friendly), else the ``output_pipeline`` setting, else ``"ast"`` — the
+    AST stack is the stage-4 default; ``engine`` is the escape hatch.
     """
     value = os.getenv("OUTPUT_PIPELINE")
     if value is None:
@@ -45,7 +46,7 @@ def _output_pipeline() -> str:
             value = getattr(settings, "output_pipeline", None)
         except Exception:  # pragma: no cover - settings optional
             value = None
-    return (value or "engine").strip().lower()
+    return (value or "ast").strip().lower()
 
 
 def _ast_pipeline_enabled() -> bool:

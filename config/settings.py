@@ -55,14 +55,16 @@ class Settings(BaseSettings):
     # Bump to invalidate all chunk-cache entries after a prompt/algorithm change.
     translation_prompt_version: str = "v2"
 
-    # ---- Output pipeline (Option A: AST convergence) ----
+    # ---- Output pipeline (Option A: AST convergence, stage 4) ----
     # Which renderer stack the live DOCX/PDF export uses:
-    #   "engine" (default) -> the mature legacy docx_engine / pdf_engine
-    #   "ast"              -> the DocumentAST + core/rendering adapters
-    # Default-safe: unset/"engine" keeps current behavior. The AST path also
-    # auto-falls-back to the engine on any error, so flipping this can never
-    # leave a job with no output. Env override: OUTPUT_PIPELINE=ast.
-    output_pipeline: str = "engine"
+    #   "ast" (default)  -> the DocumentAST + core/rendering adapters — better
+    #                       coverage than the legacy engines on every soak sample
+    #                       (see docs/SOAK_AST_VS_ENGINE.md), inline runs, book
+    #                       front matter, cover templates.
+    #   "engine"         -> the legacy docx_engine / pdf_engine (escape hatch,
+    #                       scheduled for removal in stage 5).
+    # Env override: OUTPUT_PIPELINE=engine flips back without a code change.
+    output_pipeline: str = "ast"
 
     # Strip running headers/footers ("page furniture") — the book title and
     # "Author ◆ page-number" repeated on every source page — from extracted text
