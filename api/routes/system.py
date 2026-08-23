@@ -11,6 +11,7 @@ from fastapi import APIRouter, HTTPException, Request
 
 from api.deps import queue, manager, chunk_cache, start_time, get_processor, set_processor
 from api.models import QueueStats, SystemInfo
+from api.rate_limiter import limiter
 from core.job_queue import JobStatus
 from core.translation import get_engine_manager
 from config.logging_config import get_logger
@@ -156,7 +157,8 @@ async def get_cache_stats():
 
 
 @router.post("/api/cache/clear")
-async def clear_cache(request: Request):
+@limiter.limit("5/minute")  # the docstring promised this; the decorator lived only
+async def clear_cache(request: Request):  # on the unreachable main.py duplicate
     """
     Clear all translation cache entries
 

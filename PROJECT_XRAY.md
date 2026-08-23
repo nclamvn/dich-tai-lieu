@@ -179,19 +179,40 @@ python3 scripts/backup_db.py                      # backup SQLite an toàn WAL
 
 ## 12. Nợ kỹ thuật còn lại (sổ theo dõi, xếp theo ưu tiên)
 
-1. **FastAPI `@app.on_event` → lifespan** (9 chỗ `api/main.py`, 1 `provider_routes.py`)
-   — deprecated, đổi cần cẩn trọng thứ tự khởi động.
+1. ~~**FastAPI `@app.on_event` → lifespan**~~ — **ĐÃ TRẢ (P2 paydown)**: 9 handler
+   `api/main.py` chuyển vào một `_lifespan` duy nhất (giữ nguyên thứ tự đăng ký
+   cũ cho cả startup lẫn shutdown); `integrate_with_app` chết trong
+   `provider_routes.py` (mang `on_event` cuối cùng) đã xóa. Smoke: TestClient
+   context-manager chạy đủ chuỗi startup/shutdown, 0 deprecation warning.
 2. **`datetime.utcnow()` ×~30** ngoài bridge — mechanical sweep sang
    `datetime.now(timezone.utc)`.
-3. **Cổng sprawl**: dev :8000/:3000 vs Docker :3000/:3001 vs `Dockerfile.dev`
-   :3001 — hợp nhất về một bản đồ cổng + cập nhật docs còn nhắc cổng cũ.
+3. ~~**Cổng sprawl**~~ — **ĐÃ TRẢ (P2 paydown)**: MỘT bản đồ cổng mọi ngữ cảnh —
+   backend :8000, frontend :3000 (dev.sh, Dockerfile, Dockerfile.dev, compose,
+   nginx). Sửa kèm 3 bug tiềm ẩn: nginx upstream `app:3001` trỏ service không
+   tồn tại → tách `backend_server`/`frontend_server`; compose
+   `NEXT_PUBLIC_API_URL=http://backend:3000` là hostname nội bộ Docker mà
+   BROWSER không resolve được → mặc định `http://localhost:8000` (override qua
+   env); `Dockerfile.dev` còn python:3.11 → 3.13 khớp prod.
 4. ~~**Python drift**: prod image 3.13, CI 3.11/3.12~~ — **ĐÃ TRẢ (P1 paydown)**:
    3.13 vào matrix CI, suite verify xanh trên 3.11/3.12/3.13.
-5. **7 endpoint `/api/system|queue|cache|processor` định nghĩa trùng**
-   (`api/main.py` inline che `api/routes/system.py`) — bỏ một bản.
-6. **Hai DB translation-memory** (`data/tm.db` v2 vs
-   `data/translation_memory/tm.db` v1) + `data/aps_jobs.db` nghi mồ côi — hợp
-   nhất/khai tử có kiểm chứng.
+5. ~~**7 endpoint `/api/system|queue|cache|processor` định nghĩa trùng**~~ —
+   **ĐÃ TRẢ (P2 paydown)**: xóa 7 bản inline trong `api/main.py` (chúng
+   UNREACHABLE — FastAPI 0.141 giữ router include dạng lazy `_IncludedRouter`,
+   system_router đăng ký trước nên thắng match). `api/routes/system.py` là bản
+   duy nhất; chuyển `@limiter.limit("5/minute")` cho `/api/cache/clear` sang đó
+   (docstring hứa mà decorator nằm ở bản chết). Global `processor` mồ côi +
+   2 model trùng (QueueStats/SystemInfo) trong main.py xóa theo. Test mới:
+   presence trên router + HTTP 401 khi bật auth (xuyên qua lazy-include).
+6. ~~**Hai DB translation-memory + `aps_jobs.db` nghi mồ côi**~~ — **ĐÃ KIỂM
+   CHỨNG (P2 paydown)**: `data/aps_jobs.db` KHÔNG mồ côi — nó là job store v2
+   (`api/job_repository.py`, backend "aps_jobs"); nghi vấn sinh ra từ log
+   `JobRepository initialized: data/jobs.db` nói sai file (chỉ dùng parent dir)
+   — đã sửa log nói đúng. `data/jobs.db` là queue v1 (`core/job_queue.py`) —
+   hai file, hai chủ, đều sống. Hai TM DB là HAI SẢN PHẨM: `data/tm.db` =
+   thư viện TM quản lý qua UI (`core/tm/` + tm_router — TMX/CSV import/export);
+   `data/translation_memory/tm.db` = TM runtime (hints + write-back qua
+   `core_v2/tm_gateway`). Không hợp nhất mù được — việc thật là BRIDGE cho
+   gateway đọc thêm TM thư viện UI → ghi vào §13 roadmap.
 7. **`settings.output_dir` (`data/output`) lệch cây thực dùng (`outputs/…`)**.
 8. ~~**Router chưa gate khi production**: glossary (21 ep), usage (8), api_keys
    (7), metrics~~ — **ĐÃ TRẢ (P1 paydown)**: glossary session-gate cấp router;
@@ -214,4 +235,6 @@ python3 scripts/backup_db.py                      # backup SQLite an toàn WAL
 Baseline eval dịch trước beta rộng (mốc so sánh chất lượng); diễn tập
 `SECURITY_MODE=production` + đóng residuals; observability (error tracking) +
 kiểm backup + thử trọn đường deploy; E2E Playwright luồng upload→dịch→xuất-có-bìa
-trong CI; glossary name→ID, TM write-back cấp câu (TECH_DEBT_AND_ROADMAP.md).
+trong CI; glossary name→ID, TM write-back cấp câu, TM-bridge (gateway đọc thêm
+TM thư viện UI `data/tm.db` khi sinh hints — hợp nhất thật sự của §12.6)
+(TECH_DEBT_AND_ROADMAP.md).

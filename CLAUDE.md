@@ -29,7 +29,8 @@ bash dev.sh        # backend :8000 (uvicorn --reload) + frontend :3000 — Ctrl-
 ```
 
 Mở http://localhost:3000. Backend docs: http://localhost:8000/docs (chỉ hiện
-ngoài production). Docker/production dùng cổng 3000 (backend) + 3001 (frontend)
+ngoài production). Docker/production dùng CÙNG bản đồ cổng: backend :8000,
+frontend :3000 (hợp nhất trong P2 debt paydown — không còn 3000/3001)
 — xem `DEPLOYMENT.md`; hai bộ cổng này KHÁC nhau, đừng trộn.
 
 ## Kiểm thử & gate
