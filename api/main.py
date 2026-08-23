@@ -46,7 +46,7 @@ Configuration:
 from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect, UploadFile, File, BackgroundTasks, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse, RedirectResponse
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 from typing import Optional, List, Dict, Any
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -213,10 +213,7 @@ class JobResponse(BaseModel):
     error_message: Optional[str]
     metadata: Optional[Dict[str, Any]] = None  # Phase 2.0.4: Include job metadata
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = ConfigDict(from_attributes=True)
 class QueueStats(BaseModel):
     """Queue statistics"""
     total: int
@@ -683,7 +680,9 @@ app.include_router(batch_router, dependencies=_AUTH_REQUIRED)
 # glossary_router.py both call APIRouter(prefix=...)). Do NOT repeat the prefix
 # here or every path doubles up, e.g. /api/v2/providers/api/v2/providers.
 app.include_router(provider_router, dependencies=_AUTH_REQUIRED)
-app.include_router(glossary_router)
+# Glossary CRUD is per-user data (create/update/delete/import) — session-gated
+# like every other feature router. Fail-closed in production, no-op in dev.
+app.include_router(glossary_router, dependencies=_AUTH_REQUIRED)
 
 # P1: Authentication routes (JWT-based)
 app.include_router(auth_router)

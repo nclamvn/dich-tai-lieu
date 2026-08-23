@@ -8,7 +8,7 @@ PyMuPDF-based PDF layout extraction with:
 - Figure and caption linking
 """
 
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 from dataclasses import dataclass, field
 from typing import List, Tuple, Optional, Dict
 from pathlib import Path

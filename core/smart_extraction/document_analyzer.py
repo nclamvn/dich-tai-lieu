@@ -16,7 +16,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import List, Optional, Set
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 
 logger = logging.getLogger(__name__)
 

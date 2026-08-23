@@ -4,7 +4,7 @@ Verifies the blocking fitz/pdfplumber work now lives in the module-level
 `_extract_pdf_text_sync` and that the async `_extract_pdf_text_legacy`
 delegates to it (running it off the event loop via run_blocking).
 """
-import fitz  # PyMuPDF (installed in this repo)
+import pymupdf as fitz  # PyMuPDF (installed in this repo)
 import pytest
 
 from core_v2.orchestrator import UniversalPublisher, _extract_pdf_text_sync

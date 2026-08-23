@@ -65,3 +65,54 @@ def test_file_upload_requires_auth():
     upload = [r for r in router.routes if getattr(r, "path", None) == "/api/upload"]
     assert upload, "/api/upload route not found on uploads router"
     assert _requires_auth(upload[0]), "/api/upload must require authentication"
+
+
+def test_jwt_routers_have_no_open_endpoints():
+    """Every usage/api_keys endpoint must resolve a JWT user dependency.
+
+    These routers are exempt from the session-token router gate (their scheme is
+    JWT bearer), which is only safe if NO endpoint slips through unauthenticated.
+    /api/usage/plans and /api/api-keys/scopes/available were exactly that hole.
+    """
+    from core.auth.dependencies import get_current_user, get_current_active_user, get_token_payload
+    from core.auth.dependencies import require_role  # noqa: F401  (factory — closures checked by name)
+    from api.usage_router import router as usage_router
+    from api.api_keys_router import router as api_keys_router
+
+    jwt_deps = {get_current_user, get_current_active_user, get_token_payload}
+
+    def _has_jwt_auth(route) -> bool:
+        dependant = getattr(route, "dependant", None)
+        if dependant is None:
+            return False
+        stack = list(getattr(dependant, "dependencies", []) or [])
+        while stack:
+            dep = stack.pop()
+            call = getattr(dep, "call", None)
+            if call in jwt_deps:
+                return True
+            # require_role(...) returns a closure named role_checker whose own
+            # dependency tree includes get_current_active_user; recursing below
+            # covers it, but accept it by name too in case the tree is pruned.
+            if getattr(call, "__name__", "") == "role_checker":
+                return True
+            stack.extend(getattr(dep, "dependencies", []) or [])
+        return False
+
+    open_routes = []
+    for router in (usage_router, api_keys_router):
+        for route in router.routes:
+            if not _has_jwt_auth(route):
+                open_routes.append(f"{getattr(route, 'methods', '?')} {getattr(route, 'path', '?')}")
+    assert not open_routes, f"JWT routers expose unauthenticated endpoints: {open_routes}"
+
+
+def test_metrics_endpoint_is_guarded():
+    """GET /metrics must carry _metrics_guard (token / production fail-closed)."""
+    from api.routes.metrics import router, _metrics_guard
+
+    routes = [r for r in router.routes if getattr(r, "path", None) == "/metrics"]
+    assert routes, "/metrics route not found on metrics router"
+    dependant = routes[0].dependant
+    calls = [getattr(d, "call", None) for d in (dependant.dependencies or [])]
+    assert _metrics_guard in calls, "/metrics missing _metrics_guard dependency"

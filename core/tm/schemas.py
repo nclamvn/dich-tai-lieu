@@ -4,7 +4,7 @@ API validation schemas for TM operations.
 """
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import ConfigDict, BaseModel, Field
 from enum import Enum
 
 
@@ -55,10 +55,7 @@ class TMResponse(TMBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = ConfigDict(from_attributes=True)
 class TMListResponse(BaseModel):
     """Schema for list of TMs."""
     tms: List[TMResponse]
@@ -102,10 +99,7 @@ class SegmentResponse(SegmentBase):
     created_at: datetime
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = ConfigDict(from_attributes=True)
 class SegmentListResponse(BaseModel):
     """Schema for paginated segment list."""
     segments: List[SegmentResponse]

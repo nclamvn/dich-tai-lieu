@@ -1,150 +1,74 @@
-# AI Publisher Pro - Project Context
+# CLAUDE.md — hướng dẫn cho AI agent làm việc với repo này
 
-## TWO REPOSITORIES (Updated 2026-02-11)
+> Cập nhật 2026-08-23. File này là nguồn sự thật cho agent; các file
+> `docs/HANDOVER_*` và `docs/*XRAY*` cũ hơn là TƯ LIỆU LỊCH SỬ, không phản ánh
+> hiện trạng. Bức tranh hiện trạng đầy đủ: **`PROJECT_XRAY.md`** ở repo root.
 
-### PRIVATE (Development) — WORK HERE
-- **Path**: `~/ai-publisher-pro-public`
-- **Purpose**: All development, new features, bug fixes
-- **Status**: ACTIVE — Phase 2 development
-- **Contains**: Full history, configs, secrets, internal docs
+## Dự án
 
-### PUBLIC (Open Source) — DO NOT DEVELOP HERE
-- **Path**: `~/Dich-Viet` (local copy)
-- **GitHub**: `github.com/nclamvn/Dich-Viet`
-- **Purpose**: Community sharing, releases only
-- **Status**: RELEASED v3.2.0
-- **Contains**: Sanitized code, no secrets
+**AI Publisher Pro** (repo `nclamvn/dich-tai-lieu`) — nền tảng dịch & xuất bản
+tài liệu, tiếng Việt là first-class. FastAPI backend + Next.js 16 frontend.
+Version hiện hành: **3.3.1** (`api/main.py`).
 
-### Workflow
-1. ALL development happens in `~/ai-publisher-pro-public`
-2. When ready for release: `./scripts/sync_to_public.sh vX.X.X`
-3. NEVER develop directly in `~/Dich-Viet`
+- 4 AI provider với auto-failover: OpenAI, Anthropic, DeepSeek, Gemini
+  (`ai_providers/unified_client.py`; vision order: anthropic → openai → gemini).
+- Renderer DOCX/PDF/EPUB **duy nhất** là AST stack (`core/rendering/*` —
+  `document_ast.py` + docx/pdf/epub adapters). `core/docx_engine` và
+  `core/pdf_engine` đã bị XÓA (Option A stage 5); flag `OUTPUT_PIPELINE`
+  không còn tồn tại.
+- Trang bìa: 12 template dựng sẵn + ảnh bìa riêng
+  (`core/rendering/cover_templates.py`, `cover_apply.py`;
+  API `/api/cover-templates`, picker ở `frontend/src/components/translate/cover-picker.tsx`).
+- Font tiếng Việt đóng gói sẵn trong `assets/fonts/` (Noto Sans/Serif) — PDF
+  và bìa render đủ dấu trên mọi máy.
 
----
+## Chạy dev
 
-## Quick Resume
-Khi quay lại dự án, chỉ cần nói: **"continue"** hoặc **"tiếp tục"**
-
-Claude sẽ tự động đọc HANDOVER document và tiếp tục công việc.
-
-### Handover Files:
-- **Full State 2026-02-19:** `docs/HANDOVER_2026-02-19.md` (Latest)
-- **Screenplay Studio 2026-02-12:** `docs/HANDOVER_2026-02-12.md`
-- **P0 Security 2026-02-11:** `docs/HANDOVER_2026-02-11_P0.md`
-- **Book Writer v2 2026-02-11:** `docs/HANDOVER_2026-02-11.md`
-- **Sprint 15.5 2026-02-09:** `docs/HANDOVER_2026-02-09.md`
-
-## Quick Start
 ```bash
-cd /Users/mac/ai-publisher-pro-public
-# API server
-uvicorn api.main:app --host 0.0.0.0 --port 3000 --reload
-# Frontend (Next.js) — separate process
-cd frontend && npm run dev
-```
-- API Docs: http://localhost:3000/docs
-- Frontend: http://localhost:3001 (Next.js)
-
-## Project Type
-FastAPI web server for AI-powered document translation (PDF, DOCX, TXT).
-
-## Current Status (2026-02-03)
-- Server: Working (port 8000)
-- Version: 2.8.1
-- Score: 9.7/10 (Production Ready)
-- Translation: Smart Extraction + Parallel (10x faster)
-- **Vision Fallback:** Claude Vision → OpenAI Vision (for STEM docs)
-- Academic: arXiv/formula detection fixed
-- Performance: 598 pages in ~28 min (was 4.5 hours)
-- Codebase: 75MB (↓78% from 340MB)
-- Tests: 883+ (incl. 21 vision fallback tests)
-- Git: Pushed to nclamvn/ai-translator-pro
-
-## Key Modules (2025-12-22)
-```
-core/
-├── smart_extraction/      # NEW: Smart PDF routing
-│   ├── document_analyzer.py   # Detect PDF type
-│   ├── fast_text_extractor.py # PyMuPDF (FREE, 0.1s/page)
-│   └── extraction_router.py   # FAST_TEXT/HYBRID/FULL_VISION
-│
-├── layout_preserve/       # Vision LLM → giữ tables/columns
-├── pdf_renderer/          # Agent 3: PDF output
-
-core_v2/
-├── orchestrator.py        # Parallel translation (concurrency=5)
-└── ...
-
-ai_providers/
-├── unified_client.py      # Auto-fallback + Vision: Claude → OpenAI
-└── ...                    # Text: OpenAI → Anthropic → DeepSeek
+bash dev.sh        # backend :8000 (uvicorn --reload) + frontend :3000 — Ctrl-C tắt cả hai
 ```
 
-## Key Files
-- `api/main.py` - Main FastAPI application
-- `api/aps_v2_service.py` - V2 publishing service
-- `core_v2/orchestrator.py` - Translation orchestrator
-- `frontend/` - Next.js frontend (Vietnamese + Screenplay support)
-- `.env` - API keys configuration
+Mở http://localhost:3000. Backend docs: http://localhost:8000/docs (chỉ hiện
+ngoài production). Docker/production dùng cổng 3000 (backend) + 3001 (frontend)
+— xem `DEPLOYMENT.md`; hai bộ cổng này KHÁC nhau, đừng trộn.
 
-## URLs
-- API: http://localhost:3000/docs
-- Frontend: http://localhost:3001 (Next.js, `cd frontend && npm run dev`)
-- Health: http://localhost:3000/health
+## Kiểm thử & gate
 
-## Handover Document
-**QUAN TRỌNG:** Để tiếp tục dự án sau khi nghỉ → đọc `docs/HANDOVER_v2.8.md`
-
-## Features
-- **Smart Extraction**: PyMuPDF for text-only, Vision for scanned/formulas
-- **Parallel Translation**: 5x concurrent chunks
-- **Auto-Fallback**: OpenAI → Anthropic → DeepSeek
-- **Usage Stats**: Token/time/cost tracking
-- PDF/DOCX/TXT translation
-- Layout-Preserving Translation
-- Real-time WebSocket progress
-
-## Performance (2025-12-22)
-| Metric | Before | After | Improvement |
-|--------|--------|-------|-------------|
-| Extraction (598p) | ~2 hours | ~30 sec | **240x** |
-| Translation | ~2.5 hours | ~28 min | **5x** |
-| Total | ~4.5 hours | ~28 min | **10x** |
-| Cost | ~$15-30 | ~$0.28 | **50x cheaper** |
-
-## Common Commands
 ```bash
-# Start server
-uvicorn api.main:app --host 0.0.0.0 --port 3001 --reload
-
-# Check health
-curl http://localhost:3001/health
-
-# Import checks
-python -c "from core.smart_extraction import smart_extract; print('OK')"
-python -c "from ai_providers.unified_client import get_unified_client; print('OK')"
-
-# Stop server
-lsof -ti:3001 | xargs kill -9
+python3 -m pytest tests/ -q --no-cov     # toàn suite ~3.2K test — phải XANH 100%
+ruff check .                             # lint gate (CI chặn)
+cd frontend && npx tsc --noEmit          # type gate (CI chặn)
 ```
 
-## Session 2025-12-24 Summary (v2.7)
-1. ✅ Codebase X-Ray - Project: 340MB → 75MB (↓78%)
-2. ✅ UI Cleanup - 664KB → 332KB (↓50%)
-3. ✅ Technical Debt Fixed - 2 SyntaxWarnings, 1 test failure
-4. ✅ Table → LaTeX rendering in pdf_renderer
-5. ✅ Partial job ID matching (8-char prefix)
-6. ✅ Academic paper detection (arXiv formulas fixed)
-7. ✅ HANDOVER v2.7 created
+CI (`.github/workflows/ci.yml`): ruff + import-smoke (prod deps only) + pytest
+matrix 3.11/3.12 (unit/api/security/core/eval/integration + batch/rri_t/e2e/
+streaming/v2/root) + vitest + tsc. Coverage guard nội dung render:
+`tests/eval/test_render_coverage.py` (DOCX ≥ 0.99, PDF ≥ 0.95).
 
-## Session 2025-12-22 Summary
-1. ✅ Smart Extraction Router - FAST_TEXT/HYBRID/FULL_VISION
-2. ✅ Parallel Translation - concurrency 1→5
-3. ✅ Codebase Cleanup - 57MB freed
-4. ✅ Usage Stats Tracking - tokens/time/cost
-5. ✅ Git pushed to nclamvn/ai-translator-pro
+## Kiến trúc — đường dịch chính
 
-## Frontend (Next.js)
-- Path: `frontend/`
-- Features: Vietnamese UI, Screenplay Studio, Book Writer, Translation
-- NEVER serve legacy `ui/` directory (deleted 2026-02-26)
+```
+POST /api/v2/publish (api/aps_v2_router.py)
+  → APSV2Service.create_job / _process_job (api/aps_v2_service.py)
+  → UniversalPublisher.publish (core_v2/orchestrator.py)
+      vision read → strip running furniture → DNA → term ledger (glossary)
+      → semantic chunk → translate (TM hints, cache, retry/backoff)
+      → repair pass → assemble → _convert
+  → OutputConverter (core_v2/output_converter.py) → AST adapters + cover
+  → job.output_paths → GET /api/v2/jobs/{id}/download/{format}
+```
+
+Chi tiết module-by-module, data stores, env vars: xem `PROJECT_XRAY.md`.
+
+## Quy tắc bất di bất dịch
+
+1. **`data/.encryption_key` KHÔNG BAO GIỜ được commit** (đã gitignore — đừng
+   force-add). Tương tự: `.env`, `*.db`, `*.db-wal/shm`.
+2. `outputs/`, `uploads/`, `tests/output/`, `data/authors|author_uploads|exports`
+   là cây generated — đã ignore, đừng track lại.
+3. Mọi PR: chạy đủ pytest (3.11 nếu chỉ có một version) + ruff trước khi giao.
+4. `SECURITY_MODE=development` (mặc định) TẮT auth — đó là chủ đích cho dev;
+   production đặt `SECURITY_MODE=production` (xem `docs/PRODUCTION_CHECKLIST.md`).
+5. Muốn hiểu lịch sử một quyết định: `docs/BLUEPRINT_ast_convergence.md`
+   (Option A), `docs/SOAK_RENDER_COVERAGE.md` (vì sao AST thắng engine),
+   `docs/TECH_DEBT_AND_ROADMAP.md` (sổ nợ).

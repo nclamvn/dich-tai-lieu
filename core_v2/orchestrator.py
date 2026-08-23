@@ -287,7 +287,7 @@ def _extract_pdf_text_sync(pdf_path: Path) -> str:
     it can be run off the event loop via run_blocking.
     """
     try:
-        import fitz  # PyMuPDF
+        import pymupdf as fitz  # PyMuPDF
         doc = fitz.open(str(pdf_path))
         text = ""
         for page in doc:

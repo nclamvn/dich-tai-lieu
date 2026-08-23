@@ -128,21 +128,21 @@ Types:
 
 ```
 dich-tai-lieu/
-├── api/              # API endpoints
-├── core/             # Core business logic
-│   ├── smart_extraction/   # Document analysis
-│   ├── layout_preserve/    # Translation pipeline
-│   └── pdf_renderer/       # PDF generation
-├── ai_providers/     # LLM integrations
-├── ui/               # Web interface
-└── tests/            # Test suite
+├── api/              # FastAPI routers + services
+├── core/             # Core subsystems (rendering, ocr, tm, glossary, …)
+│   ├── smart_extraction/   # Document analysis & extraction routing
+│   └── rendering/          # AST renderer stack (DOCX/PDF/EPUB + covers)
+├── core_v2/          # Claude-native publish pipeline (orchestrator, chunker)
+├── ai_providers/     # LLM integrations (OpenAI/Anthropic/DeepSeek/Gemini)
+├── frontend/         # Next.js 16 app
+└── tests/            # Test suite (~3,200 tests)
 ```
 
-## 🧪 Running Tests
+## 🧪 Running Tests & CI gates
 
 ```bash
-# All tests
-pytest tests/ -v
+# All tests (use --no-cov to skip the coverage threshold; must be 100% green)
+pytest tests/ -q --no-cov
 
 # Specific module
 pytest tests/unit/test_smart_extraction.py -v
@@ -150,6 +150,17 @@ pytest tests/unit/test_smart_extraction.py -v
 # With coverage
 pytest tests/ --cov=core --cov-report=html
 ```
+
+CI blocks a PR unless ALL of these pass — run them locally first:
+
+```bash
+ruff check .                    # lint (hard gate)
+pytest tests/ -q --no-cov       # Python 3.11 & 3.12 in CI
+cd frontend && npx vitest run   # frontend unit tests
+cd frontend && npx tsc --noEmit # type check (hard gate)
+```
+
+Python 3.11+ required.
 
 ## 📝 Documentation
 

@@ -1,5 +1,11 @@
 # Blueprint — AST convergence (Option A)
 
+> **⚑ TÀI LIỆU LỊCH SỬ — Option A ĐÃ HOÀN TẤT (stage 1→5 shipped).** Phần
+> "Current state" và kế hoạch bên dưới mô tả thế giới TRƯỚC KHI thực thi (hai
+> stack song song, cờ `OUTPUT_PIPELINE`, các file soak/flag-test cũ — nay đã
+> xóa). Chỉ mục **Status** ở cuối file là thẩm quyền hiện hành; guard đương
+> nhiệm: `scripts/soak_render_coverage.py` + `tests/eval/test_render_coverage.py`.
+
 **Goal.** Make the single `DocumentAST` + `core/rendering` adapters the *primary*
 output path for DOCX / PDF / EPUB, and retire the parallel legacy renderers
 (`core/docx_engine`, `core/pdf_engine`) once the AST path reaches parity. One

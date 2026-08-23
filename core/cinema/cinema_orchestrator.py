@@ -336,7 +336,7 @@ class CinemaOrchestrator:
         
         elif suffix == ".pdf":
             try:
-                import fitz  # PyMuPDF
+                import pymupdf as fitz  # PyMuPDF
                 doc = fitz.open(file_path)
                 text = ""
                 for page in doc:

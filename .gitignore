@@ -56,7 +56,13 @@ data/books_v2/
 data/provider_stats.json
 data/settings.json
 data/uploads/
-tests/output/*.docx
+# Generated test/render output — never track
+tests/output/*
+!tests/output/.gitkeep
+# Runtime user data written by the app — never track
+data/author_uploads/
+data/authors/
+data/exports/
 
 # Environment
 .env

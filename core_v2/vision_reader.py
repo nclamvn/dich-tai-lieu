@@ -207,7 +207,7 @@ class VisionReader:
             VisionDocument with all content as Markdown+LaTeX
         """
         try:
-            import fitz  # PyMuPDF
+            import pymupdf as fitz  # PyMuPDF
         except ImportError:
             raise RuntimeError("PyMuPDF required: pip install pymupdf")
 

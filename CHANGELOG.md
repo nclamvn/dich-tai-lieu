@@ -2,6 +2,47 @@
 
 All notable changes to AI Publisher Pro will be documented in this file.
 
+## [3.3.1] - 2026-08-23
+
+### BREAKING: AST is the only renderer (Option A complete)
+- **Stage 4**: `OUTPUT_PIPELINE` default flipped to the AST stack — every DOCX/PDF
+  export renders through `DocumentAST` + `core/rendering` adapters (proven better
+  source coverage than the legacy engines on every soak sample).
+- **Stage 5 (breaking)**: `core/docx_engine` + `core/pdf_engine` deleted
+  (~5.3K lines) along with the `OUTPUT_PIPELINE` flag and `output_pipeline`
+  setting. Content integrity is guarded by `scripts/soak_render_coverage.py`
+  (in CI as `tests/eval/test_render_coverage.py`; floors DOCX ≥ 0.99, PDF ≥ 0.95).
+  An AST failure raises and the orchestrator's pandoc fallback still guarantees
+  an output.
+
+### New: Cover templates
+- 12 pre-built cover designs rendered natively with ReportLab (no new deps),
+  applied to PDF (merged page 1), DOCX (full-bleed zero-margin section) and
+  EPUB (baked at build time). Custom cover image upload wins over templates.
+- Picker UI in the translate screen (`/api/cover-templates` + live previews +
+  `/api/cover-upload`); per-job `cover_template`/`cover_image` through
+  `/api/v2/publish` and `/publish/text`; env defaults `COVER_TEMPLATE`/`COVER_IMAGE`.
+- Bundled Vietnamese-complete fonts (`assets/fonts/`, Noto Sans/Serif, OFL) —
+  covers and PDF body render diacritics on every machine; preview URLs are
+  version-stamped so browser cache can't mask a font/template fix.
+
+### Fixed
+- Running headers/footers ("page furniture") stripped from extracted text
+  before translation — the book title no longer litters the body/TOC
+  (`core_v2/text_cleanup.py`, `STRIP_RUNNING_FURNITURE`).
+- Full test suite brought to green (~3.2K tests) and CI extended to every test
+  tree (batch/rri_t/e2e/streaming/v2/root) with `tsc --noEmit` as a hard gate.
+- Generated artifacts purged from git (`outputs/`, test outputs, runtime data)
+  with whole-tree ignore rules.
+
+### Maintenance
+- Dead code removed: orphan `integration_bridge/` + empty `services/` packages,
+  stale root scripts (`translate_book.py`, `start_server.sh`, `setup.py`, …).
+- Deprecations cleared: pydantic v2 `model_config` everywhere, `import pymupdf`
+  (fitz shim retired), `asyncio.get_event_loop()` → `get_running_loop()`/`run()`
+  (Python 3.13-safe). Unused dependencies dropped (pdf2image, openpyxl,
+  aiofiles, python-dateutil, jieba).
+
 ## [Unreleased] — Translation engine quick-wins
 
 Targeted upgrades to the live `core_v2` translation path (quality, cost, reliability).
@@ -242,6 +283,7 @@ Transform novels and stories into professional screenplays with AI-powered video
 
 | Version | Date | Highlights |
 |---------|------|------------|
+| 3.3.1 | 2026-08-23 | AST-only renderer (Option A complete), cover templates, suite green + CI hardening |
 | 3.3.0 | 2026-02-12 | Screenplay Studio - 12-agent pipeline |
 | 2.7.0 | 2024-12-21 | Initial public release |
 

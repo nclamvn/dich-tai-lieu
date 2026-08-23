@@ -408,6 +408,10 @@ class APSV2Service:
             llm_client.reset_usage_stats()
 
         try:
+            # Captured once in async context: the callback may fire from worker
+            # threads, where asyncio.get_event_loop() is gone on Python 3.12+.
+            _loop = asyncio.get_running_loop()
+
             def progress_callback(progress: float, stage: str):
                 job["progress"] = progress * 100  # Convert to percentage
                 job["current_stage"] = stage
@@ -428,7 +432,7 @@ class APSV2Service:
                     # Broadcast progress via WebSocket
                     try:
                         from api.deps import manager
-                        loop = asyncio.get_event_loop()
+                        loop = _loop
                         loop.call_soon_threadsafe(
                             asyncio.ensure_future,
                             manager.broadcast({
@@ -1116,7 +1120,7 @@ class APSV2Service:
     async def _extract_pdf_text_legacy(self, file_path: Path) -> str:
         """Legacy PDF text extraction (not recommended)."""
         try:
-            import fitz  # PyMuPDF
+            import pymupdf as fitz  # PyMuPDF
             doc = fitz.open(str(file_path))
             text = ""
             for page in doc:

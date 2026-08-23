@@ -11,7 +11,7 @@ import re
 from datetime import datetime
 from enum import Enum
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import ConfigDict, BaseModel, EmailStr, Field, field_validator
 
 
 class UserRole(str, Enum):
@@ -58,10 +58,7 @@ class User(BaseModel):
     jobs_count: int = 0
     tokens_used: int = 0
 
-    class Config:
-        from_attributes = True
-
-
+    model_config = ConfigDict(from_attributes=True)
 def _validate_password_complexity(password: str) -> str:
     """Shared password complexity validator."""
     if not re.search(r"[A-Z]", password):

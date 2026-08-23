@@ -29,7 +29,24 @@ from .database import UserDatabase, get_user_db
 logger = logging.getLogger(__name__)
 
 # Configuration
-JWT_SECRET_KEY = os.getenv("JWT_SECRET_KEY", secrets.token_urlsafe(32))
+def _resolve_jwt_secret() -> str:
+    """Resolve the JWT signing secret: settings (env JWT_SECRET_KEY) first.
+
+    Falls back to a RANDOM per-process secret so dev/tests work with zero
+    config — but then every restart invalidates all JWTs and multi-worker
+    deployments sign with different keys. The production boot-guard in
+    config/settings.py therefore refuses to start without JWT_SECRET_KEY.
+    """
+    try:
+        from config.settings import settings as _settings
+        if _settings.jwt_secret_key:
+            return _settings.jwt_secret_key
+    except Exception:  # pragma: no cover — settings import must never break auth
+        pass
+    return os.getenv("JWT_SECRET_KEY") or secrets.token_urlsafe(32)
+
+
+JWT_SECRET_KEY = _resolve_jwt_secret()
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 REFRESH_TOKEN_EXPIRE_DAYS = 7

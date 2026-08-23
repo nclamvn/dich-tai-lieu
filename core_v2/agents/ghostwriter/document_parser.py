@@ -109,7 +109,7 @@ class DocumentParser:
     def _parse_pdf(self, file_path: Path) -> ParsedDocument:
         """Parse PDF file using PyMuPDF"""
         try:
-            import fitz  # PyMuPDF
+            import pymupdf as fitz  # PyMuPDF
         except ImportError:
             raise ImportError("PyMuPDF not installed. Install with: pip install PyMuPDF")
 

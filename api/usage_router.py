@@ -284,8 +284,12 @@ async def get_usage_summary(
 # ============================================================================
 
 @router.get("/plans")
-async def list_plans():
-    """List available plans and their features."""
+async def list_plans(
+    current_user: User = Depends(get_current_active_user),
+):
+    """List available plans and their features. Requires auth like the rest of
+    this router — the catalog is only useful to signed-in users, and leaving it
+    anonymous made it the router's one unauthenticated endpoint."""
     plans = []
     for plan in QuotaPlan:
         quota = UserQuota.get_plan_quota(plan)

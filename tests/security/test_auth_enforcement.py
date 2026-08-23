@@ -25,6 +25,7 @@ def _prod(**overrides):
         session_secret=SECURE,
         session_auth_enabled=True,
         cors_origins="https://app.example.com",
+        jwt_secret_key=SECURE,
     )
     cfg.update(overrides)
     return Settings(**cfg)
@@ -67,6 +68,20 @@ def test_production_rejects_short_or_placeholder_csrf_secret():
         _prod(csrf_enabled=True, csrf_secret_key="CHANGE_ME")
     with pytest.raises(ValueError):
         _prod(csrf_enabled=True, csrf_secret_key="tooshort")
+
+
+def test_production_rejects_missing_jwt_secret():
+    # Unset JWT_SECRET_KEY = random per-process secret: every restart
+    # invalidates all JWTs and workers sign with different keys.
+    with pytest.raises(ValueError):
+        _prod(jwt_secret_key="")
+
+
+def test_production_rejects_short_or_placeholder_jwt_secret():
+    with pytest.raises(ValueError):
+        _prod(jwt_secret_key="tooshort")
+    with pytest.raises(ValueError):
+        _prod(jwt_secret_key="change-me-64-random-chars")
 
 
 def test_production_accepts_secure_csrf_secret():

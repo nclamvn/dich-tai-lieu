@@ -5,7 +5,7 @@ High-level pipeline for processing scanned/handwritten documents.
 Converts PDF pages to images and processes with OCR.
 """
 
-import fitz  # PyMuPDF
+import pymupdf as fitz  # PyMuPDF
 from pathlib import Path
 from typing import List, Optional, Dict
 from dataclasses import dataclass

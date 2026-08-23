@@ -479,7 +479,7 @@ def render_cover_image(
     """
     import tempfile
 
-    import fitz  # PyMuPDF (already a dependency)
+    import pymupdf as fitz  # PyMuPDF (already a dependency)
 
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
