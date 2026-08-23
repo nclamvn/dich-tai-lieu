@@ -7,15 +7,44 @@ Exposes /metrics in Prometheus exposition format with:
 - Error rate tracking
 """
 
+import hmac
 import time
 from collections import defaultdict
-from typing import Dict
+from typing import Dict, Optional
 
-from fastapi import APIRouter, Request, Response
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response
 from starlette.middleware.base import BaseHTTPMiddleware
 
 
 router = APIRouter(tags=["Monitoring"])
+
+
+async def _metrics_guard(authorization: Optional[str] = Header(None)) -> None:
+    """Gate GET /metrics.
+
+    - METRICS_TOKEN set  → require ``Authorization: Bearer <token>`` (all modes),
+      compared constant-time. This is the Prometheus-friendly scheme
+      (``authorization.credentials`` in scrape config) — session auth can't be
+      used by scrapers.
+    - METRICS_TOKEN empty → open in development/internal, but FAIL-CLOSED (403)
+      in production: path/latency/error tables are a recon map of the API.
+    """
+    from config.settings import get_settings
+
+    settings = get_settings()
+    token = settings.metrics_token
+    if token:
+        supplied = ""
+        if authorization and authorization.lower().startswith("bearer "):
+            supplied = authorization[7:].strip()
+        if not hmac.compare_digest(supplied, token):
+            raise HTTPException(status_code=401, detail="Invalid metrics token")
+        return
+    if settings.security_mode == "production":
+        raise HTTPException(
+            status_code=403,
+            detail="Metrics endpoint disabled — set METRICS_TOKEN to enable scraping",
+        )
 
 
 # ── In-process metrics storage (no external dependency needed) ──
@@ -121,7 +150,7 @@ class MetricsMiddleware(BaseHTTPMiddleware):
         return path
 
 
-@router.get("/metrics")
+@router.get("/metrics", dependencies=[Depends(_metrics_guard)])
 async def prometheus_metrics():
     """Expose metrics in Prometheus exposition format."""
     return Response(

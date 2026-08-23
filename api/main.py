@@ -680,7 +680,9 @@ app.include_router(batch_router, dependencies=_AUTH_REQUIRED)
 # glossary_router.py both call APIRouter(prefix=...)). Do NOT repeat the prefix
 # here or every path doubles up, e.g. /api/v2/providers/api/v2/providers.
 app.include_router(provider_router, dependencies=_AUTH_REQUIRED)
-app.include_router(glossary_router)
+# Glossary CRUD is per-user data (create/update/delete/import) — session-gated
+# like every other feature router. Fail-closed in production, no-op in dev.
+app.include_router(glossary_router, dependencies=_AUTH_REQUIRED)
 
 # P1: Authentication routes (JWT-based)
 app.include_router(auth_router)

@@ -185,16 +185,22 @@ python3 scripts/backup_db.py                      # backup SQLite an toàn WAL
    `datetime.now(timezone.utc)`.
 3. **Cổng sprawl**: dev :8000/:3000 vs Docker :3000/:3001 vs `Dockerfile.dev`
    :3001 — hợp nhất về một bản đồ cổng + cập nhật docs còn nhắc cổng cũ.
-4. **Python drift**: prod image 3.13, CI 3.11/3.12 — thêm 3.13 vào matrix hoặc
-   hạ image về 3.12.
+4. ~~**Python drift**: prod image 3.13, CI 3.11/3.12~~ — **ĐÃ TRẢ (P1 paydown)**:
+   3.13 vào matrix CI, suite verify xanh trên 3.11/3.12/3.13.
 5. **7 endpoint `/api/system|queue|cache|processor` định nghĩa trùng**
    (`api/main.py` inline che `api/routes/system.py`) — bỏ một bản.
 6. **Hai DB translation-memory** (`data/tm.db` v2 vs
    `data/translation_memory/tm.db` v1) + `data/aps_jobs.db` nghi mồ côi — hợp
    nhất/khai tử có kiểm chứng.
 7. **`settings.output_dir` (`data/output`) lệch cây thực dùng (`outputs/…`)**.
-8. **Router chưa gate khi production**: glossary (21 ep), usage (8), api_keys
-   (7), metrics — đã ghi trong PRODUCTION_CHECKLIST, cần đóng trước beta rộng.
+8. ~~**Router chưa gate khi production**: glossary (21 ep), usage (8), api_keys
+   (7), metrics~~ — **ĐÃ TRẢ (P1 paydown)**: glossary session-gate cấp router;
+   `/api/usage/plans` + `/api/api-keys/scopes/available` (2 lỗ cuối của cặp
+   router JWT) đã đóng; `/metrics` gate bearer `METRICS_TOKEN`, fail-closed 403
+   khi production không đặt token; boot-guard production bắt buộc
+   `JWT_SECRET_KEY`; frontend `GLOSSARY_BASE` sửa prefix đôi. Test:
+   `test_router_authz` + `test_jwt_routers_have_no_open_endpoints` +
+   `test_metrics_gate` + `test_auth_enforcement` (JWT guard).
 9. **CI chưa chạy** `tests/{stress,regression,cache,load}` (≈92 test) — cân
    nhắc đưa vào job nightly.
 10. **`pytest.ini --disable-warnings`** — gỡ sau khi xử lý (1)+(2) để warning

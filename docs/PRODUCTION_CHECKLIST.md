@@ -11,6 +11,7 @@ this is intentional (`config/settings.py::_validate_security_settings`).
 SECURITY_MODE=production
 SESSION_AUTH_ENABLED=true                 # or API_KEY_AUTH_ENABLED=true
 SESSION_SECRET=<64 hex chars>             # python -c "import secrets; print(secrets.token_hex(32))"
+JWT_SECRET_KEY=<64+ random chars>         # python -c "import secrets; print(secrets.token_urlsafe(48))"
 CORS_ORIGINS=https://app.yourdomain.com   # explicit; no wildcard in production
 # If CSRF is enabled for browser clients:
 CSRF_ENABLED=true
@@ -18,12 +19,17 @@ CSRF_SECRET_KEY=<64 hex chars>
 # Rate limiting is auto-on in production; override / tune if needed:
 # RATE_LIMIT_ENABLED=true    # force on/off regardless of SECURITY_MODE
 # RATE_LIMIT=240/minute      # global per-user/IP backstop
+# Prometheus scraping (optional — /metrics is 403 in production without it):
+# METRICS_TOKEN=<random>     # scraper sends "Authorization: Bearer <token>"
 ```
 
 The boot guard rejects: a default/placeholder `SESSION_SECRET`, a secret shorter
 than 32 chars, auth left disabled, empty `CORS_ORIGINS`, a **wildcard**
-`CORS_ORIGINS=*` (credentials are allowed, so `*` is unsafe), and — when
-`CSRF_ENABLED=true` — a placeholder or `<32`-char `CSRF_SECRET_KEY`.
+`CORS_ORIGINS=*` (credentials are allowed, so `*` is unsafe), a missing /
+placeholder / `<32`-char `JWT_SECRET_KEY` (unset means a **random per-process**
+key: every restart invalidates all JWTs and each worker signs with a different
+one), and — when `CSRF_ENABLED=true` — a placeholder or `<32`-char
+`CSRF_SECRET_KEY`.
 
 ## 2. What turns on automatically in production
 
@@ -42,11 +48,20 @@ than 32 chars, auth left disabled, empty `CORS_ORIGINS`, a **wildcard**
 - **Router-level auth sweep.** Every all-private session-token router is gated at
   the `include_router` site with `dependencies=[Depends(get_current_user_id)]`:
   author, editor, tm, cinema, screenplay, settings, dashboard, provider, system,
-  book-writer (v1/v2), jobs, batch (+legacy), preview, job-outputs, error-dashboard.
+  book-writer (v1/v2), jobs, batch (+legacy), preview, job-outputs, error-dashboard,
+  **glossary** (per-user CRUD — gated since the P1 debt paydown).
   Fail-closed in production, no-op in dev. Guarded by
   `tests/security/test_router_authz.py`. Deliberately NOT session-gated (each for a
-  reason): `auth`/`usage`/`api_keys` (JWT-bearer, self-enforcing); `glossary` and
-  `aps_v2` (public reference GETs); `health` (public `/health`); `metrics`.
+  reason): `auth` (login must be anonymous); `usage`/`api_keys` (JWT-bearer on
+  **every** endpoint — `/plans` and `/scopes/available` were closed in the P1
+  paydown; locked by `test_jwt_routers_have_no_open_endpoints`); `aps_v2`
+  (per-route session deps); `health` (public `/health`); `metrics` (own bearer
+  gate, next bullet).
+- **`/metrics` is fail-closed.** With `METRICS_TOKEN` set, scrapers must send
+  `Authorization: Bearer <token>` (enforced in every mode, constant-time compare).
+  Without it, `/metrics` stays open in development but returns **403 in
+  production** — the path/latency/error tables are a recon map of the API.
+  Guarded by `tests/security/test_metrics_gate.py`.
 - **Server error messages are sanitized.** Any `HTTPException(500, …)` returns a
   generic message + `error_id` (the real detail is logged), so raised exception
   strings (paths, DB errors) never reach clients; `<500` and other `5xx` keep their
@@ -99,8 +114,8 @@ pytest tests/security/test_auth_enforcement.py tests/security/test_endpoint_auth
 > **Validate the auth sweep in staging before a wide launch.** The router-level
 > sweep (§2) is session-token deny-by-default in production; confirm the frontend's
 > real flow doesn't rely on any of the newly-gated routes being anonymous, and that
-> the public exemptions (glossary/aps_v2 reference GETs, `/health`, `/metrics`) are
-> the intended set.
+> the remaining public exemptions (aps_v2 reference GETs, `/health`) are the
+> intended set. Remember `/metrics` needs `METRICS_TOKEN` in your scrape config.
 
 ## 6. Known follow-ups (not yet enforced — do before a *wide* launch)
 
@@ -113,11 +128,11 @@ each should be closed before opening the doors wide. (Rate limiting, the dead
   but `WS /api/preview/stream/{job_id}`, `WS /api/cinema/ws/jobs/{job_id}` and the
   book-writer WS endpoints stream by id with **no token check** — add a `?token=`
   check like `/ws` has.
-- **Sensitive sub-routes on the exempt routers**: `glossary` and `aps_v2` are left
-  ungated for their public reference GETs, but their *write*/*state* routes (glossary
-  create/delete, aps_v2 non-reference) should be protected per-route. `/metrics`
-  (Prometheus) leaks the internal path list — protect via network policy or scraper
-  auth.
+- **Sensitive sub-routes on the exempt routers**: ~~glossary~~ (now fully
+  session-gated), ~~`/metrics`~~ (now bearer-token / production-403 fail-closed),
+  ~~usage/api_keys catalog endpoints~~ (now JWT-gated). Remaining: `aps_v2` keeps
+  public reference GETs by design — re-audit its non-reference routes per-route
+  before a wide launch.
 - **Two auth systems**: product endpoints authenticate via **session token**
   (`get_current_user_id`), while the live login issues **JWTs**
   (`get_current_active_user`). They don't interoperate — decide on one, or bridge

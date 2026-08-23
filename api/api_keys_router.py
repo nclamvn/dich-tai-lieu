@@ -254,8 +254,11 @@ async def regenerate_api_key(
 
 
 @router.get("/scopes/available")
-async def list_available_scopes():
-    """List all available API key scopes."""
+async def list_available_scopes(
+    current_user: User = Depends(get_current_active_user),
+):
+    """List all available API key scopes. Requires auth like the rest of this
+    router — was previously its one unauthenticated endpoint."""
     return {
         "scopes": [
             {"name": s.value, "description": _get_scope_description(s)}

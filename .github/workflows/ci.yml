@@ -50,7 +50,9 @@ jobs:
     needs: lint
     strategy:
       matrix:
-        python-version: ["3.11", "3.12"]
+        # 3.13 mirrors the production image (Dockerfile: python:3.13-slim) so
+        # prod never runs a Python the suite was not verified on.
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
 

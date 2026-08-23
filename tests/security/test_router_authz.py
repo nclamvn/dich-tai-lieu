@@ -22,6 +22,7 @@ PROTECTED_ROUTERS = {
     "editor_router",
     "batch_router",
     "provider_router",
+    "glossary_router",
     "error_router",
     "tm_router",
     "preview_router",
@@ -39,16 +40,18 @@ PROTECTED_ROUTERS = {
 }
 
 # Intentionally NOT blanket-protected here, each for a documented reason:
-#  - auth/usage/api_keys: JWT-bearer self-enforcing (a session-token dep would break them)
-#  - glossary: public reference GETs (languages/domains/templates)
-#  - aps_v2: public profiles + health
+#  - auth: login/register must be reachable anonymously (JWT issuance)
+#  - usage/api_keys: JWT-bearer self-enforcing on EVERY endpoint (a session-token
+#    dep would demand both schemes at once) — test_jwt_routers_have_no_open_endpoints
+#    in test_endpoint_authz.py locks the every-endpoint part
+#  - aps_v2: per-route session deps (public profiles + health remain open)
 #  - health: public /health liveness (+ its own _PROTECT on monitoring)
-#  - metrics: Prometheus scrape endpoint
+#  - metrics: own bearer-token gate (_metrics_guard): METRICS_TOKEN when set,
+#    fail-closed 403 in production when unset — session auth can't serve scrapers
 EXEMPT_ROUTERS = {
     "auth_router",
     "usage_router",
     "api_keys_router",
-    "glossary_router",
     "aps_v2_router",
     "health_router",
     "metrics_router",

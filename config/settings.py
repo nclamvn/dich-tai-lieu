@@ -166,6 +166,18 @@ class Settings(BaseSettings):
     api_key_auth_enabled: bool = False
     api_keys: list = []  # List of valid API keys
 
+    # JWT signing secret for the /api/auth account system (env JWT_SECRET_KEY).
+    # Empty = core.auth falls back to a RANDOM per-process secret: fine for dev,
+    # but in production every restart invalidates all JWTs and multi-worker
+    # deployments each sign with a different key — so the production boot-guard
+    # below requires this to be set.
+    jwt_secret_key: str = ""
+
+    # Bearer token protecting GET /metrics (env METRICS_TOKEN).
+    # Set  → scrapers must send "Authorization: Bearer <token>" (all modes).
+    # Empty → /metrics is open in development, DISABLED (403) in production.
+    metrics_token: str = ""
+
     # CORS origins (comma-separated in env, parsed to list)
     cors_origins: str = ""  # Empty = use default dev origins
 
@@ -303,6 +315,7 @@ class Settings(BaseSettings):
             "INSECURE-DEV-CSRF-CHANGE-IN-PRODUCTION",
             "change-this-in-production",
             "change-this-secret-key-in-production-asap",
+            "change-me-64-random-chars",
             "CHANGE_ME",
             "changeme",
         ]
@@ -332,6 +345,19 @@ class Settings(BaseSettings):
             if self.csrf_enabled and len(self.csrf_secret_key) < 32:
                 errors.append(
                     "CSRF_SECRET_KEY must be at least 32 characters when CSRF is enabled in production!"
+                )
+
+            # Check JWT signing secret — core.auth otherwise falls back to a
+            # random per-process secret (JWTs die on restart, differ per worker).
+            if not self.jwt_secret_key or self.jwt_secret_key in insecure_secrets:
+                errors.append(
+                    "JWT_SECRET_KEY must be set in production! Without it every "
+                    "restart invalidates all JWTs and workers sign with different keys. "
+                    "Generate with: python -c \"import secrets; print(secrets.token_urlsafe(48))\""
+                )
+            elif len(self.jwt_secret_key) < 32:
+                errors.append(
+                    "JWT_SECRET_KEY must be at least 32 characters in production!"
                 )
 
             # Check auth is enabled
