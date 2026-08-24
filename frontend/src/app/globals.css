@@ -33,12 +33,15 @@
   --bg-sidebar:       #FBFBFA;
   --bg-overlay:       rgba(15, 15, 15, 0.6);
 
-  /* ─── Foreground ─── */
+  /* ─── Foreground ───
+     Contrast (trên nền trắng): primary 12.3:1 · secondary 6.5:1 (AA cho body
+     text — mức 0.65 cũ chỉ đạt 4.2:1, dưới chuẩn AA 4.5) · tertiary 4.2:1
+     (meta/placeholder — mức 0.45 cũ chỉ 2.5:1, mờ tới mức khó đọc). */
   --fg-primary:       rgb(55, 53, 47);
-  --fg-secondary:     rgba(55, 53, 47, 0.65);
-  --fg-tertiary:      rgba(55, 53, 47, 0.45);
-  --fg-ghost:         rgba(55, 53, 47, 0.2);
-  --fg-icon:          rgba(55, 53, 47, 0.45);
+  --fg-secondary:     rgba(55, 53, 47, 0.80);
+  --fg-tertiary:      rgba(55, 53, 47, 0.66);
+  --fg-ghost:         rgba(55, 53, 47, 0.25);
+  --fg-icon:          rgba(55, 53, 47, 0.55);
 
   /* ─── Accent backgrounds ─── */
   --accent-blue-bg:   rgba(35, 131, 226, 0.08);
@@ -62,12 +65,20 @@
                       rgba(15,15,15,0.1) 0px 3px 6px,
                       rgba(15,15,15,0.2) 0px 9px 24px;
 
-  /* ─── Layout ─── */
-  --content-width:    900px;
+  /* ─── Layout ───
+     900px cũ để ~55-65% màn hình rộng trống trơn hai bên; 1080/1220 lấp
+     khoảng thở mà cột form vẫn gọn mắt. */
+  --content-width:    1080px;
   --header-height:    45px;
   --radius-sm:        4px;
   --radius-md:        6px;
   --radius-lg:        8px;
+}
+
+@media (min-width: 1800px) {
+  :root {
+    --content-width: 1220px;
+  }
 }
 
 /* ─── Dark Mode ─── */
@@ -81,11 +92,11 @@
   --bg-sidebar:       #1E1E1E;
   --bg-overlay:       rgba(0, 0, 0, 0.7);
 
-  --fg-primary:       rgba(255, 255, 255, 0.9);
-  --fg-secondary:     rgba(255, 255, 255, 0.6);
-  --fg-tertiary:      rgba(255, 255, 255, 0.4);
-  --fg-ghost:         rgba(255, 255, 255, 0.15);
-  --fg-icon:          rgba(255, 255, 255, 0.4);
+  --fg-primary:       rgba(255, 255, 255, 0.92);
+  --fg-secondary:     rgba(255, 255, 255, 0.76);
+  --fg-tertiary:      rgba(255, 255, 255, 0.58);
+  --fg-ghost:         rgba(255, 255, 255, 0.22);
+  --fg-icon:          rgba(255, 255, 255, 0.52);
 
   --accent-blue-bg:   rgba(35, 131, 226, 0.15);
   --accent-red-bg:    rgba(235, 87, 87, 0.15);
@@ -133,7 +144,7 @@ body {
 h1 {
   font-family: var(--font-display);
   font-size: 2.5rem;
-  font-weight: 400;
+  font-weight: 600;
   letter-spacing: -0.02em;
   line-height: 1.15;
   color: var(--fg-primary);

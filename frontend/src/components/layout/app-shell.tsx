@@ -221,7 +221,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               className="text-[11px] px-2"
               style={{ color: "var(--fg-tertiary)" }}
             >
-              VIBECODE KIT V4
+              AI PUBLISHER PRO
             </p>
           )}
           <div className={cn("flex items-center", collapsed ? "flex-col gap-2" : "gap-1.5")}>

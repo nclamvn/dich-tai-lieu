@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Upload, FileText, Sparkles, ArrowRight, Loader2, Check, Home, Cloud } from "lucide-react";
+import { Upload, FileText, Sparkles, ArrowRight, Loader2, Check, Home, Cloud, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useCreateJob, useProfiles, useGlossaries, useTranslationEngines, useSettingsSection } from "@/lib/api/hooks";
@@ -165,8 +165,13 @@ export default function TranslatePage() {
       {/* File Upload */}
       <Card>
         <CardHeader>
-          <h3 className="text-[15px] font-semibold flex items-center gap-2">
-            <Upload className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
+          <h3 className="text-[15px] font-semibold flex items-center gap-2.5">
+            <span
+              className="inline-flex items-center justify-center w-[26px] h-[26px] shrink-0"
+              style={{ background: "var(--accent-blue-bg)", borderRadius: "var(--radius-md)" }}
+            >
+              <Upload className="w-3.5 h-3.5" style={{ color: "var(--color-notion-blue)" }} strokeWidth={1.75} />
+            </span>
             {t.translate.uploadDoc}
           </h3>
         </CardHeader>
@@ -189,7 +194,7 @@ export default function TranslatePage() {
                 ? "var(--accent-blue-bg)"
                 : file
                   ? "var(--accent-green-bg)"
-                  : "transparent",
+                  : "var(--bg-secondary)",
             }}
             onClick={() => document.getElementById("file-input")?.click()}
           >
@@ -238,8 +243,13 @@ export default function TranslatePage() {
       {/* Translation Settings */}
       <Card>
         <CardHeader>
-          <h3 className="text-[15px] font-semibold flex items-center gap-2">
-            <Sparkles className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
+          <h3 className="text-[15px] font-semibold flex items-center gap-2.5">
+            <span
+              className="inline-flex items-center justify-center w-[26px] h-[26px] shrink-0"
+              style={{ background: "var(--accent-purple-bg)", borderRadius: "var(--radius-md)" }}
+            >
+              <Sparkles className="w-3.5 h-3.5" style={{ color: "var(--color-notion-purple)" }} strokeWidth={1.75} />
+            </span>
             {t.translate.settings}
           </h3>
         </CardHeader>
@@ -302,11 +312,12 @@ export default function TranslatePage() {
                     onClick={() => toggleFormat(f.value)}
                     className="px-3 py-1.5 text-sm transition-colors duration-100"
                     style={{
-                      borderRadius: "var(--radius-sm)",
+                      borderRadius: "var(--radius-md)",
                       border: `1px solid ${isSelected ? "var(--color-notion-blue)" : "var(--border-default)"}`,
-                      background: isSelected ? "var(--accent-blue-bg)" : "transparent",
-                      color: isSelected ? "var(--color-notion-blue)" : "var(--fg-secondary)",
+                      background: isSelected ? "var(--color-notion-blue)" : "var(--bg-primary)",
+                      color: isSelected ? "#FFFFFF" : "var(--fg-secondary)",
                       fontWeight: isSelected ? 500 : 400,
+                      boxShadow: isSelected ? "var(--shadow-sm)" : "none",
                     }}
                   >
                     {isSelected && <Check size={14} strokeWidth={2} className="inline mr-1 align-[-2px]" />}{f.label}
@@ -381,7 +392,14 @@ export default function TranslatePage() {
               <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
                 {t.translate.glossaries} ({sourceLang}&rarr;{targetLang})
               </label>
-              <div className="space-y-1.5">
+              <div
+                className="space-y-1.5 max-h-48 overflow-y-auto pr-2"
+                style={{
+                  border: "1px solid var(--border-default)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "8px 10px",
+                }}
+              >
                 {glossaryList.map((g) => (
                   <label
                     key={g.id}
@@ -413,9 +431,14 @@ export default function TranslatePage() {
       {/* Cover template */}
       <Card>
         <CardHeader>
-          <h3 className="text-[15px] font-semibold flex items-center gap-2">
-            <Sparkles className="w-4 h-4" style={{ color: "var(--fg-icon)" }} strokeWidth={1.5} />
-            Trang bìa
+          <h3 className="text-[15px] font-semibold flex items-center gap-2.5">
+            <span
+              className="inline-flex items-center justify-center w-[26px] h-[26px] shrink-0"
+              style={{ background: "var(--accent-orange-bg)", borderRadius: "var(--radius-md)" }}
+            >
+              <BookOpen className="w-3.5 h-3.5" style={{ color: "var(--color-notion-orange)" }} strokeWidth={1.75} />
+            </span>
+            {t.translate.coverSection}
           </h3>
         </CardHeader>
         <CardContent>
