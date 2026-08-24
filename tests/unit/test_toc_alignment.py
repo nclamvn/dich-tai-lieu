@@ -113,3 +113,44 @@ class TestRenderersAlignTocEntries:
         xml = zipfile.ZipFile(out).read("word/document.xml").decode()
         assert 'w:val="right"' in xml and 'w:leader="dot"' in xml
         assert "The Devil's Flame" in xml and ">9<" in xml
+
+
+class TestNormalizeTocLines:
+    """Pre-translation: a printed-TOC blob must split into clean per-entry lines
+    so every title translates (a 200-dot lump leaves the odd title in the source
+    language) and the render layer can still detect + align each entry."""
+
+    def test_splits_glued_blob_into_parseable_entries(self):
+        from core_v2.text_cleanup import normalize_toc_lines
+        blob = (
+            "Mục lục Lời cảm ơn.................5 "
+            "01. Ngọn lửa của quỷ.............9 "
+            "30. Khoanh vùng...........249 "
+            "37. Cội nguồn...............341"
+        )
+        out, n = normalize_toc_lines(blob)
+        assert n == 4
+        lines = [l.strip() for l in out.splitlines() if l.strip()]
+        parsed = [parse_toc_line(l) for l in lines]
+        assert parsed == [
+            ("Mục lục Lời cảm ơn", "5"),
+            ("01. Ngọn lửa của quỷ", "9"),
+            ("30. Khoanh vùng", "249"),   # the entry that leaked untranslated
+            ("37. Cội nguồn", "341"),
+        ]
+
+    def test_keeps_chapter_number_prefix_in_title(self):
+        from core_v2.text_cleanup import normalize_toc_lines
+        out, _ = normalize_toc_lines("01. Ngọn lửa của quỷ.............9")
+        assert parse_toc_line(out.strip()) == ("01. Ngọn lửa của quỷ", "9")
+
+    def test_noop_without_toc_blob(self):
+        from core_v2.text_cleanup import normalize_toc_lines
+        prose = "He reached page 249 of the manuscript that morning."
+        out, n = normalize_toc_lines(prose)
+        assert n == 0 and out == prose
+
+    def test_ignores_numeric_only_segments(self):
+        from core_v2.text_cleanup import normalize_toc_lines
+        out, n = normalize_toc_lines("12................ 249")  # no alphabetic title
+        assert n == 0 and out == "12................ 249"

@@ -48,6 +48,42 @@ _SEP_CLASS = "[" + re.escape(_SEP_CHARS) + "-]"
 _SENT_END = re.compile(r"[.!?…”\"’)]\s*$")
 _PAGENUM = r"\d{1,4}"
 
+# A printed contents entry inside extracted text: a title, a long dot leader
+# (3+ dots — never a chapter prefix like "01."), then a page number. Titles may
+# contain single dots, so the leader is what delimits them.
+_TOC_SEGMENT_RE = re.compile(r"(\S[^\n]*?)\s*\.{3,}\s*(\d{1,4})(?=\s|\n|$)")
+
+
+def normalize_toc_lines(text: str) -> tuple[str, int]:
+    """Split a source book's printed contents page into one clean line per entry.
+
+    A printed TOC extracts as a single dense blob — dozens of titles glued
+    together with 200-dot leaders and page numbers ("… 30. Khoanh vùng……249 …").
+    Fed to the translator as one lump, the odd title slips through untranslated,
+    and the dot runs read as non-translatable formatting. Rewriting each entry
+    onto its own line with a short " . . . " leader turns every title into a
+    clean, isolated translatable unit — and the render layer's parse_toc_line
+    picks the same shape up to align it.
+
+    Returns ``(text, n_entries_normalized)``; unchanged when no TOC blob is found.
+    """
+    if not text:
+        return text, 0
+    count = 0
+
+    def _repl(m: "re.Match") -> str:
+        nonlocal count
+        title = m.group(1).strip()
+        if not any(c.isalpha() for c in title):
+            return m.group(0)  # pure numbers / separators — not a real entry
+        count += 1
+        return f"\n{title} . . . {m.group(2)}\n"
+
+    out = _TOC_SEGMENT_RE.sub(_repl, text)
+    if count:
+        out = re.sub(r"\n[ \t]*\n[ \t]*\n+", "\n\n", out)
+    return (out, count) if count else (text, 0)
+
 
 def _norm(s: str) -> str:
     """Digit-insensitive, punctuation-insensitive key for frequency counting."""
