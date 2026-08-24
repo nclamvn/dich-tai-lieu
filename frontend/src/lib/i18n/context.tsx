@@ -19,15 +19,16 @@ const LocaleContext = createContext<LocaleContextValue | null>(null);
 
 const STORAGE_KEY = "aipub-locale";
 
+// Vietnamese-first product: vi is the default; a stored choice always wins.
 function getInitialLocale(): Locale {
-  if (typeof window === "undefined") return "en";
+  if (typeof window === "undefined") return "vi";
   const stored = localStorage.getItem(STORAGE_KEY);
   if (stored === "en" || stored === "vi") return stored;
-  return "en";
+  return "vi";
 }
 
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("en");
+  const [locale, setLocaleState] = useState<Locale>("vi");
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
