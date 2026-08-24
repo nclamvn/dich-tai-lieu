@@ -150,6 +150,7 @@ function mapV2Job(data: Record<string, unknown>): TranslationJob {
     progress: (data.progress as number) || 0,
     error: (data.error as string) || undefined,
     _outputPaths: outputPaths,
+    _outputErrors: (data.output_errors as Record<string, string>) || undefined,
     _qualityScore: data.quality_score as number | undefined,
     _qualityLevel: data.quality_level as string | undefined,
     _currentStage: data.current_stage as string | undefined,

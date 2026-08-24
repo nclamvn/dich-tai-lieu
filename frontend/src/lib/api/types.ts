@@ -25,6 +25,7 @@ export interface TranslationJob {
 
   // V2 publishing pipeline fields
   _outputPaths?: Record<string, string>;
+  _outputErrors?: Record<string, string>;
   _qualityScore?: number;
   _qualityLevel?: string;
   _currentStage?: string;

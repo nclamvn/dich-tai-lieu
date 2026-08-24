@@ -2,6 +2,28 @@
 
 All notable changes to AI Publisher Pro will be documented in this file.
 
+## [Unreleased] — Translate-output trio (báo lỗi từ bản dịch Khởi Nguồn thật)
+
+### Fixed
+- **Chọn docx+pdf nhưng chỉ nhận docx**: các định dạng PHỤ đi qua converter
+  pandoc cũ — một dấu "$" trong văn xuôi (tiền!) kích hoạt bộ dò công thức đưa
+  PDF vào đường xelatex, fail trên máy không có LaTeX, và lỗi bị nuốt (job vẫn
+  "complete"). Giờ mọi định dạng phụ đi CÙNG pipeline AST chuyên nghiệp như
+  định dạng chính (thuần Python, font Việt bundle, KÈM BÌA); lỗi per-format
+  được ghi vào `output_errors`, lưu DB, trả qua API và hiện trên trang job.
+- **"The Source" lặp ~66 lần trong bản dịch**: PDF nguồn nhúng header/footer
+  chạy DÍNH GIỮA DÒNG ("22 <pua> KHỞI NGUỒN lọn sóng…") — stripper chỉ dò dòng
+  đứng riêng nên 325 con dấu lọt qua dịch. Thêm tầng phát hiện token TỪ HÌNH
+  DẠNG CON DẤU (chuỗi IN-HOA sau "số + ngăn cách", chuỗi Viết-Hoa trước
+  "ngăn cách + số", sàn tần suất, chọn cụm dài nhất); câu bị ngắt ngang trang
+  được NỐI LẠI. Kiểm trên chính văn bản thật: 166 → 2 (đúng 2 chỗ hợp lệ ở
+  trang bản quyền), 323 glyph ngăn cách → 0.
+- **Chọn bìa nhưng output không bìa**: ô "Không bìa" mặc-định-chọn mang viền
+  xanh + tick y hệt template được chọn — trạng thái "chưa chọn gì" nhìn như
+  "đã chọn bìa". Ô này giờ là ghost nét đứt + dòng chữ "Bìa sẽ xuất: …" nói rõ
+  bằng lời; lựa chọn bìa được lưu vào draft tự động, được PERSIST vào job
+  record (audit), và đường restart-job không còn đánh rơi bìa.
+
 ## [Unreleased] — Pre-share audit (an ninh + vệ sinh trước khi chia sẻ repo)
 
 ### Security
