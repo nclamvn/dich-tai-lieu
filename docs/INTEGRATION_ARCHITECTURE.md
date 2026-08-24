@@ -1,3 +1,8 @@
+> **📜 TÀI LIỆU LỊCH SỬ — không phản ánh hiện trạng.** Snapshot tại thời điểm
+> viết; kiến trúc, cổng, cờ cấu hình và đường dẫn trong này có thể đã đổi.
+> (`integration_bridge/` mô tả ở đây đã bị XÓA trong X-ray sweep 2026-08.)
+> Hiện trạng đúng: `PROJECT_XRAY.md` + `CLAUDE.md` + `docs/PRODUCTION_CHECKLIST.md`.
+
 # NHÀ XUẤT BẢN SỐ HOÀN CHỈNH
 ## Kiến Trúc Microservices Tích Hợp
 

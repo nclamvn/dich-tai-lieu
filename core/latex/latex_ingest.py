@@ -141,15 +141,25 @@ class LaTeXSourceIngestor:
             raise RuntimeError(f"Archive extraction failed: {e}") from e
 
     def _extract_zip(self, zip_path: Path, output_dir: Path):
-        """Extract .zip archive."""
+        """Extract .zip archive — refusing path-traversal ("zip-slip") members."""
+        out_root = output_dir.resolve()
         with zipfile.ZipFile(str(zip_path), 'r') as zf:
-            zf.extractall(str(output_dir))
+            for name in zf.namelist():
+                dest = (out_root / name).resolve()
+                if not dest.is_relative_to(out_root):
+                    raise RuntimeError(f"Archive member escapes extraction dir: {name!r}")
+            zf.extractall(str(output_dir))  # nosec B202 — members validated above (zip-slip guard)
             logger.debug(f"Extracted {len(zf.namelist())} files from ZIP")
 
     def _extract_tar(self, tar_path: Path, output_dir: Path):
-        """Extract .tar/.tar.gz/.tgz archive."""
+        """Extract .tar/.tar.gz/.tgz archive.
+
+        ``filter="data"`` (Py3.11.4+) strips absolute paths, ``..`` traversal,
+        symlinks/hardlinks pointing outside, and device files — the tar
+        equivalents of zip-slip.
+        """
         with tarfile.open(str(tar_path), 'r:*') as tf:
-            tf.extractall(str(output_dir))
+            tf.extractall(str(output_dir), filter="data")
             logger.debug(f"Extracted {len(tf.getmembers())} files from TAR")
 
     def find_main_tex(self, source_dir: str) -> Optional[str]:

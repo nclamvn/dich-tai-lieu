@@ -151,7 +151,7 @@ class ErrorTracker:
     def _generate_error_hash(self, error_type: str, error_message: str, module: str, function: str) -> str:
         """Generate unique hash for error deduplication."""
         content = f"{error_type}:{error_message}:{module}:{function}"
-        return hashlib.md5(content.encode()).hexdigest()
+        return hashlib.md5(content.encode(), usedforsecurity=False).hexdigest()
 
     def track_error(
         self,

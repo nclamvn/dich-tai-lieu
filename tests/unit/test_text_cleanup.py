@@ -12,24 +12,24 @@ from core_v2.text_cleanup import (
     strip_running_furniture,
 )
 
-TITLE = "KHỞI NGUỒN"
+TITLE = "BÌNH MINH XANH"
 SEP = ""  # decorative PUA separator glyph, as PyMuPDF extracts it
 
 
 def _novel_like():
     """A page stream mimicking fitz get_text over a book with running head/foot."""
-    lines = ["KHỞI NGUỒN", "Nguyễn Cảnh Lâm", "", "Table of Contents", ""]
+    lines = ["BÌNH MINH XANH", "Trần Văn Bút", "", "Table of Contents", ""]
     body = [
-        "The Devil's Flame",
-        "0:30 AM. The Phu My Bridge silently slithered into the night.",
-        "The birthday party took place in Nhung's penthouse.",
-        "The Dance of Numbers",
-        "He explained the Riemann Hypothesis to the room.",
+        "The Silver River",
+        "0:30 AM. The old ferry drifted across the sleeping delta.",
+        "The reunion took place in a rooftop garden downtown.",
+        "The Arithmetic of Rain",
+        "He explained the tide tables to the room.",
     ]
     # 20 "pages": each contributes a body line plus a running header + footer.
     for i, line in enumerate([body[i % len(body)] for i in range(20)], start=1):
         lines.append(TITLE)                        # running header (standalone)
-        lines.append(f"Nguyen Canh Lam  {SEP}  {i}")  # running footer (standalone)
+        lines.append(f"Tran Van But  {SEP}  {i}")  # running footer (standalone)
         lines.append(line)
     return "\n".join(lines)
 
@@ -38,10 +38,10 @@ def test_detect_finds_only_repeated_short_lines():
     text = _novel_like()
     tokens = detect_furniture_tokens(text.split("\n"), floor=5)
     forms = set(tokens)
-    assert "khởi nguồn" in forms          # title, repeated ~21x
-    assert "nguyen canh lam" in forms     # footer name, digits normalized away
+    assert "bình minh xanh" in forms          # title, repeated ~21x
+    assert "tran van but" in forms     # footer name, digits normalized away
     # a real chapter title appears a handful of times but stays below the floor
-    assert "the devil s flame" not in forms
+    assert "the silver river" not in forms
 
 
 def test_standalone_title_repeats_removed():
@@ -51,30 +51,30 @@ def test_standalone_title_repeats_removed():
     assert cleaned.count(TITLE) <= 1
     assert report.standalone_removed >= 20
     # real content survives
-    assert "The Phu My Bridge silently slithered" in cleaned
-    assert "Riemann Hypothesis" in cleaned
+    assert "The old ferry drifted" in cleaned
+    assert "tide tables" in cleaned
 
 
 def test_inline_footer_glued_to_body_is_stripped():
     # A sentence that spans a page break: footer lands mid-sentence.
     text = "\n".join(
-        [TITLE, "Nguyễn Cảnh Lâm", ""]
-        + [f"Nguyen Canh Lam  {SEP}  {i}" for i in range(1, 6)]  # seed the token
-        + [f"...the shadow clung to the wall. Nguyen Canh Lam  {SEP}  17 bones lay scattered."]
+        [TITLE, "Trần Văn Bút", ""]
+        + [f"Tran Van But  {SEP}  {i}" for i in range(1, 6)]  # seed the token
+        + [f"...the shadow clung to the wall. Tran Van But  {SEP}  17 bones lay scattered."]
     )
     cleaned, report = strip_running_furniture(text)
     assert SEP not in cleaned                       # separator glyph gone
     assert "17" not in cleaned.split("bones")[0][-6:]  # page number gone
     assert "the shadow clung to the wall." in cleaned
     assert "bones lay scattered." in cleaned
-    assert "Nguyen Canh Lam" not in cleaned.split("bones")[0]  # name prefix stripped
+    assert "Tran Van But" not in cleaned.split("bones")[0]  # name prefix stripped
 
 
 def test_pagenum_then_title_header_glued_is_stripped():
     text = "\n".join(
         [TITLE, "author", ""]
         + [TITLE for _ in range(6)]                 # seed the title token
-        + [f"22  {SEP}  KHỞI NGUỒN 3:25 AM. The room was silent."]
+        + [f"22  {SEP}  BÌNH MINH XANH 3:25 AM. The room was silent."]
     )
     cleaned, _ = strip_running_furniture(text)
     assert "3:25 AM. The room was silent." in cleaned
@@ -83,10 +83,10 @@ def test_pagenum_then_title_header_glued_is_stripped():
 
 
 def test_real_heading_containing_title_is_preserved():
-    """"Chapter 1: KHỞI NGUỒN" is a genuine heading, not furniture — keep it."""
-    text = "\n".join([TITLE] * 8 + ["Chapter 1: KHỞI NGUỒN", "Body paragraph one."])
+    """"Chapter 1: BÌNH MINH XANH" is a genuine heading, not furniture — keep it."""
+    text = "\n".join([TITLE] * 8 + ["Chapter 1: BÌNH MINH XANH", "Body paragraph one."])
     cleaned, _ = strip_running_furniture(text)
-    assert "Chapter 1: KHỞI NGUỒN" in cleaned
+    assert "Chapter 1: BÌNH MINH XANH" in cleaned
 
 
 def test_clean_document_is_unchanged():

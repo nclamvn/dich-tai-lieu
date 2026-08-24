@@ -193,7 +193,7 @@ core/pdf_renderer_v2/
 
 ```bash
 # Run all tests
-cd /Users/mac/translator_project
+cd /path/to/dich-tai-lieu
 python -m pytest core/pdf_renderer_v2/tests/ -v
 
 # Quick test

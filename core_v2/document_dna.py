@@ -183,7 +183,7 @@ async def extract_dna(
 
         # Add statistics
         dna.word_count = len(text.split())
-        dna.document_id = hashlib.md5(text[:1000].encode()).hexdigest()[:12]
+        dna.document_id = hashlib.md5(text[:1000].encode(), usedforsecurity=False).hexdigest()[:12]
 
         # Fallback language detection if LLM returned "unknown"
         if dna.language in ("unknown", "", None):
@@ -195,7 +195,7 @@ async def extract_dna(
         # Return basic DNA on error with fallback language detection
         detected_lang = _detect_language_fallback(text)
         return DocumentDNA(
-            document_id=hashlib.md5(text[:1000].encode()).hexdigest()[:12],
+            document_id=hashlib.md5(text[:1000].encode(), usedforsecurity=False).hexdigest()[:12],
             word_count=len(text.split()),
             language=detected_lang,
             genre="other"
@@ -292,7 +292,7 @@ def quick_dna(text: str) -> DocumentDNA:
     Uses simple heuristics instead of Claude.
     """
     dna = DocumentDNA()
-    dna.document_id = hashlib.md5(text[:1000].encode()).hexdigest()[:12]
+    dna.document_id = hashlib.md5(text[:1000].encode(), usedforsecurity=False).hexdigest()[:12]
     dna.word_count = len(text.split())
 
     # Simple detection

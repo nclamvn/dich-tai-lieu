@@ -338,7 +338,7 @@ class JobQueue:
         """Generate unique job ID"""
         timestamp = str(time.time())
         data = f"{job_name}:{input_file}:{timestamp}"
-        return hashlib.md5(data.encode()).hexdigest()[:12]
+        return hashlib.md5(data.encode(), usedforsecurity=False).hexdigest()[:12]
 
     def _save_job(self, job: TranslationJob):
         """Save job to database"""

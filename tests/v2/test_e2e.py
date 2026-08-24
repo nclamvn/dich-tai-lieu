@@ -187,7 +187,7 @@ async def test_novel():
 
     # Verify outputs
     for fmt, path in result.get('output_paths', {}).items():
-        full_path = Path('/Users/mac/translator_project') / path
+        full_path = Path(__file__).resolve().parents[2] / path
         if full_path.exists():
             size = full_path.stat().st_size
             print(f"   - {fmt}: {size:,} bytes OK")
@@ -239,7 +239,7 @@ async def test_stem():
 
     # Verify outputs
     for fmt, path in result.get('output_paths', {}).items():
-        full_path = Path('/Users/mac/translator_project') / path
+        full_path = Path(__file__).resolve().parents[2] / path
         if full_path.exists():
             size = full_path.stat().st_size
             print(f"   - {fmt}: {size:,} bytes OK")
@@ -291,7 +291,7 @@ async def test_business():
 
     # Verify outputs
     for fmt, path in result.get('output_paths', {}).items():
-        full_path = Path('/Users/mac/translator_project') / path
+        full_path = Path(__file__).resolve().parents[2] / path
         if full_path.exists():
             size = full_path.stat().st_size
             print(f"   - {fmt}: {size:,} bytes OK")
