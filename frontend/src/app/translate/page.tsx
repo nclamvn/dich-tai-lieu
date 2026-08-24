@@ -122,7 +122,7 @@ export default function TranslatePage() {
   const toggleFormat = (value: string) => {
     setSelectedFormats((prev) => {
       if (prev.includes(value)) {
-        // Don't allow empty — keep at least one
+        // Don't allow empty – keep at least one
         if (prev.length === 1) return prev;
         return prev.filter((f) => f !== value);
       }
@@ -216,7 +216,7 @@ export default function TranslatePage() {
                   <p className="font-medium" style={{ color: "var(--fg-primary)" }}>{file.name}</p>
                   <div className="flex items-center gap-2">
                     <p className="text-sm" style={{ color: "var(--color-notion-green)" }}>
-                      {(file.size / 1024).toFixed(1)} KB — {t.translate.clickToChange}
+                      {(file.size / 1024).toFixed(1)} KB – {t.translate.clickToChange}
                     </p>
                     {detecting && (
                       <span className="flex items-center gap-1 text-xs" style={{ color: "var(--color-notion-blue)" }}>
@@ -299,7 +299,7 @@ export default function TranslatePage() {
             </div>
           </div>
 
-          {/* Output Format — Multi-select */}
+          {/* Output Format – Multi-select */}
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: "var(--fg-primary)" }}>
               {t.translate.outputFormats}
@@ -380,7 +380,7 @@ export default function TranslatePage() {
                 <option value="">{t.translate.profileAuto}</option>
                 {profileList.map((p) => (
                   <option key={p.id} value={p.id}>
-                    {p.name} — {p.description}
+                    {p.name} – {p.description}
                   </option>
                 ))}
               </select>

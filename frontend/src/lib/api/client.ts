@@ -537,7 +537,7 @@ export const settingsApi = {
 // ─── Glossaries ───
 
 // Router declares its own prefix (api/glossary_router.py) and api/main.py
-// includes it WITHOUT repeating it — the doubled "/api/glossary/api/glossary"
+// includes it WITHOUT repeating it – the doubled "/api/glossary/api/glossary"
 // here predated that fix and 404'd every glossary call.
 const GLOSSARY_BASE = "/api/glossary";
 

@@ -2,7 +2,7 @@
 
 /**
  * Reusable form field components for Settings panels.
- * Uses CSS variables (Notion theme) — no shadcn dependency.
+ * Uses CSS variables (Notion theme) – no shadcn dependency.
  */
 
 import { cn } from "@/lib/utils";

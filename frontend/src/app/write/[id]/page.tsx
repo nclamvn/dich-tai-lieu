@@ -266,7 +266,7 @@ export default function BookDetailPage({
         </Card>
       )}
 
-      {/* Outline Ready — approval checkpoint */}
+      {/* Outline Ready – approval checkpoint */}
       {book.status === "outline_ready" && book.blueprint && (
         <>
           <Card
