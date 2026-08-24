@@ -2,6 +2,14 @@
 
 All notable changes to AI Publisher Pro will be documented in this file.
 
+## [Unreleased] — Typography UI: em-dash & dòng mồ côi
+
+- Toàn bộ 26 em-dash (—) trong copy giao diện thay bằng en-dash (–), cả hai
+  ngôn ngữ; trang render kiểm bằng Playwright: 0 em-dash còn lại.
+- Chống dòng một-chữ: `text-wrap: balance` cho h1-h3 (heading tự cân dòng),
+  `text-wrap: pretty` cho đoạn văn (không orphan dòng cuối) — progressive
+  enhancement, trình duyệt cũ bỏ qua an toàn. Verify ảnh ở 1440px và 860px.
+
 ## [Unreleased] — Translate-output trio (báo lỗi từ bản dịch Khởi Nguồn thật)
 
 ### Fixed

@@ -118,7 +118,7 @@ export function CoverPicker({
           {/* The no-cover tile is deliberately UNLIKE a template: dashed ghost
               with a plain label. The old styling gave it the same confident
               blue border + tick as a selected template, so the DEFAULT state
-              (no cover chosen) read as "a cover is selected" — and users
+              (no cover chosen) read as "a cover is selected" – and users
               shipped jobs believing a cover was on. */}
           <button
             type="button"

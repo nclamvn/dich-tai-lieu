@@ -586,7 +586,7 @@ export default function JobDetailPage({
         </Link>
       )}
 
-      {/* Per-format failures — a requested format that could not be produced */}
+      {/* Per-format failures – a requested format that could not be produced */}
       {job._outputErrors && Object.keys(job._outputErrors).length > 0 && (
         <Card>
           <CardContent className="py-3 space-y-1">

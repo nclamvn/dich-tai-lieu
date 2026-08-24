@@ -18,7 +18,7 @@ export const translations = {
     landing: {
       title: "Translate & publish with quality intelligence",
       subtitle:
-        "Upload a document, choose your language pair, and let the pipeline handle extraction, translation, quality scoring, and output \u2014 all in one workflow.",
+        "Upload a document, choose your language pair, and let the pipeline handle extraction, translation, quality scoring, and output \u2013 all in one workflow.",
       startBtn: "Start Translating",
       viewDashboard: "View Dashboard",
       howItWorks: "How it works",
@@ -39,7 +39,7 @@ export const translations = {
           "Structural analysis preserves tables, formulas, headings, lists, and code blocks.",
         multiFormat: "Multi-Format Output",
         multiFormatDesc:
-          "Generate DOCX, PDF, or EPUB 3.0 \u2014 each layout-aware and publication-ready.",
+          "Generate DOCX, PDF, or EPUB 3.0 \u2013 each layout-aware and publication-ready.",
         glossaries: "Custom Glossaries",
         glossariesDesc:
           "Define terminology per language pair. Automatically fed into translation and consistency checks.",
@@ -443,7 +443,7 @@ export const translations = {
       backendUrl: "Backend API URL",
       backendUrlHint: "Set via NEXT_PUBLIC_API_URL environment variable",
       version: "Version",
-      versionInfo: "AI Publisher Pro v2.0 \u2014 15 Sprints, 19 Service Modules",
+      versionInfo: "AI Publisher Pro v2.0 \u2013 15 Sprints, 19 Service Modules",
     },
     reader: {
       preparingDoc: "Preparing document...",
@@ -504,7 +504,7 @@ export const translations = {
       title: "Batch Upload",
       subtitle: "Translate multiple files at once",
       dropFiles: "Drop files here or click to browse",
-      dropHint: "PDF, DOCX, TXT — up to 10 files",
+      dropHint: "PDF, DOCX, TXT – up to 10 files",
       selectedFiles: "Selected files",
       sourceLang: "Source Language",
       targetLang: "Target Language",
@@ -580,7 +580,7 @@ export const translations = {
     landing: {
       title: "D\u1ECBch & xu\u1EA5t b\u1EA3n v\u1EDBi tr\u00ED tu\u1EC7 ch\u1EA5t l\u01B0\u1EE3ng",
       subtitle:
-        "T\u1EA3i l\u00EAn t\u00E0i li\u1EC7u, ch\u1ECDn c\u1EB7p ng\u00F4n ng\u1EEF, v\u00E0 \u0111\u1EC3 pipeline x\u1EED l\u00FD tr\u00EDch xu\u1EA5t, d\u1ECBch thu\u1EADt, ch\u1EA5m \u0111i\u1EC3m ch\u1EA5t l\u01B0\u1EE3ng v\u00E0 xu\u1EA5t file \u2014 t\u1EA5t c\u1EA3 trong m\u1ED9t quy tr\u00ECnh.",
+        "T\u1EA3i l\u00EAn t\u00E0i li\u1EC7u, ch\u1ECDn c\u1EB7p ng\u00F4n ng\u1EEF, v\u00E0 \u0111\u1EC3 pipeline x\u1EED l\u00FD tr\u00EDch xu\u1EA5t, d\u1ECBch thu\u1EADt, ch\u1EA5m \u0111i\u1EC3m ch\u1EA5t l\u01B0\u1EE3ng v\u00E0 xu\u1EA5t file \u2013 t\u1EA5t c\u1EA3 trong m\u1ED9t quy tr\u00ECnh.",
       startBtn: "B\u1EAFt \u0111\u1EA7u d\u1ECBch",
       viewDashboard: "Xem b\u1EA3ng \u0111i\u1EC1u khi\u1EC3n",
       howItWorks: "C\u00E1ch ho\u1EA1t \u0111\u1ED9ng",
@@ -601,7 +601,7 @@ export const translations = {
           "Ph\u00E2n t\u00EDch c\u1EA5u tr\u00FAc gi\u1EEF nguy\u00EAn b\u1EA3ng bi\u1EC3u, c\u00F4ng th\u1EE9c, ti\u00EAu \u0111\u1EC1, danh s\u00E1ch v\u00E0 kh\u1ED1i m\u00E3.",
         multiFormat: "Xu\u1EA5t \u0111a \u0111\u1ECBnh d\u1EA1ng",
         multiFormatDesc:
-          "T\u1EA1o DOCX, PDF ho\u1EB7c EPUB 3.0 \u2014 gi\u1EEF layout v\u00E0 s\u1EB5n s\u00E0ng xu\u1EA5t b\u1EA3n.",
+          "T\u1EA1o DOCX, PDF ho\u1EB7c EPUB 3.0 \u2013 gi\u1EEF layout v\u00E0 s\u1EB5n s\u00E0ng xu\u1EA5t b\u1EA3n.",
         glossaries: "Thu\u1EADt ng\u1EEF t\u00F9y ch\u1EC9nh",
         glossariesDesc:
           "X\u00E1c \u0111\u1ECBnh thu\u1EADt ng\u1EEF theo c\u1EB7p ng\u00F4n ng\u1EEF. T\u1EF1 \u0111\u1ED9ng \u0111\u01B0a v\u00E0o d\u1ECBch thu\u1EADt v\u00E0 ki\u1EC3m tra nh\u1EA5t qu\u00E1n.",
@@ -989,7 +989,7 @@ export const translations = {
       backendUrl: "\u0110\u1ECBa ch\u1EC9 API backend",
       backendUrlHint: "C\u00E0i qua bi\u1EBFn m\u00F4i tr\u01B0\u1EDDng NEXT_PUBLIC_API_URL",
       version: "Phi\u00EAn b\u1EA3n",
-      versionInfo: "AI Publisher Pro v2.0 \u2014 15 Sprint, 19 Module d\u1ECBch v\u1EE5",
+      versionInfo: "AI Publisher Pro v2.0 \u2013 15 Sprint, 19 Module d\u1ECBch v\u1EE5",
     },
     reader: {
       preparingDoc: "\u0110ang chu\u1EA9n b\u1ECB t\u00E0i li\u1EC7u...",
@@ -1050,7 +1050,7 @@ export const translations = {
       title: "D\u1ECBch h\u00E0ng lo\u1EA1t",
       subtitle: "D\u1ECBch nhi\u1EC1u file c\u00F9ng l\u00FAc",
       dropFiles: "K\u00E9o th\u1EA3 file v\u00E0o \u0111\u00E2y ho\u1EB7c nh\u1EA5p \u0111\u1EC3 ch\u1ECDn",
-      dropHint: "PDF, DOCX, TXT \u2014 t\u1ED1i \u0111a 10 file",
+      dropHint: "PDF, DOCX, TXT \u2013 t\u1ED1i \u0111a 10 file",
       selectedFiles: "File \u0111\u00E3 ch\u1ECDn",
       sourceLang: "Ng\u00F4n ng\u1EEF ngu\u1ED3n",
       targetLang: "Ng\u00F4n ng\u1EEF \u0111\u00EDch",

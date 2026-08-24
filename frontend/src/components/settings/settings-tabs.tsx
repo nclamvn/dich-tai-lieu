@@ -47,7 +47,7 @@ export function SettingsTabs() {
 
   return (
     <div className="flex flex-col md:flex-row gap-6">
-      {/* Tab list — horizontal on mobile, vertical on desktop */}
+      {/* Tab list – horizontal on mobile, vertical on desktop */}
       <nav className="md:w-48 shrink-0 flex md:flex-col gap-0.5 overflow-x-auto md:overflow-visible pb-2 md:pb-0 border-b md:border-b-0 md:border-r"
         style={{ borderColor: "var(--border-default)" }}
       >

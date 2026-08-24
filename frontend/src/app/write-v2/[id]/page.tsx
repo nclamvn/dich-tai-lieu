@@ -113,7 +113,7 @@ export default function BookV2DetailPage({
         </div>
       </div>
 
-      {/* Created — waiting for pipeline to start */}
+      {/* Created – waiting for pipeline to start */}
       {project.status === "created" && (
         <Card className="px-5 py-4">
           <div className="flex items-center gap-3">

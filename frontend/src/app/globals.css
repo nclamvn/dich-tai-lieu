@@ -141,6 +141,17 @@ body {
 
 /* ─── Typography ─── */
 
+/* Chống dòng mồ côi: heading tự cân các dòng (không còn một chữ lẻ loi
+   rơi xuống dòng cuối), đoạn văn tránh orphan ở dòng chót. Progressive
+   enhancement — trình duyệt cũ bỏ qua, không vỡ gì. */
+h1, h2, h3 {
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
+}
+
 h1 {
   font-family: var(--font-display);
   font-size: 2.5rem;

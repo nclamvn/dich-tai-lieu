@@ -75,7 +75,7 @@ export default function AdminDashboard() {
 
   const uptime = sys?.uptime_seconds
     ? `${Math.floor((sys.uptime_seconds as number) / 3600)}h ${Math.floor(((sys.uptime_seconds as number) % 3600) / 60)}m`
-    : "—";
+    : "–";
 
   return (
     <div className="space-y-6">
@@ -110,12 +110,12 @@ export default function AdminDashboard() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             <StatCard
               label="Status"
-              value={health?.status === "healthy" ? "Healthy" : (health?.status as string) || "—"}
+              value={health?.status === "healthy" ? "Healthy" : (health?.status as string) || "–"}
             />
             <StatCard label="Uptime" value={uptime} />
             <StatCard
               label="Version"
-              value={(sys?.version as string) || "—"}
+              value={(sys?.version as string) || "–"}
             />
             <StatCard
               label="Processor"
@@ -148,7 +148,7 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-            <StatCard label="Total" value={queue?.total ?? "—"} />
+            <StatCard label="Total" value={queue?.total ?? "–"} />
             <StatCard label="Pending" value={queue?.pending ?? 0} />
             <StatCard label="Running" value={queue?.running ?? 0} />
             <StatCard label="Completed" value={queue?.completed ?? 0} />
@@ -259,7 +259,7 @@ export default function AdminDashboard() {
                     </p>
                     <p className="text-xs mt-1" style={{ color: "var(--fg-ghost)" }}>
                       {err.occurrence_count as number}x &middot;{" "}
-                      {err.last_seen ? new Date((err.last_seen as number) * 1000).toLocaleString() : "—"}
+                      {err.last_seen ? new Date((err.last_seen as number) * 1000).toLocaleString() : "–"}
                     </p>
                   </div>
                   {err.resolved ? (

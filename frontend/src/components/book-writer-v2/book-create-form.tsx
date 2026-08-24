@@ -401,7 +401,7 @@ export function BookCreateForm() {
             </div>
           </div>
 
-          {/* Images (optional) — Sprint K */}
+          {/* Images (optional) – Sprint K */}
           <div>
             <button
               type="button"
