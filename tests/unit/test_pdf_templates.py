@@ -77,3 +77,37 @@ def test_default_no_template_uses_serif(tmp_path):
 
 def test_ebook_and_business_differ(tmp_path):
     assert _render(tmp_path, "ebook") != _render(tmp_path, "business")
+
+
+class TestBodyParagraphSpacing:
+    """Regression: the PDF body style silently dropped the stylesheet's
+    paragraph spacing — novels rendered as one solid justified wall of text
+    (no space between paragraphs, no first-line indent)."""
+
+    def _renderer(self):
+        from core.rendering.document_ast import DocumentAST, DocumentMetadata, StyleSheet
+        from core.rendering.pdf_adapter import _PdfRenderer, _ensure_fonts
+
+        ast = DocumentAST(metadata=DocumentMetadata(title="t"), styles=StyleSheet())
+        return _PdfRenderer(ast, _ensure_fonts())
+
+    def test_body_consumes_stylesheet_spacing(self):
+        r = self._renderer()
+        assert r.body.spaceAfter > 0, "paragraphs need breathing space"
+        assert r.body.firstLineIndent > 0, "book body keeps its first-line indent"
+
+    def test_first_paragraph_style_has_no_indent(self):
+        r = self._renderer()
+        assert r.body_first.firstLineIndent == 0.0
+        assert r.body_first.spaceAfter == r.body.spaceAfter
+
+    def test_extractor_tags_first_paragraph_roles(self, tmp_path):
+        from core.rendering.document_extractor import extract_to_ast
+        from core.rendering.document_ast import Paragraph, ParagraphRole
+
+        md = tmp_path / "s.md"
+        md.write_text("# H\n\nOpener after heading.\n\nRegular body one.\n\nRegular body two.\n")
+        ast = extract_to_ast(md)
+        roles = [b.role for b in ast.blocks if isinstance(b, Paragraph)]
+        assert roles[0] == ParagraphRole.FIRST_PARAGRAPH
+        assert all(r == ParagraphRole.BODY for r in roles[1:])

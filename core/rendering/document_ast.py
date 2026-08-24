@@ -387,7 +387,10 @@ class StyleSheet:
 
     body: ParagraphStyle = field(default_factory=lambda: ParagraphStyle(
         font=FontStyle(family="Georgia", size_pt=11.0),
-        spacing=SpacingStyle(line_spacing=1.3, first_line_indent_pt=18.0),
+        # Book body: first-line indent (classic) plus a small space-after so
+        # justified paragraphs never read as one solid wall of text.
+        spacing=SpacingStyle(line_spacing=1.3, first_line_indent_pt=18.0,
+                             space_after_pt=5.0),
         alignment="justify"
     ))
 

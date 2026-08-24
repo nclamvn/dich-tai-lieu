@@ -219,10 +219,21 @@ class _PdfRenderer:
         body_face = _face_for(s.body.font.family, faces)
         self.font = body_face
         size = s.body.font.size_pt
+        # Body honors the stylesheet's paragraph spacing — space_after so
+        # paragraphs breathe, first-line indent for the classic book look.
+        # (Headings always consumed these; body silently dropped them, which
+        # rendered novels as a solid justified wall of text.)
         self.body = ParagraphStyle(
             "body", fontName=body_face, fontSize=size,
             leading=size * (s.body.spacing.line_spacing or 1.35),
             alignment=align_map.get(s.body.alignment, TA_JUSTIFY),
+            spaceAfter=s.body.spacing.space_after_pt,
+            firstLineIndent=s.body.spacing.first_line_indent_pt,
+        )
+        # First paragraph after a heading/section break: no indent
+        # (commercial convention — mirrors the DOCX adapter's role handling).
+        self.body_first = ParagraphStyle(
+            "body_first", parent=self.body, firstLineIndent=0.0,
         )
         self.headings = {
             lvl: ParagraphStyle(
@@ -255,9 +266,16 @@ class _PdfRenderer:
             prefix = f"{block.number}. " if block.number else ""
             return [P(f"<b>{escape(prefix + block.text)}</b>", style)]
         if isinstance(block, Paragraph):
+            from core.rendering.document_ast import ParagraphRole
+
+            style = (
+                self.body_first
+                if getattr(block, "role", None) == ParagraphRole.FIRST_PARAGRAPH
+                else self.body
+            )
             if block.runs:
-                return [P(_runs_to_rl_markup(block.runs), self.body)]
-            return [P(escape(block.text), self.body)]
+                return [P(_runs_to_rl_markup(block.runs), style)]
+            return [P(escape(block.text), style)]
         if isinstance(block, Blockquote):
             out = [P(_inline_markup(block.text), self.quote)]
             if block.attribution:
