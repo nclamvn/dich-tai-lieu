@@ -218,10 +218,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         >
           {!collapsed && (
             <p
-              className="text-[11px] px-2"
-              style={{ color: "var(--fg-tertiary)" }}
+              className="text-[11px] px-2 whitespace-nowrap"
+              style={{ color: "var(--fg-tertiary)", letterSpacing: "0.08em" }}
             >
-              AI PUBLISHER PRO
+              N.C.L
             </p>
           )}
           <div className={cn("flex items-center", collapsed ? "flex-col gap-2" : "gap-1.5")}>
