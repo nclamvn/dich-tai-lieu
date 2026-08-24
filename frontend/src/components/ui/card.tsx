@@ -16,6 +16,7 @@ export function Card({
         background: "var(--bg-primary)",
         borderRadius: "var(--radius-lg)",
         border: "1px solid var(--border-default)",
+        boxShadow: "var(--shadow-sm)",
       }}
       {...props}
     >
