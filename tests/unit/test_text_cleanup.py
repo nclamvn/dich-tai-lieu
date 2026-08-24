@@ -108,3 +108,49 @@ def test_repeated_short_sentence_is_not_furniture():
     cleaned, report = strip_running_furniture(text)
     assert cleaned.count('"Yes."') == 9
     assert report.standalone_removed == 0
+
+
+# ── Inline-only furniture (the Khởi-Nguồn-PDF defect, 2026-08-24) ──
+# Extraction merged paragraphs into long lines, so the running header/footer
+# NEVER appears standalone: "…từng\n\n10  <pua>  TIÊU ĐỀ lọn sóng…" interrupts a
+# sentence mid-line. The standalone frequency pass sees nothing; token discovery
+# must come from the stamp shapes themselves.
+
+PUA = ""
+
+
+def _merged_novel(pages: int = 12) -> str:
+    parts = ["TRĂNG ĐÁY SÔNG Bản quyền tiếng Việt © Lê Thị Mực, 2024 Giữ mọi quyền."]
+    for i in range(1, pages + 1):
+        # footer of previous page glued at end, header of this page glued after
+        # a paragraph break that cuts a sentence in half
+        parts.append(
+            f"Dòng nước cuộn lên từng Lê Thị Mực    {PUA}    {2 * i - 1}\n\n"
+            f"{2 * i}    {PUA}    TRĂNG ĐÁY SÔNG lớp sóng bạc dưới ánh trăng mờ."
+        )
+    return "\n\n".join(parts)
+
+
+def test_inline_only_furniture_is_discovered_and_stripped():
+    text = _merged_novel()
+    cleaned, report = strip_running_furniture(text)
+    forms = set(report.tokens)
+    assert "trăng đáy sông" in forms          # header title, glued only
+    assert "lê thị mực" in forms              # footer author, glued only
+    # every stamp removed…
+    assert PUA not in cleaned
+    assert cleaned.count("TRĂNG ĐÁY SÔNG") <= 1   # copyright-page mention survives
+    assert cleaned.count("Lê Thị Mực") <= 1
+    # …and the sentence the page break cut in half reads whole again
+    assert "cuộn lên từng lớp sóng bạc" in cleaned
+
+
+def test_inline_discovery_ignores_low_frequency_capitalized_prose():
+    # Capitalized words near a stray separator must not become "furniture".
+    text = "\n\n".join(
+        f"Đoạn văn {i} nhắc tới Hà Nội ◆ {i} lần trong câu chuyện dài."
+        for i in range(1, 4)  # only 3 repeats — under the floor
+    )
+    cleaned, report = strip_running_furniture(text)
+    assert not report.tokens
+    assert cleaned == text

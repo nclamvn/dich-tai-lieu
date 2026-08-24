@@ -314,6 +314,7 @@ class APSV2Service:
             "chunks": [],
             "translated_chunks": [],
             "output_paths": {},
+            "output_errors": {},  # per-format failure messages (surfaced to the UI)
             "verification": None,
             "content_path": str(content_path),  # For resume
             "created_at": datetime.now(),
@@ -486,55 +487,87 @@ class APSV2Service:
             if result.output_path:
                 job["output_paths"][first_format] = str(result.output_path)
 
-            # Generate additional output formats if requested
+            # Generate additional output formats if requested.
+            #
+            # These go through the SAME professional AST pipeline as the primary
+            # format (pure-Python: reportlab/python-docx/ebooklib — no pandoc or
+            # LaTeX toolchain), with the same cover arguments. The old path fed
+            # them to the legacy pandoc converter: a lone "$" in prose (money!)
+            # tripped its formula sniffer onto the xelatex road, which fails on
+            # machines without LaTeX — and the failure was logged then swallowed,
+            # so a "docx+pdf" job completed quietly with the PDF missing.
             if len(job["output_formats"]) > 1 and result.assembled_content:
                 from core_v2.output_converter import OutputConverter, OutputFormat
                 converter = OutputConverter()
 
-                # Check if document has formulas
-                has_formulas = False
-                if result.dna:
-                    has_formulas = result.dna.has_formulas
-                if not has_formulas:
-                    formula_patterns = ['$', '\\begin{equation}', '\\frac', '\\sum', '\\int']
-                    has_formulas = any(p in result.assembled_content for p in formula_patterns)
+                doc_title = result.dna.title if result.dna and getattr(result.dna, "title", None) else (title_fallback or "Document")
+                doc_author = result.dna.author if result.dna and getattr(result.dna, "author", None) else ""
+                target_lang = job.get("target_language", "en")
 
                 for fmt in job["output_formats"][1:]:
+                    base_name = f"{job_id}_translated"
+                    output_path = self.output_dir / f"{base_name}.{fmt}"
                     try:
-                        # Sprint 13: Use LayoutDNA-aware EPUB renderer
+                        # Sprint 13: LayoutDNA-aware EPUB renderer when available
                         if fmt == "epub" and epub_available() and job.get("layout_dna"):
                             from api.services.layout_dna import LayoutDNA
-                            base_name = f"{job_id}_translated"
                             output_path = self.output_dir / f"{base_name}.epub"
                             dna = LayoutDNA.from_dict(job["layout_dna"])
                             epub_renderer = EpubRenderer()
                             epub_renderer.render(
                                 layout_dna=dna,
                                 output_path=str(output_path),
-                                title=result.dna.title if result.dna else "Document",
-                                author=result.dna.author if result.dna else "",
-                                language=job.get("target_language", "en"),
+                                title=doc_title,
+                                author=doc_author,
+                                language=target_lang,
                             )
                             job["output_paths"]["epub"] = str(output_path)
                             logger.info(f"[{job_id}] EPUB created via LayoutDNA renderer")
                             continue
 
-                        format_enum = OutputFormat(fmt)
-                        base_name = f"{job_id}_translated"
-                        output_path = self.output_dir / f"{base_name}.{fmt}"
-                        success = await converter.convert(
-                            content=result.assembled_content,
-                            output_format=format_enum,
-                            output_path=output_path,
-                            title=result.dna.title if result.dna else "Document",
-                            author=result.dna.author if result.dna else "",
-                            has_formulas=has_formulas,
-                        )
-                        if success:
-                            job["output_paths"][fmt] = str(output_path)
-                            logger.info(f"[{job_id}] Additional format created: {fmt}")
+                        if fmt == "docx":
+                            produced = await converter.convert_markdown_to_docx_professional(
+                                result.assembled_content, output_path,
+                                template=(docx_template if docx_template != "auto" else "ebook"),
+                                title=doc_title, author=doc_author, language=target_lang,
+                                cover_template=cover_template, cover_image=cover_image,
+                            )
+                            job["output_paths"][fmt] = str(produced)
+                        elif fmt == "pdf":
+                            produced = await converter.convert_markdown_to_pdf_professional(
+                                result.assembled_content, output_path,
+                                template=(pdf_template if pdf_template != "auto" else "ebook"),
+                                title=doc_title, author=doc_author, language=target_lang,
+                                cover_template=cover_template, cover_image=cover_image,
+                            )
+                            job["output_paths"][fmt] = str(produced)
+                        elif fmt == "epub":
+                            produced = await converter.convert_markdown_to_epub_professional(
+                                result.assembled_content, output_path,
+                                title=doc_title, author=doc_author, language=target_lang,
+                                cover_template=cover_template, cover_image=cover_image,
+                            )
+                            job["output_paths"][fmt] = str(produced)
+                        else:
+                            # md / txt / html — plain text-ish targets, no cover concept
+                            format_enum = OutputFormat(fmt)
+                            success = await converter.convert(
+                                content=result.assembled_content,
+                                output_format=format_enum,
+                                output_path=output_path,
+                                title=doc_title,
+                                author=doc_author,
+                            )
+                            if success:
+                                job["output_paths"][fmt] = str(output_path)
+                            else:
+                                raise RuntimeError("converter returned failure (see server log)")
+                        logger.info(f"[{job_id}] Additional format created: {fmt}")
                     except Exception as e:
-                        logger.warning(f"[{job_id}] Failed to create {fmt}: {e}")
+                        # NEVER swallow: the job stays usable, but the miss is
+                        # recorded, persisted, and shown to the user.
+                        job["output_errors"][fmt] = str(e) or e.__class__.__name__
+                        logger.error(f"[{job_id}] Failed to create {fmt}: {e}")
 
             if result.verification:
                 job["verification"] = result.verification
@@ -583,7 +616,7 @@ class APSV2Service:
                 await run_blocking(self._repo.mark_failed, job_id, result.error)
             else:
                 # Save completion to database
-                await run_blocking(self._repo.mark_complete, job_id, job["output_paths"])
+                await run_blocking(self._repo.mark_complete, job_id, job["output_paths"], job.get("output_errors") or {})
 
             # QAPR: record call outcome for future routing decisions
             try:
@@ -777,6 +810,8 @@ class APSV2Service:
             dna=dna_response,
             chunks_count=len(job.get("chunks", [])),
             output_paths=job.get("output_paths", {}),
+            output_errors=job.get("output_errors", {}) or {},
+            cover_template=job.get("cover_template") or "",
             quality_score=quality_score,
             quality_level=quality_level,
             usage_stats=usage_stats_response,
@@ -838,6 +873,8 @@ class APSV2Service:
             pdf_template=job.get("pdf_template", "auto"),
             provider=job.get("provider"),
             model=job.get("model"),
+            cover_template=job.get("cover_template") or None,
+            cover_image=job.get("cover_image") or None,
         ))
         self._job_tasks[job_id] = task
 

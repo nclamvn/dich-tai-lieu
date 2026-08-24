@@ -65,6 +65,7 @@ export default function TranslatePage() {
         if (draft.targetLang) setTargetLang(draft.targetLang);
         if (draft.formats?.length) setSelectedFormats(draft.formats);
         if (draft.engineId) setEngineId(draft.engineId);
+        if (draft.cover) setCover(draft.cover);
       } catch { /* ignore corrupt draft */ }
     }
   }, []);
@@ -72,11 +73,11 @@ export default function TranslatePage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       localStorage.setItem(DRAFT_KEY, JSON.stringify({
-        sourceLang, targetLang, formats: selectedFormats, engineId,
+        sourceLang, targetLang, formats: selectedFormats, engineId, cover,
       }));
     }, 1000);
     return () => clearTimeout(timer);
-  }, [sourceLang, targetLang, selectedFormats, engineId]);
+  }, [sourceLang, targetLang, selectedFormats, engineId, cover]);
 
   const profileList = profilesData?.profiles || [];
   const glossaryList = glossaryData?.glossaries || [];

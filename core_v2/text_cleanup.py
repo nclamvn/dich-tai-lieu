@@ -114,6 +114,93 @@ def detect_furniture_tokens(
     return tokens
 
 
+
+_HDR_SHAPE = re.compile(rf"{_PAGENUM}\s*{_SEP_CLASS}+\s*([^\n]{{1,80}})", re.UNICODE)
+_FTR_SHAPE = re.compile(rf"([^\n]{{1,80}}?)\s*{_SEP_CLASS}+\s*{_PAGENUM}", re.UNICODE)
+_WORD_RE = re.compile(r"[\w’'-]+", re.UNICODE)
+
+
+def _isupper_word(w: str) -> bool:
+    return any(ch.isalpha() for ch in w) and w == w.upper()
+
+
+def _iscap_word(w: str) -> bool:
+    letters = [ch for ch in w if ch.isalpha()]
+    return bool(letters) and letters[0] == letters[0].upper()
+
+
+def detect_inline_furniture_tokens(text: str, *, floor: int = 5) -> dict[str, str]:
+    """Find furniture whose every occurrence is GLUED into body text.
+
+    A PDF whose extraction merges paragraphs produces lines like
+    ``"…từng\n\n10    <pua>    KHỌI NGUỄN lọn sóng…"`` (title interrupting a
+    sentence mid-line) — the running header never stands alone, so the
+    standalone-line frequency pass sees nothing. Here the *stamp shape itself*
+    proposes candidates:
+
+    * after ``<num> <sep>``: the leading run of ALL-CAPS words (running-header
+      title) — prefixes counted, longest prefix at ~max family frequency wins;
+    * before ``<sep> <num>``: the trailing run of Capitalized words (an
+      ``Author <sep> page`` footer) — suffixes counted the same way.
+
+    Only phrases repeating >= ``floor`` times qualify, so chapter headings and
+    prose near a stray separator never make the cut.
+    """
+    raw_of: dict[str, str] = {}
+    prefix_counts: Counter = Counter()
+    for m in _HDR_SHAPE.finditer(text):
+        words = _WORD_RE.findall(m.group(1))
+        run = []
+        for w in words:
+            if not _isupper_word(w) or len(run) >= 6:
+                break
+            run.append(w)
+        for k in range(1, len(run) + 1):
+            phrase = " ".join(run[:k])
+            form = _norm(phrase)
+            if form:
+                prefix_counts[form] += 1
+                raw_of.setdefault(form, phrase)
+
+    suffix_counts: Counter = Counter()
+    for m in _FTR_SHAPE.finditer(text):
+        words = _WORD_RE.findall(m.group(1))
+        run = []
+        for w in reversed(words):
+            if not _iscap_word(w) or len(run) >= 6:
+                break
+            run.append(w)
+        run.reverse()
+        for k in range(1, len(run) + 1):
+            phrase = " ".join(run[-k:])
+            form = _norm(phrase)
+            if form:
+                suffix_counts[form] += 1
+                raw_of.setdefault(form, phrase)
+
+    def _pick(counts: Counter) -> dict[str, str]:
+        # Longest phrase whose count is within 10% of the family maximum:
+        # nested prefixes/suffixes of the true token share its count ("KHỌI"
+        # and "KHỌI NGUỄN" both hit ~164) while accidental extensions ("Xe
+        # Nguyễn …") appear a handful of times.
+        picked: dict[str, str] = {}
+        qualified = {f: c for f, c in counts.items() if c >= floor}
+        if not qualified:
+            return picked
+        top = max(qualified.values())
+        for form in sorted(qualified, key=lambda f: len(raw_of[f]), reverse=True):
+            if qualified[form] < 0.9 * top:
+                continue
+            if any(form != other and form in other for other in picked):
+                continue  # covered by a longer chosen phrase
+            picked[form] = raw_of[form]
+        return picked
+
+    tokens = _pick(prefix_counts)
+    tokens.update(_pick(suffix_counts))
+    return tokens
+
+
 def _build_stamp_re(raw_tokens: list[str]) -> re.Pattern:
     # Anchor on the token CORE (no page number, no separators) so a token whose
     # representative spelling happened to include a page number still matches
@@ -146,6 +233,10 @@ def strip_running_furniture(text: str, *, floor: int = 5) -> tuple[str, Furnitur
 
     lines = text.split("\n")
     tokens = detect_furniture_tokens(lines, floor=floor)
+    # Furniture glued into merged paragraph lines never stands alone — discover
+    # those tokens from the "<num> <sep> TITLE" / "AUTHOR <sep> <num>" shapes.
+    for form, raw in detect_inline_furniture_tokens(text, floor=floor).items():
+        tokens.setdefault(form, raw)
     if not tokens:
         return text, report
     report.tokens = tokens
@@ -172,6 +263,15 @@ def strip_running_furniture(text: str, *, floor: int = 5) -> tuple[str, Furnitur
 
     cleaned = "\n".join(out)
     cleaned = re.sub(r"\n[ \t]*\n[ \t]*\n+", "\n\n", cleaned)
+    # A stripped stamp often sat exactly on a page break that interrupted a
+    # sentence ("…từng ⏎⏎ [stamp] lọn sóng…"). When the text before the break
+    # has no terminal punctuation and the text after starts lowercase, the
+    # break is an extraction artifact — rejoin the sentence.
+    cleaned = re.sub(
+        r"([^\s.!?…:;”\"'’)\]])[ \t]*\n[ \t]*\n+([a-zà-ỹ])",
+        r"\1 \2",
+        cleaned,
+    )
     logger.info(
         "running-furniture strip: %d token(s) %s; removed %d standalone line(s), "
         "cleaned %d inline stamp(s)",

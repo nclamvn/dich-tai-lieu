@@ -85,8 +85,24 @@ export function CoverPicker({
     </span>
   );
 
+  const selectedName =
+    value.coverImage
+      ? "Ảnh bìa tự tải lên"
+      : value.coverTemplate
+        ? (templates.find((tp) => tp.id === value.coverTemplate)?.name || value.coverTemplate)
+        : null;
+
   return (
     <div>
+      <p className="text-[13px] mb-2.5">
+        <span style={{ color: "var(--fg-tertiary)" }}>Bìa sẽ xuất: </span>
+        <span
+          className="font-medium"
+          style={{ color: selectedName ? "var(--color-notion-blue)" : "var(--fg-secondary)" }}
+        >
+          {selectedName || "Không dùng bìa"}
+        </span>
+      </p>
       {error && (
         <p className="text-sm mb-2" style={{ color: "var(--color-notion-red, #e5484d)" }}>
           {error}
@@ -99,18 +115,23 @@ export function CoverPicker({
       ) : (
         <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
           {/* No cover */}
+          {/* The no-cover tile is deliberately UNLIKE a template: dashed ghost
+              with a plain label. The old styling gave it the same confident
+              blue border + tick as a selected template, so the DEFAULT state
+              (no cover chosen) read as "a cover is selected" — and users
+              shipped jobs believing a cover was on. */}
           <button
             type="button"
             onClick={pickNone}
             className={cn(cardBase, "flex items-center justify-center text-xs font-medium")}
             style={{
-              borderColor: noneSelected ? "var(--color-notion-blue, #2f6bff)" : "var(--border-hover)",
-              color: "var(--fg-secondary)",
-              background: "var(--bg-secondary, transparent)",
+              borderStyle: "dashed",
+              borderColor: noneSelected ? "var(--fg-tertiary)" : "var(--border-hover)",
+              color: noneSelected ? "var(--fg-primary)" : "var(--fg-tertiary)",
+              background: "transparent",
             }}
           >
             Không bìa
-            {noneSelected && tick}
           </button>
 
           {/* Templates */}

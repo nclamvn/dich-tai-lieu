@@ -586,6 +586,19 @@ export default function JobDetailPage({
         </Link>
       )}
 
+      {/* Per-format failures — a requested format that could not be produced */}
+      {job._outputErrors && Object.keys(job._outputErrors).length > 0 && (
+        <Card>
+          <CardContent className="py-3 space-y-1">
+            {Object.entries(job._outputErrors).map(([fmt, msg]) => (
+              <p key={fmt} className="text-sm" style={{ color: "var(--color-notion-orange)" }}>
+                ⚠ {fmt.toUpperCase()}: {msg}
+              </p>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
       {/* Download Outputs */}
       {outputs.length > 0 && (
         <Card>

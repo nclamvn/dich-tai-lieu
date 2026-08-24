@@ -149,6 +149,12 @@ class JobResponseV2(BaseModel):
     dna: Optional[DocumentDNAResponse] = None
     chunks_count: int = 0
     output_paths: Dict[str, str] = {}
+    # Per-format failure messages — a requested format that could not be
+    # produced is reported here instead of silently missing from output_paths.
+    output_errors: Dict[str, str] = {}
+    # Cover audit: what the caller asked for (empty string = no cover)
+    cover_template: str = ""
+
 
     # Verification (when available)
     quality_score: Optional[float] = None

@@ -91,6 +91,23 @@ class JobRepository:
             except Exception:
                 pass  # Column already exists
 
+            # Migration: per-format failure messages (a requested format that
+            # could not be produced must be VISIBLE, not silently absent)
+            try:
+                conn.execute("ALTER TABLE aps_jobs ADD COLUMN output_errors_json TEXT DEFAULT '{}'")
+            except Exception:
+                pass  # Column already exists
+
+            # Migration: cover request audit (which cover the caller asked for)
+            try:
+                conn.execute("ALTER TABLE aps_jobs ADD COLUMN cover_template TEXT DEFAULT ''")
+            except Exception:
+                pass
+            try:
+                conn.execute("ALTER TABLE aps_jobs ADD COLUMN cover_image TEXT DEFAULT ''")
+            except Exception:
+                pass
+
             conn.execute("""
                 CREATE INDEX IF NOT EXISTS idx_aps_jobs_user_id
                 ON aps_jobs(user_id)
@@ -146,8 +163,9 @@ class JobRepository:
                     profile_id, output_formats, use_vision,
                     status, progress, current_stage, error,
                     dna_json, output_paths_json, content_path,
+                    cover_template, cover_image,
                     created_at, updated_at, completed_at, user_id
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT(job_id) DO UPDATE SET
                     status = excluded.status,
                     progress = excluded.progress,
@@ -172,6 +190,8 @@ class JobRepository:
                 dna_json,
                 output_paths,
                 job.get("content_path"),
+                job.get("cover_template") or "",
+                job.get("cover_image") or "",
                 created_at or now,
                 now,
                 completed_at,
@@ -207,7 +227,8 @@ class JobRepository:
     _LIST_COLUMNS = (
         "job_id, source_file, source_language, target_language, profile_id, "
         "output_formats, use_vision, status, progress, current_stage, error, "
-        "output_paths_json, created_at, updated_at, completed_at, user_id"
+        "output_paths_json, output_errors_json, cover_template, cover_image, "
+        "created_at, updated_at, completed_at, user_id"
     )
 
     def get_all_jobs(self, limit: int = 50, user_id: Optional[str] = None) -> List[Dict]:
@@ -246,6 +267,11 @@ class JobRepository:
             "error": row["error"],
             "dna": None,
             "output_paths": json.loads(row["output_paths_json"]),
+            "output_errors": json.loads(
+                (row["output_errors_json"] if "output_errors_json" in row.keys() else None) or "{}"
+            ),
+            "cover_template": (row["cover_template"] if "cover_template" in row.keys() else "") or "",
+            "cover_image": (row["cover_image"] if "cover_image" in row.keys() else "") or "",
             "content_path": None,
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
@@ -346,8 +372,8 @@ class JobRepository:
                 WHERE job_id = ?
             """, (progress, stage, datetime.now().isoformat(), job_id))
 
-    def mark_complete(self, job_id: str, output_paths: Dict) -> None:
-        """Mark job as complete."""
+    def mark_complete(self, job_id: str, output_paths: Dict, output_errors: Optional[Dict] = None) -> None:
+        """Mark job as complete (recording any per-format failures)."""
         with self._get_connection() as conn:
             now = datetime.now().isoformat()
             conn.execute("""
@@ -355,9 +381,10 @@ class JobRepository:
                 SET status = 'complete', progress = 100.0,
                     current_stage = 'Complete',
                     output_paths_json = ?,
+                    output_errors_json = ?,
                     updated_at = ?, completed_at = ?
                 WHERE job_id = ?
-            """, (json.dumps(output_paths), now, now, job_id))
+            """, (json.dumps(output_paths), json.dumps(output_errors or {}), now, now, job_id))
         self.record_history(job_id, "status", "running", "complete")
 
     def mark_failed(self, job_id: str, error: str) -> None:
@@ -386,6 +413,11 @@ class JobRepository:
             "error": row["error"],
             "dna": json.loads(row["dna_json"]) if row["dna_json"] else None,
             "output_paths": json.loads(row["output_paths_json"]),
+            "output_errors": json.loads(
+                (row["output_errors_json"] if "output_errors_json" in row.keys() else None) or "{}"
+            ),
+            "cover_template": (row["cover_template"] if "cover_template" in row.keys() else "") or "",
+            "cover_image": (row["cover_image"] if "cover_image" in row.keys() else "") or "",
             "content_path": row["content_path"],
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
