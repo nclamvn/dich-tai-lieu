@@ -25,7 +25,8 @@ Version hiện hành: **3.3.1** (`api/main.py`).
 ## Chạy dev
 
 ```bash
-bash dev.sh        # backend :8000 (uvicorn --reload) + frontend :3000 — Ctrl-C tắt cả hai
+bash dev.sh        # backend :8000 + frontend :3000 — cổng bận thì TỰ DÒ cổng kế
+                   # (ép cổng: BACKEND_PORT=8001 FRONTEND_PORT=3001 bash dev.sh)
 ```
 
 Mở http://localhost:3000. Backend docs: http://localhost:8000/docs (chỉ hiện
