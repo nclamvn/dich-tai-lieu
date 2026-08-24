@@ -204,6 +204,64 @@ def _inline_markup(text: str) -> str:
     return _runs_to_rl_markup(runs) if runs else escape(text)
 
 
+def _toc_flowable_base():
+    """Lazily build the ``_TocLine`` flowable class (keeps reportlab off the
+    module import path)."""
+    from reportlab.pdfbase.pdfmetrics import stringWidth
+    from reportlab.platypus import Flowable
+
+    class _TocLineImpl(Flowable):
+        """One contents line: title flush-left, page flush-right, a dot leader
+        filling the gap. Renders identically whatever the title/page lengths, so
+        the whole contents list aligns to a single right margin — the fix for
+        source-book TOC pages that extract as ragged literal-dot paragraphs."""
+
+        def __init__(self, title: str, page: str, style):
+            super().__init__()
+            self.title = title
+            self.page = page
+            self.style = style
+
+        def wrap(self, avail_w, avail_h):
+            self.width = avail_w
+            self.height = self.style.leading
+            return avail_w, self.height
+
+        def draw(self):
+            c = self.canv
+            st = self.style
+            fn, fs = st.fontName, st.fontSize
+            y = (self.height - fs) / 2.0 + fs * 0.18  # visually-centered baseline
+            c.setFont(fn, fs)
+            title_w = stringWidth(self.title, fn, fs)
+            page_w = stringWidth(self.page, fn, fs)
+            c.drawString(0, y, self.title)
+            c.drawRightString(self.width, y, self.page)
+            dot = "."
+            dot_w = stringWidth(dot, fn, fs)
+            gap = fs * 0.4
+            start = title_w + gap
+            end = self.width - page_w - gap
+            if end > start and dot_w > 0:
+                n = int((end - start) / dot_w)
+                if n > 0:
+                    # right-align the dot run against the page number (classic look)
+                    c.drawString(end - n * dot_w, y, dot * n)
+
+    return _TocLineImpl
+
+
+# Built once on first use.
+_TocLine = None  # type: ignore
+
+
+def _ensure_toc_line():
+    global _TocLine
+    if _TocLine is None:
+        _TocLine = _toc_flowable_base()
+    return _TocLine
+
+
 class _PdfRenderer:
     def __init__(self, ast: DocumentAST, faces: dict):
         from reportlab.lib.enums import TA_CENTER, TA_JUSTIFY, TA_LEFT, TA_RIGHT
@@ -268,9 +326,12 @@ class _PdfRenderer:
         if isinstance(block, Paragraph):
             from core.rendering.document_ast import ParagraphRole
 
+            role = getattr(block, "role", None)
+            if role == ParagraphRole.TOC_ENTRY and getattr(block, "page", None):
+                return [_ensure_toc_line()(block.text, str(block.page), self.body)]
             style = (
                 self.body_first
-                if getattr(block, "role", None) == ParagraphRole.FIRST_PARAGRAPH
+                if role == ParagraphRole.FIRST_PARAGRAPH
                 else self.body
             )
             if block.runs:
