@@ -2,6 +2,18 @@
 
 All notable changes to AI Publisher Pro will be documented in this file.
 
+## [Unreleased] — TOC dịch sót (chuẩn hoá blob mục lục trước khi dịch)
+
+- Trang mục lục in sẵn của sách nguồn trích ra thành MỘT blob dày đặc
+  ("… 30. Khoanh vùng……249 …", dấu chấm 200 ký tự nối liền). Đưa nguyên lump
+  vào dịch, model để sót vài tiêu đề ở tiếng gốc ("Khoanh vùng"). Giờ
+  `normalize_toc_lines` (chạy trước dịch, cạnh strip furniture) tách mỗi mục
+  thành DÒNG RIÊNG với leader ngắn " . . . " — mỗi tiêu đề thành đơn vị dịch
+  sạch, độc lập; render layer vẫn nhận diện + căn lề như cũ. Kiểm trên chính
+  văn bản nguồn: 31 mục tách đúng, số trang + số chương ("01.") giữ nguyên.
+- Lưu ý: số trang trong TOC là phân trang của SÁCH GỐC, không khớp phân trang
+  bản dịch tái dàn — đây là bản in lại nguyên trạng mục lục nguồn.
+
 ## [Unreleased] — TOC alignment (căn chỉnh mục lục trái–phải)
 
 - Dòng mục lục từ TOC in sẵn của sách nguồn (trích ra thành "Tiêu đề……số

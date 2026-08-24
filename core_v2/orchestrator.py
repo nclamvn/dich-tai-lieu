@@ -525,6 +525,27 @@ class UniversalPublisher:
                         f"[{job.job_id}] running-furniture strip skipped: {e}"
                     )
 
+            # Split a source book's printed contents blob into one clean line per
+            # entry BEFORE translation — a 200-dot "Title……page" lump makes the
+            # model leave the odd title untranslated; isolated short lines
+            # translate reliably, and the render layer re-aligns them.
+            if source_text and bool(_cfg("strip_running_furniture", True)):
+                try:
+                    from core_v2.text_cleanup import normalize_toc_lines
+
+                    toc_text, n_toc = normalize_toc_lines(source_text)
+                    if n_toc:
+                        logger.info(
+                            f"[{job.job_id}] normalized {n_toc} printed-TOC entr"
+                            f"{'y' if n_toc == 1 else 'ies'} for clean translation"
+                        )
+                        source_text = toc_text
+                        job.source_text = source_text
+                except Exception as e:  # pragma: no cover - cleanup is best-effort
+                    logger.warning(
+                        f"[{job.job_id}] TOC normalization skipped: {e}"
+                    )
+
             # Stage 1: Extract DNA (52%)
             update_progress(0.52, "Extracting document DNA")
             job.status = JobStatus.EXTRACTING_DNA
