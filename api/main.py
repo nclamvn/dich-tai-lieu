@@ -875,7 +875,7 @@ def _cover_preview_version() -> str:
     if _COVER_PREVIEW_VERSION is None:
         import hashlib
 
-        h = hashlib.sha1()
+        h = hashlib.sha1(usedforsecurity=False)
         try:
             from core.rendering.pdf_adapter import _BUNDLED_FONTS
 

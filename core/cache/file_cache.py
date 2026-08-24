@@ -98,7 +98,7 @@ class FileCache(CacheInterface):
 
     def _key_to_filename(self, key: str) -> str:
         """Convert key to safe filename"""
-        hash_val = hashlib.md5(key.encode()).hexdigest()[:16]
+        hash_val = hashlib.md5(key.encode(), usedforsecurity=False).hexdigest()[:16]
         safe_key = "".join(c if c.isalnum() else "_" for c in key[:32])
         return f"{safe_key}_{hash_val}"
 

@@ -258,7 +258,7 @@ class ImageExtractor:
 
         # Check for duplicates
         if self.config.skip_duplicates:
-            img_hash = hashlib.md5(image_bytes).hexdigest()
+            img_hash = hashlib.md5(image_bytes, usedforsecurity=False).hexdigest()
             if img_hash in self._seen_hashes:
                 return None
             self._seen_hashes.add(img_hash)

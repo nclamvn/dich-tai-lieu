@@ -175,7 +175,7 @@ class PlaceholderManager:
             Placeholder string
         """
         # Create hash of content for uniqueness
-        content_hash = hashlib.md5(content.encode('utf-8')).hexdigest()[:8]
+        content_hash = hashlib.md5(content.encode('utf-8'), usedforsecurity=False).hexdigest()[:8]
 
         # Get subtype
         if content_type == 'formula':

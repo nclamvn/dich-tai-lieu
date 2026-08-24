@@ -434,7 +434,7 @@ class TestFeatureX:
 **1. Import Errors**
 ```bash
 # Ensure project root is in path
-export PYTHONPATH="${PYTHONPATH}:/Users/mac/translator_project"
+export PYTHONPATH="${PYTHONPATH}:/path/to/dich-tai-lieu"
 ```
 
 **2. Async Tests Failing**

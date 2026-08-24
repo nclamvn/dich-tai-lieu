@@ -5,6 +5,7 @@ Tests for Image Embedding Module
 Run: pytest tests/test_image_embedding.py -v
 """
 
+import os
 import pytest
 import tempfile
 from pathlib import Path
@@ -242,7 +243,7 @@ class TestImageEmbeddingPipeline:
 
 # Integration test with real PDF (if available)
 @pytest.mark.skipif(
-    not Path("/Users/mac/ai-publisher-pro-public/tests/samples").exists(),
+    not Path(os.environ.get("SAMPLES_DIR", "tests/samples")).exists(),
     reason="Sample PDFs not available"
 )
 class TestIntegration:
@@ -252,7 +253,7 @@ class TestIntegration:
         """Test extraction from a sample PDF"""
         from core.image_embedding import ImageExtractor
 
-        sample_dir = Path("/Users/mac/ai-publisher-pro-public/tests/samples")
+        sample_dir = Path(os.environ.get("SAMPLES_DIR", "tests/samples"))
         pdfs = list(sample_dir.glob("*.pdf"))
 
         if not pdfs:

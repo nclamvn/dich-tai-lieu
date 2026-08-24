@@ -2,6 +2,38 @@
 
 All notable changes to AI Publisher Pro will be documented in this file.
 
+## [Unreleased] — Pre-share audit (an ninh + vệ sinh trước khi chia sẻ repo)
+
+### Security
+- **Full-history secret scan: CLEAN.** Every unique blob in git history (1,485)
+  scanned for API-key/token/private-key patterns — only documentation
+  placeholders found. `.env`/`*.key`/`*.db` never committed.
+- Frontend dependencies: **15 CVEs → 0** (`npm audit fix` + Next.js
+  16.1.6 → 16.3.2, patching GHSA-955p-x3mx-jcvp server-function disclosure);
+  production build verified on the new version. `pip-audit`: 0 known CVEs.
+- `bandit -lll`: **12 High → 0** — archive extraction hardened against
+  zip-slip/tar-traversal (member validation + `filter="data"`); ten MD5/SHA1
+  fingerprint call-sites marked `usedforsecurity=False` (cache keys and
+  dedup hashes, not credentials).
+
+### Fixed
+- `core/book_writer/prompts.py` could not PARSE on Python 3.11 (backslash in
+  f-string expression — PEP 701 is 3.12+): a latent crash for the Book Writer
+  feature on 3.11 deployments that CI missed because the module imports
+  lazily. Rewritten with prebuilt snippets — output byte-identical (verified
+  against the old rendering on 3.13).
+- `.env.production` still advertised the pre-P2 port map → 8000/3000.
+
+### Privacy (pre-share)
+- Personal absolute paths (`/Users/mac/...`) removed from live tests/docs —
+  repo-relative or env-var (`SAMPLES_DIR`) instead; historical docs keep
+  theirs under the 📜 banner (now also on INTEGRATION_ARCHITECTURE.md).
+- The running-furniture test fixture no longer embeds the author's real
+  manuscript title/chapter names/author-name — anonymized synthetic novel,
+  same structure, all 7 tests pass.
+- Email sweep: only example/test addresses. No phone numbers. LICENSE (MIT)
+  year bumped to 2024-2026.
+
 ## [Unreleased] — P3 debt paydown (the §12 ledger is now CLOSED: 11/11 paid)
 
 ### Fixed

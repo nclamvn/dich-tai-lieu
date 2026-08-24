@@ -137,6 +137,20 @@ Thiết kế argument arc:
 - CONCLUSION (1-2 chapters): Tổng kết, tầm nhìn, call to action
 </argument_arc_guide>"""
 
+    # Py3.11: f-string expressions must not contain backslashes (PEP 701 is
+    # 3.12+), so the escaped-quote JSON snippets are prebuilt here.
+    if genre == "fiction":
+        arc_schema_json = ('"narrative_arc": {"act1_end": 5, "midpoint": 10, '
+                           '"act2_end": 16, "climax_chapter": 17},')
+        sheet_schema_json = ('"characters": [{"name": "...", "description": "...", '
+                             '"motivation": "...", "arc": "...", "relationships": {}, '
+                             '"voice_notes": "..."}]')
+    else:
+        arc_schema_json = ('"argument_arc": {"hook_chapters": [1,2], '
+                           '"foundation_chapters": [3,4,5], "core_chapters": [6,7,8,9,10,11,12,13], '
+                           '"application_chapters": [14,15,16], "conclusion_chapters": [17,18]},')
+        sheet_schema_json = ('"terms": [{"term": "...", "definition": "...", '
+                             '"first_chapter": 1}]')
     return f"""<role>
 Bạn là kiến trúc sư sách — thiết kế cấu trúc tổng thể cho tác phẩm.
 Nhận Analysis Report làm input, tạo ra Book Blueprint.
@@ -181,8 +195,8 @@ Schema:
       "emotional_tone": "..."
     }}
   ],
-  {"\"narrative_arc\": {\"act1_end\": 5, \"midpoint\": 10, \"act2_end\": 16, \"climax_chapter\": 17}," if genre == "fiction" else "\"argument_arc\": {\"hook_chapters\": [1,2], \"foundation_chapters\": [3,4,5], \"core_chapters\": [6,7,8,9,10,11,12,13], \"application_chapters\": [14,15,16], \"conclusion_chapters\": [17,18]},"}
-  {"\"characters\": [{\"name\": \"...\", \"description\": \"...\", \"motivation\": \"...\", \"arc\": \"...\", \"relationships\": {}, \"voice_notes\": \"...\"}]" if genre == "fiction" else "\"terms\": [{\"term\": \"...\", \"definition\": \"...\", \"first_chapter\": 1}]"}
+  {arc_schema_json}
+  {sheet_schema_json}
 }}
 </output_rules>"""
 

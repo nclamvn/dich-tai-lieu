@@ -168,7 +168,7 @@ class VectorMemory:
 
     def _generate_chunk_id(self, chapter: int, index: int, text: str) -> str:
         """Generate unique ID for chunk"""
-        content_hash = hashlib.md5(text.encode()).hexdigest()[:8]
+        content_hash = hashlib.md5(text.encode(), usedforsecurity=False).hexdigest()[:8]
         return f"ch{chapter:03d}_idx{index:03d}_{content_hash}"
 
     def search(
