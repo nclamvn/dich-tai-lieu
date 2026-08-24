@@ -24,6 +24,14 @@ All notable changes to AI Publisher Pro will be documented in this file.
   bằng lời; lựa chọn bìa được lưu vào draft tự động, được PERSIST vào job
   record (audit), và đường restart-job không còn đánh rơi bìa.
 
+### Fixed (paragraph spacing)
+- PDF xuất tiểu thuyết là "bức tường chữ": body style của pdf_adapter bỏ quên
+  `first_line_indent_pt` + `space_after_pt` của stylesheet (heading thì có).
+  Giờ đoạn văn có indent dòng đầu 18pt + 5pt giãn sau đoạn; đoạn MỞ ĐẦU sau
+  heading không indent (chuẩn sách thương mại — ngang hàng DOCX adapter), và
+  `extract_to_ast` gán role FIRST_PARAGRAPH cho mọi front-end (trước chỉ
+  ast_builder có). DOCX cũng được thêm 5pt giãn đoạn qua stylesheet chung.
+
 ## [Unreleased] — Pre-share audit (an ninh + vệ sinh trước khi chia sẻ repo)
 
 ### Security

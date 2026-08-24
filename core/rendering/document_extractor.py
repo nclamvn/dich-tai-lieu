@@ -38,13 +38,37 @@ def extract_to_ast(source: Union[str, Path]) -> DocumentAST:
     path = Path(source)
     suffix = path.suffix.lower()
     if suffix == ".docx":
-        return extract_docx(path)
-    if suffix in (".txt", ".md", ".markdown"):
-        return extract_text(path)
-    raise NotImplementedError(
-        f"extract_to_ast does not support '{suffix}' yet "
-        "(DOCX and TXT/MD are supported; PDF extraction is an L0 follow-up)."
-    )
+        ast = extract_docx(path)
+    elif suffix in (".txt", ".md", ".markdown"):
+        ast = extract_text(path)
+    else:
+        raise NotImplementedError(
+            f"extract_to_ast does not support '{suffix}' yet "
+            "(DOCX and TXT/MD are supported; PDF extraction is an L0 follow-up)."
+        )
+    _assign_first_paragraph_roles(ast)
+    return ast
+
+
+def _assign_first_paragraph_roles(ast: DocumentAST) -> None:
+    """Tag the paragraph that opens the document or follows a heading/page break
+    as FIRST_PARAGRAPH (commercial convention: it renders without the first-line
+    indent). ast_builder assigns roles itself; this extractor path never did, so
+    every renderer downstream saw uniform BODY paragraphs."""
+    from core.rendering.document_ast import Heading, PageBreak, Paragraph, ParagraphRole
+
+    flow_broken = True  # document start counts as a break
+    for block in ast.blocks:
+        if isinstance(block, (Heading, PageBreak)):
+            flow_broken = True
+            continue
+        if isinstance(block, Paragraph):
+            if flow_broken and block.role == ParagraphRole.BODY:
+                block.role = ParagraphRole.FIRST_PARAGRAPH
+            flow_broken = False
+        else:
+            # Lists, tables, quotes… also interrupt paragraph flow.
+            flow_broken = True
 
 
 def _new_ast(title: str) -> DocumentAST:
