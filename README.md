@@ -92,7 +92,8 @@ pip install -r requirements.txt
 cp .env.example .env
 # Edit .env — add your API keys
 
-# Start both servers with one command (backend :8000 + frontend :3000)
+# Start both servers with one command (backend :8000 + frontend :3000;
+# busy ports are dodged automatically — override: FRONTEND_PORT=3001 bash dev.sh)
 bash dev.sh
 ```
 
