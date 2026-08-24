@@ -46,8 +46,74 @@ def extract_to_ast(source: Union[str, Path]) -> DocumentAST:
             f"extract_to_ast does not support '{suffix}' yet "
             "(DOCX and TXT/MD are supported; PDF extraction is an L0 follow-up)."
         )
+    _detect_toc_entries(ast)
     _assign_first_paragraph_roles(ast)
     return ast
+
+
+# A table-of-contents line: a title, a dot leader (2+ dot-like glyphs, possibly
+# space-separated), then a trailing page number. Requiring the dot leader keeps
+# ordinary prose that merely ends in a number ("...in 1999") from matching.
+_TOC_LINE_RE = re.compile(
+    r"^\s*(?P<title>.*?\S)\s*"
+    r"(?P<dots>[.…·‧](?:\s*[.…·‧])+)\s*"
+    r"(?P<page>\d{1,4})\s*$"
+)
+
+
+def parse_toc_line(text: str):
+    """Return ``(title, page)`` if *text* is a dot-leader TOC entry, else None.
+
+    The title must contain a letter (so numeric runs like "1 . . . 2" don't
+    match) and the leader must be at least two dot glyphs.
+    """
+    m = _TOC_LINE_RE.match(text or "")
+    if not m:
+        return None
+    title = m.group("title").strip()
+    if not any(ch.isalpha() for ch in title):
+        return None
+    return title, m.group("page")
+
+
+def _detect_toc_entries(ast: DocumentAST) -> None:
+    """Reclassify dot-leader TOC lines — whether they arrived as paragraphs or as
+    a mis-detected numbered list — into TOC_ENTRY paragraphs the PDF/DOCX
+    renderers align (title flush-left, page flush-right, dots between).
+
+    A source book's printed contents page is extracted verbatim; left as plain
+    paragraphs it renders as a ragged wall of literal dots with page numbers
+    landing wherever the text happens to end. This is the single choke point that
+    makes every downstream renderer produce a real, aligned TOC instead.
+    """
+    from core.rendering.document_ast import ListBlock, Paragraph, ParagraphRole
+
+    new_blocks: list = []
+    for block in ast.blocks:
+        if isinstance(block, Paragraph) and block.role != ParagraphRole.TOC_ENTRY:
+            parsed = parse_toc_line(block.text)
+            if parsed:
+                title, page = parsed
+                new_blocks.append(
+                    Paragraph(text=title, role=ParagraphRole.TOC_ENTRY, page=page)
+                )
+                continue
+        if isinstance(block, ListBlock):
+            parsed_items = [(it, parse_toc_line(it)) for it in block.items]
+            matched = [p for _, p in parsed_items if p]
+            # Convert only when the list is clearly a contents list, not a normal
+            # list with one number-ending item: 3+ hits and a strong majority.
+            if len(matched) >= 3 and len(matched) >= 0.6 * len(block.items):
+                for _, p in parsed_items:
+                    if p:
+                        new_blocks.append(
+                            Paragraph(text=p[0], role=ParagraphRole.TOC_ENTRY, page=p[1])
+                        )
+                    # Non-matching stragglers in a contents list are dropped —
+                    # they are page-header noise, not real content.
+                continue
+        new_blocks.append(block)
+    ast.blocks = new_blocks
 
 
 def _assign_first_paragraph_roles(ast: DocumentAST) -> None:

@@ -2,6 +2,20 @@
 
 All notable changes to AI Publisher Pro will be documented in this file.
 
+## [Unreleased] — TOC alignment (căn chỉnh mục lục trái–phải)
+
+- Dòng mục lục từ TOC in sẵn của sách nguồn (trích ra thành "Tiêu đề……số
+  trang" với dấu chấm literal) giờ được nhận diện ở tầng AST và render CĂN LỀ:
+  tiêu đề flush trái, số trang flush PHẢI về một mép chung, dot leader lấp
+  đều khoảng giữa. Áp cho CẢ PDF (flowable tự vẽ, đo `stringWidth`) lẫn DOCX
+  (tab stop phải + `w:leader="dot"` — cơ chế native của Word).
+- Nhận diện tại một chỗ duy nhất (`extract_to_ast`) nên mọi đường render đều
+  hưởng: dòng đứng riêng LẪN danh sách đánh số bị nhận nhầm ("11. Tiêu đề…9")
+  đều thành TOC entry sạch — bỏ luôn số thứ tự list rác. Yêu cầu có dot leader
+  (2+ chấm) nên văn xuôi kết thúc bằng số KHÔNG bị bắt nhầm.
+- Test chống tái diễn: detector (5 khớp / 5 loại), post-pass (đoạn + list +
+  không đụng list thường), và render (PDF ra flowable, DOCX có tab phải + dot).
+
 ## [Unreleased] — Typography UI: em-dash & dòng mồ côi
 
 - Toàn bộ 26 em-dash (—) trong copy giao diện thay bằng en-dash (–), cả hai

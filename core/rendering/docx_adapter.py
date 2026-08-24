@@ -323,6 +323,8 @@ def _render_block(doc: Document, block: Block, ast: DocumentAST) -> None:
     """
     if isinstance(block, Heading):
         _render_heading(doc, block, ast)
+    elif isinstance(block, Paragraph) and block.role == ParagraphRole.TOC_ENTRY and block.page:
+        _render_toc_entry(doc, block, ast)
     elif isinstance(block, Paragraph):
         _render_paragraph(doc, block, ast)
     elif isinstance(block, Blockquote):
@@ -755,6 +757,31 @@ def _render_caption(doc: Document, caption: Caption, ast: DocumentAST) -> None:
     run.font.size = Pt(10.0)
     paragraph.alignment = WD_ALIGN_PARAGRAPH.CENTER
     logger.debug(f"Rendered caption: target={caption.target}, number={caption.number}")
+
+
+def _render_toc_entry(doc: Document, para: Paragraph, ast: DocumentAST) -> None:
+    """Render a contents line: title, then a right tab stop with a DOT leader
+    carrying the page number to the right margin — Word's native mechanism, so
+    the whole contents list aligns to one right edge (title flush-left, page
+    flush-right, dots between) instead of the ragged literal-dot paragraphs a
+    source book's printed TOC extracts as."""
+    from docx.enum.text import WD_TAB_ALIGNMENT, WD_TAB_LEADER
+
+    section = doc.sections[0]
+    usable_w = section.page_width - section.left_margin - section.right_margin
+
+    p = doc.add_paragraph()
+    fmt = p.paragraph_format
+    fmt.tab_stops.add_tab_stop(usable_w, WD_TAB_ALIGNMENT.RIGHT, WD_TAB_LEADER.DOTS)
+    # No first-line indent, tight spacing — this is a list line, not prose.
+    fmt.first_line_indent = Pt(0)
+    fmt.space_after = Pt(2.0)
+    body_font = ast.styles.body.font
+    r = p.add_run(f"{para.text}\t{para.page}")
+    r.font.size = Pt(body_font.size_pt)
+    if body_font.family:
+        r.font.name = body_font.family
+    logger.debug(f"Rendered TOC entry: {para.text!r} -> p.{para.page}")
 
 
 def _render_page_break(doc: Document, page_break: PageBreak, ast: DocumentAST) -> None:

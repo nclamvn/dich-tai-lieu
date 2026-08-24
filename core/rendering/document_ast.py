@@ -77,6 +77,7 @@ class ParagraphRole(Enum):
     EPIGRAPH = "epigraph"  # Chapter epigraph
     DIALOGUE = "dialogue"  # Dialogue (for future use)
     FIRST_PARAGRAPH = "first_paragraph"  # First paragraph after heading (no indent)
+    TOC_ENTRY = "toc_entry"  # A table-of-contents line: title left, page right, dot leader
 
 
 class EquationMode(Enum):
@@ -189,6 +190,10 @@ class Paragraph(Block):
     text: str
     role: ParagraphRole = ParagraphRole.BODY
     runs: Optional[List["InlineRun"]] = None
+    # For role == TOC_ENTRY only: the trailing page number (kept as a string so
+    # roman numerals / arbitrary source page labels survive). ``text`` then holds
+    # just the entry title (dot leaders stripped).
+    page: Optional[str] = None
 
     def __post_init__(self):
         self.block_type = BlockType.PARAGRAPH
