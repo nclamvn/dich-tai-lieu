@@ -97,7 +97,7 @@ def _norm(s: str) -> str:
 def _core(raw: str) -> str:
     """The furniture's stable text: separators and page numbers removed.
 
-    ``"Nguyen Canh Lam  ◆  43"`` -> ``"Nguyen Canh Lam"``; ``"KHỞI NGUỒN"`` stays.
+    ``"Tran Van But  ◆  43"`` -> ``"Tran Van But"``; ``"BÌNH MINH XANH"`` stays.
     This is what actually repeats page to page (the page number is what varies),
     so it is the right thing to anchor the inline stamp regex on.
     """
@@ -169,7 +169,7 @@ def detect_inline_furniture_tokens(text: str, *, floor: int = 5) -> dict[str, st
     """Find furniture whose every occurrence is GLUED into body text.
 
     A PDF whose extraction merges paragraphs produces lines like
-    ``"…từng\n\n10    <pua>    KHỌI NGUỄN lọn sóng…"`` (title interrupting a
+    ``"…từng\n\n10    <pua>    BÌNH MINH XANH lọn sóng…"`` (title interrupting a
     sentence mid-line) — the running header never stands alone, so the
     standalone-line frequency pass sees nothing. Here the *stamp shape itself*
     proposes candidates:
@@ -216,9 +216,9 @@ def detect_inline_furniture_tokens(text: str, *, floor: int = 5) -> dict[str, st
 
     def _pick(counts: Counter) -> dict[str, str]:
         # Longest phrase whose count is within 10% of the family maximum:
-        # nested prefixes/suffixes of the true token share its count ("KHỌI"
-        # and "KHỌI NGUỄN" both hit ~164) while accidental extensions ("Xe
-        # Nguyễn …") appear a handful of times.
+        # nested prefixes/suffixes of the true token share its count ("BÌNH"
+        # and "BÌNH MINH XANH" both hit ~164) while accidental extensions ("Xe
+        # Xanh …") appear a handful of times.
         picked: dict[str, str] = {}
         qualified = {f: c for f, c in counts.items() if c >= floor}
         if not qualified:
