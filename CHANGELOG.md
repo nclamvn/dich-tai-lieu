@@ -2,6 +2,16 @@
 
 All notable changes to AI Publisher Pro will be documented in this file.
 
+## [Unreleased] — Ẩn danh nốt fixture còn sót (sẵn sàng public)
+
+- Audit pre-share #43 bỏ sót: 3 file test bìa (`test_cover_apply`,
+  `test_cover_phase3`, `test_cover_templates`) vẫn dùng tựa sách + tên tác giả
+  thật ("KHỞI NGUỒN" / "Nguyễn Cảnh Lâm") làm fixture — 18 chỗ, nay thay bằng
+  tiểu thuyết giả cùng cấu trúc ("BÌNH MINH XANH" / "Trần Văn Bút"), khớp bản
+  ẩn danh trước ở test_text_cleanup. Kèm 3 ví dụ docstring trong text_cleanup.
+- Quét lại toàn history tại HEAD: 0 secret thật (2 hit là fixture test), không
+  file .db/.key/.env thật bị track, .gitignore chặn đúng. Repo sạch để public.
+
 ## [Unreleased] — TOC dịch sót (chuẩn hoá blob mục lục trước khi dịch)
 
 - Trang mục lục in sẵn của sách nguồn trích ra thành MỘT blob dày đặc

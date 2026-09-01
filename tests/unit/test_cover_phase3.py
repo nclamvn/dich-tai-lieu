@@ -31,7 +31,7 @@ from core.rendering.pdf_adapter import render_pdf_from_ast
 
 
 def _meta():
-    return DocumentMetadata(title="KHỞI NGUỒN", author="Nguyễn Cảnh Lâm", language="vi")
+    return DocumentMetadata(title="BÌNH MINH XANH", author="Trần Văn Bút", language="vi")
 
 
 def _ast():
@@ -93,13 +93,13 @@ def test_dispatcher_image_wins_over_template(tmp_path, user_image):
 # ---- EPUB covers (baked at build time) ------------------------------------ #
 def test_epub_cover_image_is_baked_in(tmp_path, user_image):
     e = tmp_path / "book.epub"
-    render_epub_from_ast(_ast(), e, "KHỞI NGUỒN", cover_image=user_image)
+    render_epub_from_ast(_ast(), e, "BÌNH MINH XANH", cover_image=user_image)
     assert e.exists() and _has_cover(e)
 
 
 def test_epub_has_no_cover_by_default(tmp_path):
     e = tmp_path / "book.epub"
-    render_epub_from_ast(_ast(), e, "KHỞI NGUỒN")
+    render_epub_from_ast(_ast(), e, "BÌNH MINH XANH")
     assert e.exists() and not _has_cover(e)
 
 
@@ -112,7 +112,7 @@ def test_converter_epub_professional_template_and_image(tmp_path, user_image):
     async def build(name, **kw):
         out = tmp_path / f"{name}.epub"
         await conv.convert_markdown_to_epub_professional(
-            md, out, title="KHỞI NGUỒN", author="Nguyễn Cảnh Lâm", language="vi", **kw
+            md, out, title="BÌNH MINH XANH", author="Trần Văn Bút", language="vi", **kw
         )
         return out
 
@@ -137,7 +137,7 @@ def test_converter_professional_accepts_cover_image(tmp_path, user_image, fmt):
             if fmt == "pdf"
             else conv.convert_markdown_to_docx_professional
         )
-        await fn(md, out, title="KHỞI NGUỒN", author="Nguyễn Cảnh Lâm",
+        await fn(md, out, title="BÌNH MINH XANH", author="Trần Văn Bút",
                  language="vi", cover_image=cover_image)
         return out
 

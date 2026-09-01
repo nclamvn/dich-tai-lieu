@@ -27,7 +27,7 @@ from core.rendering.pdf_adapter import render_pdf_from_ast
 
 
 def _meta():
-    return DocumentMetadata(title="KHỞI NGUỒN", author="Nguyễn Cảnh Lâm", language="vi")
+    return DocumentMetadata(title="BÌNH MINH XANH", author="Trần Văn Bút", language="vi")
 
 
 def _ast():
@@ -51,7 +51,7 @@ def test_apply_cover_to_pdf_prepends_one_page(tmp_path):
     p = tmp_path / "book.pdf"
     render_pdf_from_ast(_ast(), p)
     n0 = len(pypdf.PdfReader(str(p)).pages)
-    assert apply_cover_to_pdf(p, "gradient", title="KHỞI NGUỒN", author="Nguyễn Cảnh Lâm") is True
+    assert apply_cover_to_pdf(p, "gradient", title="BÌNH MINH XANH", author="Trần Văn Bút") is True
     assert len(pypdf.PdfReader(str(p)).pages) == n0 + 1
 
 
@@ -71,7 +71,7 @@ def test_apply_cover_to_docx_adds_zero_margin_cover_section(tmp_path):
     d = tmp_path / "book.docx"
     render_docx_from_ast(_ast(), d)
     s0 = len(docx.Document(str(d)).sections)
-    assert apply_cover_to_docx(d, "emblem", title="KHỞI NGUỒN", author="Nguyễn Cảnh Lâm") is True
+    assert apply_cover_to_docx(d, "emblem", title="BÌNH MINH XANH", author="Trần Văn Bút") is True
     dd = docx.Document(str(d))
     assert len(dd.sections) == s0 + 1  # cover section added ahead of the body
     assert "blip" in dd.paragraphs[0]._p.xml  # first paragraph carries the image
@@ -102,7 +102,7 @@ def test_converter_applies_cover_when_requested(tmp_path, fmt):
             if fmt == "pdf"
             else conv.convert_markdown_to_docx_professional
         )
-        await fn(md, out, title="KHỞI NGUỒN", author="Nguyễn Cảnh Lâm",
+        await fn(md, out, title="BÌNH MINH XANH", author="Trần Văn Bút",
                  language="vi", cover_template=cover)
         return out
 

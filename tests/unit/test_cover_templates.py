@@ -30,7 +30,7 @@ EXPECTED_IDS = {
 }
 
 
-def _meta(title="KHỞI NGUỒN", author="Nguyễn Cảnh Lâm", language="vi"):
+def _meta(title="BÌNH MINH XANH", author="Trần Văn Bút", language="vi"):
     return DocumentMetadata(title=title, author=author, language=language)
 
 
